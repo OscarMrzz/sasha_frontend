@@ -10,33 +10,322 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppAsignacionRouteImport } from './routes/_app/asignacion'
+import { Route as AppAsistenciaRouteImport } from './routes/_app/asistencia'
+import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
+import { Route as AppCalificacionesRouteImport } from './routes/_app/calificaciones'
+import { Route as AppConfiguracionRouteImport } from './routes/_app/configuracion'
+import { Route as AppControladoresRouteImport } from './routes/_app/controladores'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppEstadisticasRouteImport } from './routes/_app/estadisticas'
+import { Route as AppHorariosRouteImport } from './routes/_app/horarios'
+import { Route as AppMatriculaRouteImport } from './routes/_app/matricula'
+import { Route as AppNotificacionesAdminRouteImport } from './routes/_app/notificaciones-admin'
+import { Route as AppPagosRouteImport } from './routes/_app/pagos'
+import { Route as AppPersonasRouteImport } from './routes/_app/personas'
+import { Route as AppPlanEstudioRouteImport } from './routes/_app/plan-estudio'
+import { Route as AppSaceRouteImport } from './routes/_app/sace'
+import { Route as AppTareasRouteImport } from './routes/_app/tareas'
+import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
+import { Route as AppCatalogosCursosRouteImport } from './routes/_app/catalogos/cursos'
+import { Route as AppCatalogosGradosRouteImport } from './routes/_app/catalogos/grados'
+import { Route as AppCatalogosModalidadesRouteImport } from './routes/_app/catalogos/modalidades'
+import { Route as AppCatalogosPeriodosRouteImport } from './routes/_app/catalogos/periodos'
+import { Route as AppCatalogosSeccionesRouteImport } from './routes/_app/catalogos/secciones'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAsignacionRoute = AppAsignacionRouteImport.update({
+  id: '/asignacion',
+  path: '/asignacion',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAsistenciaRoute = AppAsistenciaRouteImport.update({
+  id: '/asistencia',
+  path: '/asistencia',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCalificacionesRoute = AppCalificacionesRouteImport.update({
+  id: '/calificaciones',
+  path: '/calificaciones',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConfiguracionRoute = AppConfiguracionRouteImport.update({
+  id: '/configuracion',
+  path: '/configuracion',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppControladoresRoute = AppControladoresRouteImport.update({
+  id: '/controladores',
+  path: '/controladores',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEstadisticasRoute = AppEstadisticasRouteImport.update({
+  id: '/estadisticas',
+  path: '/estadisticas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHorariosRoute = AppHorariosRouteImport.update({
+  id: '/horarios',
+  path: '/horarios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMatriculaRoute = AppMatriculaRouteImport.update({
+  id: '/matricula',
+  path: '/matricula',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificacionesAdminRoute = AppNotificacionesAdminRouteImport.update({
+  id: '/notificaciones-admin',
+  path: '/notificaciones-admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPagosRoute = AppPagosRouteImport.update({
+  id: '/pagos',
+  path: '/pagos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPersonasRoute = AppPersonasRouteImport.update({
+  id: '/personas',
+  path: '/personas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPlanEstudioRoute = AppPlanEstudioRouteImport.update({
+  id: '/plan-estudio',
+  path: '/plan-estudio',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSaceRoute = AppSaceRouteImport.update({
+  id: '/sace',
+  path: '/sace',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTareasRoute = AppTareasRouteImport.update({
+  id: '/tareas',
+  path: '/tareas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsuariosRoute = AppUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCatalogosCursosRoute = AppCatalogosCursosRouteImport.update({
+  id: '/catalogos/cursos',
+  path: '/catalogos/cursos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCatalogosGradosRoute = AppCatalogosGradosRouteImport.update({
+  id: '/catalogos/grados',
+  path: '/catalogos/grados',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCatalogosModalidadesRoute = AppCatalogosModalidadesRouteImport.update({
+  id: '/catalogos/modalidades',
+  path: '/catalogos/modalidades',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCatalogosPeriodosRoute = AppCatalogosPeriodosRouteImport.update({
+  id: '/catalogos/periodos',
+  path: '/catalogos/periodos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCatalogosSeccionesRoute = AppCatalogosSeccionesRouteImport.update({
+  id: '/catalogos/secciones',
+  path: '/catalogos/secciones',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/asignacion': typeof AppAsignacionRoute
+  '/asistencia': typeof AppAsistenciaRoute
+  '/auditoria': typeof AppAuditoriaRoute
+  '/calificaciones': typeof AppCalificacionesRoute
+  '/configuracion': typeof AppConfiguracionRoute
+  '/controladores': typeof AppControladoresRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/estadisticas': typeof AppEstadisticasRoute
+  '/horarios': typeof AppHorariosRoute
+  '/matricula': typeof AppMatriculaRoute
+  '/notificaciones-admin': typeof AppNotificacionesAdminRoute
+  '/pagos': typeof AppPagosRoute
+  '/personas': typeof AppPersonasRoute
+  '/plan-estudio': typeof AppPlanEstudioRoute
+  '/sace': typeof AppSaceRoute
+  '/tareas': typeof AppTareasRoute
+  '/usuarios': typeof AppUsuariosRoute
+  '/catalogos/cursos': typeof AppCatalogosCursosRoute
+  '/catalogos/grados': typeof AppCatalogosGradosRoute
+  '/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
+  '/catalogos/periodos': typeof AppCatalogosPeriodosRoute
+  '/catalogos/secciones': typeof AppCatalogosSeccionesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/asignacion': typeof AppAsignacionRoute
+  '/asistencia': typeof AppAsistenciaRoute
+  '/auditoria': typeof AppAuditoriaRoute
+  '/calificaciones': typeof AppCalificacionesRoute
+  '/configuracion': typeof AppConfiguracionRoute
+  '/controladores': typeof AppControladoresRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/estadisticas': typeof AppEstadisticasRoute
+  '/horarios': typeof AppHorariosRoute
+  '/matricula': typeof AppMatriculaRoute
+  '/notificaciones-admin': typeof AppNotificacionesAdminRoute
+  '/pagos': typeof AppPagosRoute
+  '/personas': typeof AppPersonasRoute
+  '/plan-estudio': typeof AppPlanEstudioRoute
+  '/sace': typeof AppSaceRoute
+  '/tareas': typeof AppTareasRoute
+  '/usuarios': typeof AppUsuariosRoute
+  '/catalogos/cursos': typeof AppCatalogosCursosRoute
+  '/catalogos/grados': typeof AppCatalogosGradosRoute
+  '/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
+  '/catalogos/periodos': typeof AppCatalogosPeriodosRoute
+  '/catalogos/secciones': typeof AppCatalogosSeccionesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_app/asignacion': typeof AppAsignacionRoute
+  '/_app/asistencia': typeof AppAsistenciaRoute
+  '/_app/auditoria': typeof AppAuditoriaRoute
+  '/_app/calificaciones': typeof AppCalificacionesRoute
+  '/_app/configuracion': typeof AppConfiguracionRoute
+  '/_app/controladores': typeof AppControladoresRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/estadisticas': typeof AppEstadisticasRoute
+  '/_app/horarios': typeof AppHorariosRoute
+  '/_app/matricula': typeof AppMatriculaRoute
+  '/_app/notificaciones-admin': typeof AppNotificacionesAdminRoute
+  '/_app/pagos': typeof AppPagosRoute
+  '/_app/personas': typeof AppPersonasRoute
+  '/_app/plan-estudio': typeof AppPlanEstudioRoute
+  '/_app/sace': typeof AppSaceRoute
+  '/_app/tareas': typeof AppTareasRoute
+  '/_app/usuarios': typeof AppUsuariosRoute
+  '/_app/catalogos/cursos': typeof AppCatalogosCursosRoute
+  '/_app/catalogos/grados': typeof AppCatalogosGradosRoute
+  '/_app/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
+  '/_app/catalogos/periodos': typeof AppCatalogosPeriodosRoute
+  '/_app/catalogos/secciones': typeof AppCatalogosSeccionesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/asignacion'
+    | '/asistencia'
+    | '/auditoria'
+    | '/calificaciones'
+    | '/configuracion'
+    | '/controladores'
+    | '/dashboard'
+    | '/estadisticas'
+    | '/horarios'
+    | '/matricula'
+    | '/notificaciones-admin'
+    | '/pagos'
+    | '/personas'
+    | '/plan-estudio'
+    | '/sace'
+    | '/tareas'
+    | '/usuarios'
+    | '/catalogos/cursos'
+    | '/catalogos/grados'
+    | '/catalogos/modalidades'
+    | '/catalogos/periodos'
+    | '/catalogos/secciones'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/asignacion'
+    | '/asistencia'
+    | '/auditoria'
+    | '/calificaciones'
+    | '/configuracion'
+    | '/controladores'
+    | '/dashboard'
+    | '/estadisticas'
+    | '/horarios'
+    | '/matricula'
+    | '/notificaciones-admin'
+    | '/pagos'
+    | '/personas'
+    | '/plan-estudio'
+    | '/sace'
+    | '/tareas'
+    | '/usuarios'
+    | '/catalogos/cursos'
+    | '/catalogos/grados'
+    | '/catalogos/modalidades'
+    | '/catalogos/periodos'
+    | '/catalogos/secciones'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/asignacion'
+    | '/_app/asistencia'
+    | '/_app/auditoria'
+    | '/_app/calificaciones'
+    | '/_app/configuracion'
+    | '/_app/controladores'
+    | '/_app/dashboard'
+    | '/_app/estadisticas'
+    | '/_app/horarios'
+    | '/_app/matricula'
+    | '/_app/notificaciones-admin'
+    | '/_app/pagos'
+    | '/_app/personas'
+    | '/_app/plan-estudio'
+    | '/_app/sace'
+    | '/_app/tareas'
+    | '/_app/usuarios'
+    | '/_app/catalogos/cursos'
+    | '/_app/catalogos/grados'
+    | '/_app/catalogos/modalidades'
+    | '/_app/catalogos/periodos'
+    | '/_app/catalogos/secciones'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,12 +337,243 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/asignacion': {
+      id: '/_app/asignacion'
+      path: '/asignacion'
+      fullPath: '/asignacion'
+      preLoaderRoute: typeof AppAsignacionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/asistencia': {
+      id: '/_app/asistencia'
+      path: '/asistencia'
+      fullPath: '/asistencia'
+      preLoaderRoute: typeof AppAsistenciaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/auditoria': {
+      id: '/_app/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AppAuditoriaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/calificaciones': {
+      id: '/_app/calificaciones'
+      path: '/calificaciones'
+      fullPath: '/calificaciones'
+      preLoaderRoute: typeof AppCalificacionesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/configuracion': {
+      id: '/_app/configuracion'
+      path: '/configuracion'
+      fullPath: '/configuracion'
+      preLoaderRoute: typeof AppConfiguracionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/controladores': {
+      id: '/_app/controladores'
+      path: '/controladores'
+      fullPath: '/controladores'
+      preLoaderRoute: typeof AppControladoresRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/estadisticas': {
+      id: '/_app/estadisticas'
+      path: '/estadisticas'
+      fullPath: '/estadisticas'
+      preLoaderRoute: typeof AppEstadisticasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/horarios': {
+      id: '/_app/horarios'
+      path: '/horarios'
+      fullPath: '/horarios'
+      preLoaderRoute: typeof AppHorariosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/matricula': {
+      id: '/_app/matricula'
+      path: '/matricula'
+      fullPath: '/matricula'
+      preLoaderRoute: typeof AppMatriculaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notificaciones-admin': {
+      id: '/_app/notificaciones-admin'
+      path: '/notificaciones-admin'
+      fullPath: '/notificaciones-admin'
+      preLoaderRoute: typeof AppNotificacionesAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/pagos': {
+      id: '/_app/pagos'
+      path: '/pagos'
+      fullPath: '/pagos'
+      preLoaderRoute: typeof AppPagosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/personas': {
+      id: '/_app/personas'
+      path: '/personas'
+      fullPath: '/personas'
+      preLoaderRoute: typeof AppPersonasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/plan-estudio': {
+      id: '/_app/plan-estudio'
+      path: '/plan-estudio'
+      fullPath: '/plan-estudio'
+      preLoaderRoute: typeof AppPlanEstudioRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/sace': {
+      id: '/_app/sace'
+      path: '/sace'
+      fullPath: '/sace'
+      preLoaderRoute: typeof AppSaceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tareas': {
+      id: '/_app/tareas'
+      path: '/tareas'
+      fullPath: '/tareas'
+      preLoaderRoute: typeof AppTareasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/usuarios': {
+      id: '/_app/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AppUsuariosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/catalogos/cursos': {
+      id: '/_app/catalogos/cursos'
+      path: '/catalogos/cursos'
+      fullPath: '/catalogos/cursos'
+      preLoaderRoute: typeof AppCatalogosCursosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/catalogos/grados': {
+      id: '/_app/catalogos/grados'
+      path: '/catalogos/grados'
+      fullPath: '/catalogos/grados'
+      preLoaderRoute: typeof AppCatalogosGradosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/catalogos/modalidades': {
+      id: '/_app/catalogos/modalidades'
+      path: '/catalogos/modalidades'
+      fullPath: '/catalogos/modalidades'
+      preLoaderRoute: typeof AppCatalogosModalidadesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/catalogos/periodos': {
+      id: '/_app/catalogos/periodos'
+      path: '/catalogos/periodos'
+      fullPath: '/catalogos/periodos'
+      preLoaderRoute: typeof AppCatalogosPeriodosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/catalogos/secciones': {
+      id: '/_app/catalogos/secciones'
+      path: '/catalogos/secciones'
+      fullPath: '/catalogos/secciones'
+      preLoaderRoute: typeof AppCatalogosSeccionesRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAsignacionRoute: typeof AppAsignacionRoute
+  AppAsistenciaRoute: typeof AppAsistenciaRoute
+  AppAuditoriaRoute: typeof AppAuditoriaRoute
+  AppCalificacionesRoute: typeof AppCalificacionesRoute
+  AppConfiguracionRoute: typeof AppConfiguracionRoute
+  AppControladoresRoute: typeof AppControladoresRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppEstadisticasRoute: typeof AppEstadisticasRoute
+  AppHorariosRoute: typeof AppHorariosRoute
+  AppMatriculaRoute: typeof AppMatriculaRoute
+  AppNotificacionesAdminRoute: typeof AppNotificacionesAdminRoute
+  AppPagosRoute: typeof AppPagosRoute
+  AppPersonasRoute: typeof AppPersonasRoute
+  AppPlanEstudioRoute: typeof AppPlanEstudioRoute
+  AppSaceRoute: typeof AppSaceRoute
+  AppTareasRoute: typeof AppTareasRoute
+  AppUsuariosRoute: typeof AppUsuariosRoute
+  AppCatalogosCursosRoute: typeof AppCatalogosCursosRoute
+  AppCatalogosGradosRoute: typeof AppCatalogosGradosRoute
+  AppCatalogosModalidadesRoute: typeof AppCatalogosModalidadesRoute
+  AppCatalogosPeriodosRoute: typeof AppCatalogosPeriodosRoute
+  AppCatalogosSeccionesRoute: typeof AppCatalogosSeccionesRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAsignacionRoute: AppAsignacionRoute,
+  AppAsistenciaRoute: AppAsistenciaRoute,
+  AppAuditoriaRoute: AppAuditoriaRoute,
+  AppCalificacionesRoute: AppCalificacionesRoute,
+  AppConfiguracionRoute: AppConfiguracionRoute,
+  AppControladoresRoute: AppControladoresRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppEstadisticasRoute: AppEstadisticasRoute,
+  AppHorariosRoute: AppHorariosRoute,
+  AppMatriculaRoute: AppMatriculaRoute,
+  AppNotificacionesAdminRoute: AppNotificacionesAdminRoute,
+  AppPagosRoute: AppPagosRoute,
+  AppPersonasRoute: AppPersonasRoute,
+  AppPlanEstudioRoute: AppPlanEstudioRoute,
+  AppSaceRoute: AppSaceRoute,
+  AppTareasRoute: AppTareasRoute,
+  AppUsuariosRoute: AppUsuariosRoute,
+  AppCatalogosCursosRoute: AppCatalogosCursosRoute,
+  AppCatalogosGradosRoute: AppCatalogosGradosRoute,
+  AppCatalogosModalidadesRoute: AppCatalogosModalidadesRoute,
+  AppCatalogosPeriodosRoute: AppCatalogosPeriodosRoute,
+  AppCatalogosSeccionesRoute: AppCatalogosSeccionesRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

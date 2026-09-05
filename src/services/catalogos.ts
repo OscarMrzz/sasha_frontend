@@ -1,0 +1,175 @@
+import { apiRequest } from '#/lib/api'
+
+export interface Grado {
+  id: string
+  codigo: string
+  nombre: string
+  orden: number
+  status: string
+  codigo_sace?: string
+  detalles?: string
+}
+
+export interface GradoCreate {
+  nombre: string
+  orden: number
+  status: string
+  codigo_sace?: string
+  detalles?: string
+}
+
+export interface Modalidad {
+  id: string
+  codigo: string
+  nombre: string
+  hora_inicio: string
+  hora_fin: string
+  status: string
+  detalles?: string
+}
+
+export interface ModalidadCreate {
+  nombre: string
+  hora_inicio: string
+  hora_fin: string
+  status: string
+  dias: number[]
+  detalles?: string
+}
+
+export interface Seccion {
+  id: string
+  codigo: string
+  nombre: string
+  grado_id: string
+  modalidad_id: string
+  status: string
+  codigo_sace?: string
+  detalles?: string
+  cupo_maximo?: number
+}
+
+export interface SeccionCreate {
+  nombre: string
+  grado_id: string
+  modalidad_id: string
+  status: string
+  codigo_sace?: string
+  detalles?: string
+  cupo_maximo?: number
+}
+
+export interface Curso {
+  id: string
+  codigo: string
+  nombre: string
+  horas_semana_minimas: number
+  status: string
+  codigo_sace?: string
+  detalles?: string
+}
+
+export interface CursoCreate {
+  nombre: string
+  horas_semana_minimas: number
+  status: string
+  codigo_sace?: string
+  detalles?: string
+}
+
+export interface Periodo {
+  id: string
+  nombre: string
+  anio_lectivo: number
+  fecha_inicio: string
+  fecha_fin: string
+  status: string
+}
+
+export interface PeriodoCreate {
+  nombre: string
+  anio_lectivo: number
+  fecha_inicio: string
+  fecha_fin: string
+  status: string
+}
+
+export async function listGrados() {
+  return apiRequest<Grado[]>('/catalogos/grados')
+}
+
+export async function createGrado(body: GradoCreate) {
+  return apiRequest<Grado>('/catalogos/grados', { method: 'POST', body })
+}
+
+export async function updateGrado(id: string, body: GradoCreate) {
+  return apiRequest<Grado>(`/catalogos/grados/${id}`, { method: 'PUT', body })
+}
+
+export async function deleteGrado(id: string) {
+  return apiRequest<{ message: string }>(`/catalogos/grados/${id}`, { method: 'DELETE' })
+}
+
+export async function listModalidades() {
+  return apiRequest<Modalidad[]>('/catalogos/modalidades')
+}
+
+export async function createModalidad(body: ModalidadCreate) {
+  return apiRequest<Modalidad>('/catalogos/modalidades', { method: 'POST', body })
+}
+
+export async function updateModalidad(id: string, body: ModalidadCreate) {
+  return apiRequest<Modalidad>(`/catalogos/modalidades/${id}`, { method: 'PUT', body })
+}
+
+export async function deleteModalidad(id: string) {
+  return apiRequest<{ message: string }>(`/catalogos/modalidades/${id}`, { method: 'DELETE' })
+}
+
+export async function listSecciones() {
+  return apiRequest<Seccion[]>('/catalogos/secciones')
+}
+
+export async function createSeccion(body: SeccionCreate) {
+  return apiRequest<Seccion>('/catalogos/secciones', { method: 'POST', body })
+}
+
+export async function updateSeccion(id: string, body: SeccionCreate) {
+  return apiRequest<Seccion>(`/catalogos/secciones/${id}`, { method: 'PUT', body })
+}
+
+export async function deleteSeccion(id: string) {
+  return apiRequest<{ message: string }>(`/catalogos/secciones/${id}`, { method: 'DELETE' })
+}
+
+export async function listCursos() {
+  return apiRequest<Curso[]>('/catalogos/cursos')
+}
+
+export async function createCurso(body: CursoCreate) {
+  return apiRequest<Curso>('/catalogos/cursos', { method: 'POST', body })
+}
+
+export async function updateCurso(id: string, body: CursoCreate) {
+  return apiRequest<Curso>(`/catalogos/cursos/${id}`, { method: 'PUT', body })
+}
+
+export async function deleteCurso(id: string) {
+  return apiRequest<{ message: string }>(`/catalogos/cursos/${id}`, { method: 'DELETE' })
+}
+
+export async function listPeriodos() {
+  return apiRequest<Periodo[]>('/catalogos/periodos')
+}
+
+export async function createPeriodo(body: PeriodoCreate) {
+  return apiRequest<Periodo>('/catalogos/periodos', { method: 'POST', body })
+}
+
+export async function updatePeriodo(id: string, body: PeriodoCreate) {
+  return apiRequest<Periodo>(`/catalogos/periodos/${id}`, { method: 'PUT', body })
+}
+
+export async function deletePeriodo(id: string) {
+  return apiRequest<{ message: string }>(`/catalogos/periodos/${id}`, { method: 'DELETE' })
+}

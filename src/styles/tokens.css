@@ -1,0 +1,76 @@
+/* Sasha — industrial utilitario, dark por defecto, sin negros puros ni degradados */
+
+:root {
+  --sasha-font-sans: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  --sasha-font-display: 'IBM Plex Serif', Georgia, serif;
+
+  /* Dark (default) — charcoal, never #000 */
+  --sasha-bg-base: #0f1419;
+  --sasha-bg-raised: #161b22;
+  --sasha-bg-overlay: #1c2330;
+  --sasha-bg-muted: #242b36;
+  --sasha-bg-hover: #2a3340;
+
+  --sasha-border-suave: #2e3644;
+  --sasha-border-fuerte: #3d4756;
+
+  --sasha-texto-primary: #e8edf4;
+  --sasha-texto-muted: #8b97a8;
+  --sasha-texto-emphasis: #f4f7fb;
+  --sasha-texto-title: #f7fafc;
+  --sasha-texto-inverse: #12171e;
+
+  --sasha-accent: #3d8bfd;
+  --sasha-accent-hover: #5a9dff;
+  --sasha-accent-muted: #1e3a5f;
+
+  --sasha-success: #3d9a6a;
+  --sasha-warning: #c9a227;
+  --sasha-danger: #d64545;
+  --sasha-danger-muted: #4a2222;
+
+  --sasha-table-row: #161b22;
+  --sasha-table-row-alt: #1a2029;
+  --sasha-table-row-hover: #222a36;
+
+  --sasha-shadow-modal: 0 16px 48px rgba(15, 20, 25, 0.55);
+  --sasha-radius: 6px;
+  --sasha-sidebar-width: 240px;
+  --sasha-sidebar-collapsed: 64px;
+  --sasha-topbar-height: 52px;
+
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --sasha-bg-base: #f2f4f7;
+  --sasha-bg-raised: #ffffff;
+  --sasha-bg-overlay: #ffffff;
+  --sasha-bg-muted: #e8ecf1;
+  --sasha-bg-hover: #dde3eb;
+
+  --sasha-border-suave: #d0d7e0;
+  --sasha-border-fuerte: #aeb8c5;
+
+  --sasha-texto-primary: #1a2230;
+  --sasha-texto-muted: #5c6b7d;
+  --sasha-texto-emphasis: #0f1419;
+  --sasha-texto-title: #0f1419;
+  --sasha-texto-inverse: #f4f7fb;
+
+  --sasha-accent: #2563c7;
+  --sasha-accent-hover: #1d4fa3;
+  --sasha-accent-muted: #d6e4f7;
+
+  --sasha-success: #2f7a52;
+  --sasha-warning: #9a7a14;
+  --sasha-danger: #b53a3a;
+  --sasha-danger-muted: #f5d6d6;
+
+  --sasha-table-row: #ffffff;
+  --sasha-table-row-alt: #f7f9fb;
+  --sasha-table-row-hover: #eef2f7;
+
+  --sasha-shadow-modal: 0 16px 48px rgba(26, 34, 48, 0.18);
+  color-scheme: light;
+}

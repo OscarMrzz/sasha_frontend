@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "brainstorming": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/brainstorming/SKILL.md",
+      "computedHash": "0eb8e9ba100985eb4da20c46807268cafd72ec1c4ea58132edf9be6c469867fe"
+    },
+    "changelog-generator": {
+      "source": "composiohq/awesome-claude-skills",
+      "sourceType": "github",
+      "skillPath": "changelog-generator/SKILL.md",
+      "computedHash": "f84bcb773a67ade28878d63103e3d4dc1f5031d6103be5107ff99c15b8d4a992"
+    },
+    "frontend-desing": {
+      "source": "kintsukuro1/aplicacion_colegio",
+      "sourceType": "github",
+      "skillPath": "Aplicacion_Colegio/.github/skills/frontend-desing/SKILL.md",
+      "computedHash": "0fd4f6eff04267deb80daac3261ea6437feb44c5e88ce7887be31824cb603cb8"
+    },
+    "playwright-best-practices": {
+      "source": "currents-dev/playwright-best-practices-skill",
+      "sourceType": "github",
+      "skillPath": "playwright-best-practices/SKILL.md",
+      "computedHash": "88623575c97314e115f0e361a7d942e31d3b7a4e8925832257e1ad33f52096e4"
+    },
+    "systematic-debugging": {
+      "source": "jnmetacode/superpowers-zh",
+      "sourceType": "github",
+      "skillPath": "skills/systematic-debugging/SKILL.md",
+      "computedHash": "62a172f578879a11f6826b0229740d04f6a52c9c186e643718c52fe71d161a73"
+    }
+  }
+}
