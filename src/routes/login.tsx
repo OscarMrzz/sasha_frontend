@@ -51,7 +51,6 @@ function LoginPage() {
       }
       setSession({
         code: res.code,
-        activeRole: knownRoles[0],
         knownRoles,
       })
       toast.success('Sesión iniciada')

@@ -20,7 +20,7 @@ Content-Type: application/json
 
 - `user` = **código** del usuario (no email).
 - Respuesta: cookie HttpOnly **`auth_token`** (el navegador la guarda si usas `credentials: 'include'`).
-- Body típico (roles reales del usuario; el cliente elige `X-Active-Role` entre ellos):
+- Body típico (roles reales del usuario; el cliente los usa internamente según la app):
 
 ```json
 {
@@ -41,8 +41,15 @@ Content-Type: application/json
 X-Active-Role: admin
 ```
 
-El valor debe ser **uno de los roles** que tiene ese usuario (`admin`, `secretaria`, `maestro`, `alumno`, etc.).  
-Los permisos se evalúan **solo con ese rol activo**.
+o varios roles (esta app escolar manda **todos** los del login):
+
+```http
+X-Active-Role: maestro,responsable
+```
+
+- Cada valor debe ser un rol que el usuario tenga en el JWT.
+- Los permisos se evalúan con **unión**: basta con que **uno** de los roles enviados tenga el permiso.
+- Una app distinta (p. ej. portal de padres) puede mandar solo `responsable` e ignorar el resto.
 
 ### Logout
 

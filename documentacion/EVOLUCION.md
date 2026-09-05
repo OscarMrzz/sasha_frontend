@@ -18,6 +18,12 @@
 
 ## 2. Bitácora
 
+### 2026-09-05 — Roles internos sin combobox
+
+- Sin selector de rol en login ni en el shell.
+- Esta app envía todos los `roles` del login en `X-Active-Role` (coma-separados).
+- UI y API usan unión de permisos; otra app (p. ej. padres) podrá filtrar roles al arrancar.
+
 ### 2026-09-04 — Roles reales post-login
 
 - Login ya no pide rol: usa `code`/`username`/`roles` del body de `POST /login/`.

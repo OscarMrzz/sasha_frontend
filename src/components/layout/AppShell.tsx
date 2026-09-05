@@ -29,7 +29,6 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Can, useCan } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { NAV_ITEMS } from '#/helpers/nav'
-import { roleLabel, type RoleName } from '#/helpers/permissions'
 import { useSession } from '#/hooks/use-session'
 import { logout } from '#/services/auth'
 import { toast } from 'sonner'
@@ -62,7 +61,7 @@ const ICONS: Record<string, ReactNode> = {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { session, clearSession, setActiveRole } = useSession()
+  const { session, clearSession } = useSession()
   const { can } = useCan()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [collapsed, setCollapsed] = useState(false)
@@ -80,8 +79,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     ]
     return base.filter((i) => (i.permission ? can(i.permission) : true))
   }, [can])
-
-  const roleOptions = session?.knownRoles ?? []
 
   return (
     <div className="app-shell" data-theme={theme}>
@@ -133,22 +130,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="app-shell__main">
         <header className="app-shell__top">
           <div style={{ marginRight: 'auto', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <label className="texto-muted" style={{ fontSize: '0.8rem' }} htmlFor="active-role">
-              Rol activo
-            </label>
-            <select
-              id="active-role"
-              className="field__select"
-              value={session?.activeRole ?? ''}
-              onChange={(e) => setActiveRole(e.target.value as RoleName)}
-              data-testid="active-role-select"
-            >
-              {roleOptions.map((r) => (
-                <option key={r} value={r}>
-                  {roleLabel(r)}
-                </option>
-              ))}
-            </select>
             <span className="badge" data-testid="session-code">
               {session?.code}
             </span>

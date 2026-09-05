@@ -1,20 +1,20 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
-import { roleHasPermission, type Permission } from '#/helpers/permissions'
+import { rolesHavePermission, type Permission } from '#/helpers/permissions'
 import { useSession } from '#/hooks/use-session'
 
 const PermContext = createContext<{
   can: (permission: Permission) => boolean
-  activeRole: string | null
-}>({ can: () => false, activeRole: null })
+  roles: string[]
+}>({ can: () => false, roles: [] })
 
 export function PermissionsProvider({ children }: { children: ReactNode }) {
   const { session } = useSession()
   const value = useMemo(
     () => ({
-      activeRole: session?.activeRole ?? null,
-      can: (permission: Permission) => roleHasPermission(session?.activeRole, permission),
+      roles: session?.knownRoles ?? [],
+      can: (permission: Permission) => rolesHavePermission(session?.knownRoles, permission),
     }),
-    [session?.activeRole],
+    [session?.knownRoles],
   )
   return <PermContext.Provider value={value}>{children}</PermContext.Provider>
 }
@@ -23,7 +23,7 @@ export function useCan() {
   return useContext(PermContext)
 }
 
-/** Oculta hijos si el rol activo no tiene el permiso. */
+/** Oculta hijos si ningún rol de la sesión tiene el permiso. */
 export function Can({
   permission,
   children,
@@ -49,7 +49,7 @@ export function RequirePermission({
   if (!can(permission)) {
     return (
       <div className="empty-state" role="alert">
-        No tienes permiso <code>{permission}</code> con el rol activo.
+        No tienes permiso <code>{permission}</code>.
       </div>
     )
   }

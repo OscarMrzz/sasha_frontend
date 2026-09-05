@@ -168,6 +168,15 @@ export function roleHasPermission(role: string | null | undefined, permission: P
   return ROLE_PERMISSIONS[role as RoleName].includes(permission)
 }
 
+/** Unión de permisos: basta con que un rol de la sesión lo tenga. */
+export function rolesHavePermission(
+  roles: readonly string[] | null | undefined,
+  permission: Permission,
+): boolean {
+  if (!roles?.length) return false
+  return roles.some((role) => roleHasPermission(role, permission))
+}
+
 export function roleLabel(role: string): string {
   const labels: Record<string, string> = {
     admin: 'Admin',

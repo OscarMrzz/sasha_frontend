@@ -22,15 +22,15 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
   const data = await apiRequest<LoginResponse>('/login/', {
     method: 'POST',
     body,
-    activeRole: null,
+    activeRoles: null,
   })
   return loginResponseSchema.parse(data)
 }
 
 export async function logout() {
-  return apiRequest('/logout/', { method: 'POST', activeRole: null })
+  return apiRequest('/logout/', { method: 'POST', activeRoles: null })
 }
 
 export async function healthCheck() {
-  return apiRequest<{ status: string }>('/health', { activeRole: null })
+  return apiRequest<{ status: string }>('/health', { activeRoles: null })
 }

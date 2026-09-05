@@ -49,14 +49,12 @@ test.describe('smoke @smoke @critical', () => {
     await expect(page.getByRole('link', { name: 'Auditoría' })).toBeVisible()
   })
 
-  test('selector de rol solo muestra roles del login', async ({ page }) => {
+  test('no hay selector de rol en el shell', async ({ page }) => {
     await waitLoginReady(page)
     await page.getByTestId('login-code').fill('1002026100')
     await page.getByTestId('login-password').fill('Admin123!')
     await page.getByTestId('login-submit').click()
     await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 })
-    const options = page.getByTestId('active-role-select').locator('option')
-    await expect(options).toHaveCount(1)
-    await expect(options.first()).toHaveText(/Admin/i)
+    await expect(page.getByTestId('active-role-select')).toHaveCount(0)
   })
 })

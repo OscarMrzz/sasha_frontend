@@ -27,28 +27,30 @@ export function getApiBaseUrl() {
 type RequestOptions = {
   method?: string
   body?: unknown
-  activeRole?: string | null
+  /** Roles a enviar en X-Active-Role (coma-separados). null = no header (login/health). */
+  activeRoles?: string[] | null
   headers?: Record<string, string>
   raw?: boolean
   signal?: AbortSignal
 }
 
-let activeRoleGetter: () => string | null = () => null
+let sessionRolesGetter: () => string[] = () => []
 
-export function setActiveRoleGetter(fn: () => string | null) {
-  activeRoleGetter = fn
+export function setSessionRolesGetter(fn: () => string[]) {
+  sessionRolesGetter = fn
 }
 
 export async function apiRequest<T = unknown>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = 'GET', body, activeRole, headers = {}, raw = false, signal } = options
-  const role = activeRole ?? activeRoleGetter()
+  const { method = 'GET', body, activeRoles, headers = {}, raw = false, signal } = options
+  const roles =
+    activeRoles === null ? [] : activeRoles !== undefined ? activeRoles : sessionRolesGetter()
   const finalHeaders: Record<string, string> = { ...headers }
 
-  if (role) {
-    finalHeaders['X-Active-Role'] = role
+  if (roles.length > 0) {
+    finalHeaders['X-Active-Role'] = roles.join(',')
   }
 
   let payload: BodyInit | undefined
@@ -107,7 +109,7 @@ export async function apiRequest<T = unknown>(
 export function userMessageFromError(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) return 'Sesión expirada o no autenticado. Vuelve a iniciar sesión.'
-    if (err.status === 403) return err.message || 'No tienes permiso para esta acción con el rol activo.'
+    if (err.status === 403) return err.message || 'No tienes permiso para esta acción.'
     return err.message
   }
   if (err instanceof Error) return err.message
