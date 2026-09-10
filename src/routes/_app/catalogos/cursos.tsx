@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -23,6 +24,11 @@ export const Route = createFileRoute('/_app/catalogos/cursos')({ component: Curs
 
 const col = createColumnHelper<Curso>()
 const defaultForm: CursoCreate = { nombre: '', horas_semana_minimas: 2, status: 'ACTIVE' }
+
+const STATUS_OPTIONS = [
+  { value: 'ACTIVE', label: 'ACTIVE' },
+  { value: 'INACTIVE', label: 'INACTIVE' },
+]
 
 function CursosPage() {
   const qc = useQueryClient()
@@ -100,14 +106,23 @@ function CursosPage() {
     [],
   )
 
+  const tableFilters = useMemo(
+    () => [
+      { id: 'nombre', label: 'Nombre', getValue: (r: Curso) => r.nombre },
+      { id: 'status', label: 'Estado', getValue: (r: Curso) => r.status },
+    ],
+    [],
+  )
+
   if (isLoading) return <div className="empty-state">Cargando cursos…</div>
 
   return (
     <RequirePermission permission="catalogos:get">
-      <h1 className="page-title">Cursos</h1>
       <DataTable
+        title="Cursos"
         data={data}
         columns={columns}
+        filters={tableFilters}
         addLabel="Agregar curso"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
@@ -193,15 +208,13 @@ function CursosPage() {
           />
         </Field>
         <Field label="Estado">
-          <select
-            className="field__select"
+          <Combobox
             disabled={viewOnly}
             value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-          >
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, status: v }))}
+            options={STATUS_OPTIONS}
+            placeholder="Buscar estado…"
+          />
         </Field>
         <Field label="Código SACE">
           <input

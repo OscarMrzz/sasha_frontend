@@ -26,6 +26,12 @@ export interface Modalidad {
   hora_fin: string
   status: string
   detalles?: string
+  duracion_hora_clase_minutos: number
+  duracion_periodo_meses: number
+  cantidad_parciales_por_periodo: number
+  duracion_parcial_dias?: number
+  duracion_recreo_minutos: number
+  cantidad_recreos: number
 }
 
 export interface ModalidadCreate {
@@ -35,6 +41,12 @@ export interface ModalidadCreate {
   status: string
   dias: number[]
   detalles?: string
+  duracion_hora_clase_minutos: number
+  duracion_periodo_meses: number
+  cantidad_parciales_por_periodo: number
+  duracion_parcial_dias?: number
+  duracion_recreo_minutos: number
+  cantidad_recreos: number
 }
 
 export interface Seccion {

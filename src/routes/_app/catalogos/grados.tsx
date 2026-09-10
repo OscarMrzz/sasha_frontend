@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -24,6 +25,31 @@ export const Route = createFileRoute('/_app/catalogos/grados')({ component: Grad
 const col = createColumnHelper<Grado>()
 
 const defaultForm: GradoCreate = { nombre: '', orden: 1, status: 'ACTIVE' }
+
+const STATUS_OPTIONS = [
+  { value: 'ACTIVE', label: 'ACTIVE' },
+  { value: 'INACTIVE', label: 'INACTIVE' },
+]
+
+/** Nivel académico 1.º–12.º; se persiste como `orden` en API. */
+const NIVELES_ACADEMICOS = [
+  { nivel: 1, label: 'Primer grado' },
+  { nivel: 2, label: 'Segundo grado' },
+  { nivel: 3, label: 'Tercer grado' },
+  { nivel: 4, label: 'Cuarto grado' },
+  { nivel: 5, label: 'Quinto grado' },
+  { nivel: 6, label: 'Sexto grado' },
+  { nivel: 7, label: 'Séptimo grado' },
+  { nivel: 8, label: 'Octavo grado' },
+  { nivel: 9, label: 'Noveno grado' },
+  { nivel: 10, label: 'Décimo grado' },
+  { nivel: 11, label: 'Undécimo grado' },
+  { nivel: 12, label: 'Duodécimo grado' },
+] as const
+
+function labelNivel(orden: number) {
+  return NIVELES_ACADEMICOS.find((n) => n.nivel === orden)?.label ?? `Nivel ${orden}`
+}
 
 function GradosPage() {
   const qc = useQueryClient()
@@ -95,7 +121,10 @@ function GradosPage() {
     () => [
       col.accessor('codigo', { header: 'Código' }),
       col.accessor('nombre', { header: 'Nombre' }),
-      col.accessor('orden', { header: 'Orden' }),
+      col.accessor('orden', {
+        header: 'Nivel académico',
+        cell: (i) => labelNivel(i.getValue()),
+      }),
       col.accessor('status', {
         header: 'Estado',
         cell: (i) => <span className="badge">{i.getValue()}</span>,
@@ -104,14 +133,23 @@ function GradosPage() {
     [],
   )
 
+  const tableFilters = useMemo(
+    () => [
+      { id: 'nombre', label: 'Nombre', getValue: (r: Grado) => r.nombre },
+      { id: 'status', label: 'Estado', getValue: (r: Grado) => r.status },
+    ],
+    [],
+  )
+
   if (isLoading) return <div className="empty-state">Cargando grados…</div>
 
   return (
     <RequirePermission permission="catalogos:get">
-      <h1 className="page-title">Grados</h1>
       <DataTable
+        title="Grados"
         data={data}
         columns={columns}
+        filters={tableFilters}
         addLabel="Agregar grado"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
@@ -121,7 +159,7 @@ function GradosPage() {
             data.map((g) => ({
               codigo: g.codigo,
               nombre: g.nombre,
-              orden: g.orden,
+              nivel_academico: labelNivel(g.orden),
               status: g.status,
             })),
           )
@@ -192,27 +230,42 @@ function GradosPage() {
             onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
           />
         </Field>
-        <Field label="Orden" htmlFor="grado-orden">
-          <input
-            id="grado-orden"
-            type="number"
-            className="field__input"
-            disabled={viewOnly}
-            value={form.orden}
-            onChange={(e) => setForm((f) => ({ ...f, orden: Number(e.target.value) }))}
-          />
-        </Field>
-        <Field label="Estado" htmlFor="grado-status">
-          <select
-            id="grado-status"
-            className="field__select"
-            disabled={viewOnly}
-            value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-          >
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
+        <Field label="Nivel académico">
+          <div className="nivel-check" role="radiogroup" aria-label="Nivel académico">
+            {NIVELES_ACADEMICOS.map((n) => {
+              const taken = data.some((g) => g.orden === n.nivel && g.id !== editing?.id)
+              const selected = form.orden === n.nivel
+              return (
+                <label
+                  key={n.nivel}
+                  className={`nivel-check__item${selected ? ' nivel-check__item--on' : ''}${
+                    taken ? ' nivel-check__item--taken' : ''
+                  }`}
+                  title={taken ? `${n.label} (ya registrado)` : n.label}
+                >
+                  <input
+                    type="radio"
+                    name="grado-nivel"
+                    disabled={viewOnly || taken}
+                    checked={selected}
+                    aria-label={n.label}
+                    onChange={() =>
+                      setForm((f) => ({
+                        ...f,
+                        orden: n.nivel,
+                        nombre:
+                          !f.nombre.trim() || NIVELES_ACADEMICOS.some((x) => x.label === f.nombre)
+                            ? n.label
+                            : f.nombre,
+                      }))
+                    }
+                  />
+                  <span className="nivel-check__mark" aria-hidden />
+                  <span className="nivel-check__num">{n.nivel}.º</span>
+                </label>
+              )
+            })}
+          </div>
         </Field>
         <Field label="Código SACE">
           <input
@@ -229,6 +282,16 @@ function GradosPage() {
             rows={2}
             value={form.detalles ?? ''}
             onChange={(e) => setForm((f) => ({ ...f, detalles: e.target.value }))}
+          />
+        </Field>
+        <Field label="Estado" htmlFor="grado-status">
+          <Combobox
+            id="grado-status"
+            disabled={viewOnly}
+            value={form.status}
+            onChange={(v) => setForm((f) => ({ ...f, status: v }))}
+            options={STATUS_OPTIONS}
+            placeholder="Buscar estado…"
           />
         </Field>
         {editing ? (

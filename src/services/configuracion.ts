@@ -9,12 +9,6 @@ export interface Configuracion {
   calificacion_honor_merito: number
   calificacion_excelencia: number
   calificacion_rango_bajo: number
-  duracion_hora_clase_minutos: number
-  duracion_periodo_meses: number
-  cantidad_parciales_por_periodo: number
-  duracion_parcial_dias?: number
-  duracion_recreo_minutos: number
-  cantidad_recreos_por_modalidad: number
   logo_app_key?: string
   logo_institucion_key?: string
 }
@@ -27,12 +21,6 @@ export interface ConfiguracionUpdate {
   calificacion_honor_merito?: number
   calificacion_excelencia?: number
   calificacion_rango_bajo?: number
-  duracion_hora_clase_minutos?: number
-  duracion_periodo_meses?: number
-  cantidad_parciales_por_periodo?: number
-  duracion_parcial_dias?: number
-  duracion_recreo_minutos?: number
-  cantidad_recreos_por_modalidad?: number
   logo_app_key?: string
   logo_institucion_key?: string
 }

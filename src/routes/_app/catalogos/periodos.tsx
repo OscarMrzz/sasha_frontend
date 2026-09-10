@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -29,6 +30,11 @@ const defaultForm: PeriodoCreate = {
   fecha_fin: '',
   status: 'ACTIVE',
 }
+
+const STATUS_OPTIONS = [
+  { value: 'ACTIVE', label: 'ACTIVE' },
+  { value: 'INACTIVE', label: 'INACTIVE' },
+]
 
 function PeriodosPage() {
   const qc = useQueryClient()
@@ -113,14 +119,24 @@ function PeriodosPage() {
     [],
   )
 
+  const tableFilters = useMemo(
+    () => [
+      { id: 'nombre', label: 'Nombre', getValue: (r: Periodo) => r.nombre },
+      { id: 'anio_lectivo', label: 'Año lectivo', getValue: (r: Periodo) => String(r.anio_lectivo) },
+      { id: 'status', label: 'Estado', getValue: (r: Periodo) => r.status },
+    ],
+    [],
+  )
+
   if (isLoading) return <div className="empty-state">Cargando periodos…</div>
 
   return (
     <RequirePermission permission="catalogos:get">
-      <h1 className="page-title">Periodos académicos</h1>
       <DataTable
+        title="Periodos académicos"
         data={data}
         columns={columns}
+        filters={tableFilters}
         addLabel="Agregar periodo"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
@@ -227,15 +243,13 @@ function PeriodosPage() {
           </Field>
         </div>
         <Field label="Estado">
-          <select
-            className="field__select"
+          <Combobox
             disabled={viewOnly}
             value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-          >
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, status: v }))}
+            options={STATUS_OPTIONS}
+            placeholder="Buscar estado…"
+          />
         </Field>
       </Modal>
 

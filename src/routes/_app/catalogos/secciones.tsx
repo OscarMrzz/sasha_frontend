@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -25,6 +26,11 @@ export const Route = createFileRoute('/_app/catalogos/secciones')({ component: S
 
 const col = createColumnHelper<Seccion>()
 const defaultForm: SeccionCreate = { nombre: '', grado_id: '', modalidad_id: '', status: 'ACTIVE' }
+
+const STATUS_OPTIONS = [
+  { value: 'ACTIVE', label: 'ACTIVE' },
+  { value: 'INACTIVE', label: 'INACTIVE' },
+]
 
 function SeccionesPage() {
   const qc = useQueryClient()
@@ -58,11 +64,7 @@ function SeccionesPage() {
   const openCreate = () => {
     setEditing(null)
     setViewOnly(false)
-    setForm({
-      ...defaultForm,
-      grado_id: grados[0]?.id ?? '',
-      modalidad_id: modalidades[0]?.id ?? '',
-    })
+    setForm(defaultForm)
     setModalOpen(true)
   }
 
@@ -120,14 +122,35 @@ function SeccionesPage() {
     [gradoMap, modalidadMap],
   )
 
+  const tableFilters = useMemo(
+    () => [
+      { id: 'nombre', label: 'Nombre', getValue: (r: Seccion) => r.nombre },
+      {
+        id: 'grado',
+        label: 'Grado',
+        getValue: (r: Seccion) => r.grado_id,
+        getLabel: (r: Seccion) => gradoMap[r.grado_id] ?? r.grado_id,
+      },
+      {
+        id: 'modalidad',
+        label: 'Modalidad',
+        getValue: (r: Seccion) => r.modalidad_id,
+        getLabel: (r: Seccion) => modalidadMap[r.modalidad_id] ?? r.modalidad_id,
+      },
+      { id: 'status', label: 'Estado', getValue: (r: Seccion) => r.status },
+    ],
+    [gradoMap, modalidadMap],
+  )
+
   if (isLoading) return <div className="empty-state">Cargando secciones…</div>
 
   return (
     <RequirePermission permission="catalogos:get">
-      <h1 className="page-title">Secciones</h1>
       <DataTable
+        title="Secciones"
         data={data}
         columns={columns}
+        filters={tableFilters}
         addLabel="Agregar sección"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
@@ -205,38 +228,26 @@ function SeccionesPage() {
           />
         </Field>
         <Field label="Grado" htmlFor="seccion-grado">
-          <select
+          <Combobox
             id="seccion-grado"
-            className="field__select"
             data-testid="seccion-grado-select"
             disabled={viewOnly}
             value={form.grado_id}
-            onChange={(e) => setForm((f) => ({ ...f, grado_id: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {grados.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, grado_id: v }))}
+            options={grados.map((g) => ({ value: g.id, label: g.nombre, keywords: g.codigo }))}
+            placeholder="Seleccione un grado"
+          />
         </Field>
         <Field label="Modalidad" htmlFor="seccion-modalidad">
-          <select
+          <Combobox
             id="seccion-modalidad"
-            className="field__select"
             data-testid="seccion-modalidad-select"
             disabled={viewOnly}
             value={form.modalidad_id}
-            onChange={(e) => setForm((f) => ({ ...f, modalidad_id: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {modalidades.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, modalidad_id: v }))}
+            options={modalidades.map((m) => ({ value: m.id, label: m.nombre, keywords: m.codigo }))}
+            placeholder="Seleccione una modalidad"
+          />
         </Field>
         <Field label="Cupo máximo">
           <input
@@ -253,15 +264,13 @@ function SeccionesPage() {
           />
         </Field>
         <Field label="Estado">
-          <select
-            className="field__select"
+          <Combobox
             disabled={viewOnly}
             value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-          >
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, status: v }))}
+            options={STATUS_OPTIONS}
+            placeholder="Buscar estado…"
+          />
         </Field>
       </Modal>
 

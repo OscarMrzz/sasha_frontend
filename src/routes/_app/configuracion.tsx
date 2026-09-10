@@ -23,12 +23,6 @@ const emptyForm: ConfiguracionUpdate = {
   calificacion_honor_merito: 90,
   calificacion_excelencia: 95,
   calificacion_rango_bajo: 50,
-  duracion_hora_clase_minutos: 45,
-  duracion_periodo_meses: 4,
-  cantidad_parciales_por_periodo: 4,
-  duracion_parcial_dias: 30,
-  duracion_recreo_minutos: 15,
-  cantidad_recreos_por_modalidad: 1,
 }
 
 function configToForm(c: Configuracion): ConfiguracionUpdate {
@@ -40,12 +34,6 @@ function configToForm(c: Configuracion): ConfiguracionUpdate {
     calificacion_honor_merito: c.calificacion_honor_merito,
     calificacion_excelencia: c.calificacion_excelencia,
     calificacion_rango_bajo: c.calificacion_rango_bajo,
-    duracion_hora_clase_minutos: c.duracion_hora_clase_minutos,
-    duracion_periodo_meses: c.duracion_periodo_meses,
-    cantidad_parciales_por_periodo: c.cantidad_parciales_por_periodo,
-    duracion_parcial_dias: c.duracion_parcial_dias,
-    duracion_recreo_minutos: c.duracion_recreo_minutos,
-    cantidad_recreos_por_modalidad: c.cantidad_recreos_por_modalidad,
     logo_app_key: c.logo_app_key,
     logo_institucion_key: c.logo_institucion_key,
   }
@@ -98,6 +86,10 @@ function ConfiguracionPage() {
   return (
     <RequirePermission permission="configuracion:get">
       <h1 className="page-title">Configuración institucional</h1>
+      <p className="texto-muted" style={{ marginTop: '-0.5rem', marginBottom: '1rem', maxWidth: 720 }}>
+        Datos de la institución. Duración de clase, recreos, parciales y programa SACE se definen en cada{' '}
+        <strong>modalidad</strong> del catálogo.
+      </p>
       <form
         className="panel-form"
         style={{ maxWidth: 720 }}
@@ -115,26 +107,25 @@ function ConfiguracionPage() {
             onChange={(e) => setStr('nombre_institucion', e.target.value)}
           />
         </Field>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <Field label="Código SACE" htmlFor="cfg-sace">
-            <input
-              id="cfg-sace"
-              className="field__input"
-              value={form.codigo_sace ?? ''}
-              onChange={(e) => setStr('codigo_sace', e.target.value)}
-            />
-          </Field>
-          <Field label="Modalidad SACE" htmlFor="cfg-modalidad">
-            <input
-              id="cfg-modalidad"
-              className="field__input"
-              value={form.modalidad_sace ?? ''}
-              onChange={(e) => setStr('modalidad_sace', e.target.value)}
-            />
-          </Field>
-        </div>
+        <Field label="Código SACE institucional" htmlFor="cfg-sace">
+          <input
+            id="cfg-sace"
+            className="field__input"
+            value={form.codigo_sace ?? ''}
+            onChange={(e) => setStr('codigo_sace', e.target.value)}
+          />
+        </Field>
+        <Field label="Programa académico SACE" htmlFor="cfg-modalidad-sace">
+          <input
+            id="cfg-modalidad-sace"
+            className="field__input"
+            placeholder="Ej. BACHILLERATO TÉCNICO PROFESIONAL EN INFORMÁTICA"
+            value={form.modalidad_sace ?? ''}
+            onChange={(e) => setStr('modalidad_sace', e.target.value)}
+          />
+        </Field>
         <h3 className="texto-muted" style={{ fontSize: '0.9rem' }}>
-          Calificaciones
+          Umbrales de calificación
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
           {(
@@ -143,30 +134,6 @@ function ConfiguracionPage() {
               ['calificacion_honor_merito', 'Honor al mérito'],
               ['calificacion_excelencia', 'Excelencia'],
               ['calificacion_rango_bajo', 'Rango bajo'],
-            ] as const
-          ).map(([key, label]) => (
-            <Field key={key} label={label}>
-              <input
-                type="number"
-                className="field__input"
-                value={form[key] ?? ''}
-                onChange={(e) => setNum(key, e.target.value)}
-              />
-            </Field>
-          ))}
-        </div>
-        <h3 className="texto-muted" style={{ fontSize: '0.9rem' }}>
-          Horarios y periodos
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
-          {(
-            [
-              ['duracion_hora_clase_minutos', 'Duración hora (min)'],
-              ['duracion_periodo_meses', 'Duración periodo (meses)'],
-              ['cantidad_parciales_por_periodo', 'Parciales por periodo'],
-              ['duracion_parcial_dias', 'Duración parcial (días)'],
-              ['duracion_recreo_minutos', 'Recreo (min)'],
-              ['cantidad_recreos_por_modalidad', 'Recreos por modalidad'],
             ] as const
           ).map(([key, label]) => (
             <Field key={key} label={label}>
