@@ -18,7 +18,6 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/catalogos/periodos', label: 'Periodos', permission: 'catalogos:get', icon: 'calendar' },
   { to: '/usuarios', label: 'Usuarios', permission: 'users:get', icon: 'users' },
   { to: '/controladores', label: 'Controladores', permission: 'users:put', icon: 'shield' },
-  { to: '/personas', label: 'Personas', permission: 'personas:get', icon: 'user' },
   { to: '/matricula', label: 'Matrícula', permission: 'matricula:get', icon: 'clipboard' },
   { to: '/asignacion', label: 'Asignación', permission: 'asignacion:get', icon: 'link' },
   { to: '/horarios', label: 'Horarios', permission: 'horarios:get', icon: 'calendar-days' },

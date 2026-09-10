@@ -1,205 +1,240 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
+import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { RequirePermission, Can } from '#/components/gates/Can'
+import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
-import { Field } from '#/components/ui/Field'
-import { ROLES, roleLabel, type RoleName } from '#/helpers/permissions'
+import { DataTable } from '#/components/ui/DataTable'
+import { roleLabel } from '#/helpers/permissions'
 import { userMessageFromError } from '#/lib/api'
-import {
-  listPermisos,
-  updateRoles,
-  upsertPermisos,
-  type PermisoUsuario,
-} from '#/services/users'
+import { listRoles, updateRoleStatus, type RoleItem } from '#/services/roles'
+import { listUsers, updateStatus, type ResponseUser } from '#/services/users'
 
 export const Route = createFileRoute('/_app/controladores')({ component: ControladoresPage })
 
-const ASSIGNABLE = ROLES.filter((r) => r !== 'developer')
+const col = createColumnHelper<ResponseUser>()
+
+function Switch({
+  on,
+  disabled,
+  label,
+  onToggle,
+  testId,
+}: {
+  on: boolean
+  disabled?: boolean
+  label: string
+  onToggle: () => void
+  testId?: string
+}) {
+  return (
+    <button
+      type="button"
+      className={`switch${on ? ' switch--on' : ''}`}
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      disabled={disabled}
+      data-testid={testId}
+      onClick={onToggle}
+    >
+      <span className="switch__thumb" />
+    </button>
+  )
+}
 
 function ControladoresPage() {
   const qc = useQueryClient()
-  const [userCode, setUserCode] = useState('')
-  const [roles, setRoles] = useState<string[]>([])
-  const [permisos, setPermisos] = useState<PermisoUsuario[]>([])
-  const [confirmSave, setConfirmSave] = useState(false)
-  const [loaded, setLoaded] = useState(false)
+  const { can } = useCan()
 
-  const permisosQuery = useQuery({
-    queryKey: ['permisos', userCode],
-    queryFn: () => listPermisos(userCode),
-    enabled: false,
-  })
+  const rolesQuery = useQuery({ queryKey: ['roles'], queryFn: listRoles })
+  const usersQuery = useQuery({ queryKey: ['users'], queryFn: listUsers })
 
-  const loadUser = async () => {
-    if (!userCode.trim()) {
-      toast.error('Ingresa un código de usuario')
-      return
-    }
-    try {
-      const data = await permisosQuery.refetch()
-      if (data.data) {
-        setPermisos(data.data)
-        setLoaded(true)
-        toast.success('Permisos cargados')
-      }
-    } catch (e) {
-      toast.error(userMessageFromError(e))
-    }
-  }
+  const [confirmRole, setConfirmRole] = useState<RoleItem | null>(null)
+  const [confirmUser, setConfirmUser] = useState<ResponseUser | null>(null)
 
-  const saveMut = useMutation({
-    mutationFn: async () => {
-      if (roles.length) await updateRoles(userCode, roles)
-      if (permisos.length) await upsertPermisos(userCode, permisos)
-    },
-    onSuccess: () => {
-      toast.success('Controladores actualizados')
-      qc.invalidateQueries({ queryKey: ['permisos', userCode] })
-      setConfirmSave(false)
+  const roleMut = useMutation({
+    mutationFn: ({ name, status }: { name: string; status: 'ACTIVE' | 'INACTIVE' }) =>
+      updateRoleStatus(name, status),
+    onSuccess: (role) => {
+      toast.success(
+        role.status === 'ACTIVE'
+          ? `Rol ${roleLabel(role.name)} activado`
+          : `Rol ${roleLabel(role.name)} desactivado`,
+      )
+      qc.invalidateQueries({ queryKey: ['roles'] })
+      setConfirmRole(null)
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
 
-  const toggleRole = (role: RoleName) => {
-    setRoles((r) => (r.includes(role) ? r.filter((x) => x !== role) : [...r, role]))
-  }
+  const userMut = useMutation({
+    mutationFn: ({ code, statususer }: { code: string; statususer: string }) =>
+      updateStatus(code, statususer),
+    onSuccess: (u) => {
+      toast.success(
+        u.statususer === 'ACTIVE' ? `Usuario ${u.code} activado` : `Usuario ${u.code} desactivado`,
+      )
+      qc.invalidateQueries({ queryKey: ['users'] })
+      setConfirmUser(null)
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
 
-  const addPermiso = () => {
-    setPermisos((p) => [...p, { resource: '', action: 'get', permitido: true }])
-  }
+  const requestRoleToggle = useCallback(
+    (role: RoleItem) => {
+      if (!can('roles:put')) return
+      if (role.name.toLowerCase() === 'admin' && role.status === 'ACTIVE') {
+        toast.error('No se puede desactivar el rol admin')
+        return
+      }
+      if (role.status === 'ACTIVE') {
+        setConfirmRole(role)
+        return
+      }
+      roleMut.mutate({ name: role.name, status: 'ACTIVE' })
+    },
+    [can, roleMut],
+  )
 
-  const updatePermiso = (idx: number, patch: Partial<PermisoUsuario>) => {
-    setPermisos((p) => p.map((item, i) => (i === idx ? { ...item, ...patch } : item)))
-  }
+  const requestUserToggle = useCallback(
+    (user: ResponseUser) => {
+      if (!can('users:put')) return
+      if (user.statususer === 'ACTIVE') {
+        setConfirmUser(user)
+        return
+      }
+      userMut.mutate({ code: user.code, statususer: 'ACTIVE' })
+    },
+    [can, userMut],
+  )
 
-  const removePermiso = (idx: number) => {
-    setPermisos((p) => p.filter((_, i) => i !== idx))
-  }
+  const columns = useMemo(
+    () => [
+      col.accessor('code', { header: 'Código' }),
+      col.accessor('username', { header: 'Username' }),
+      col.display({
+        id: 'activo',
+        header: 'Activo',
+        enableSorting: false,
+        cell: ({ row }) => {
+          const u = row.original
+          const on = u.statususer === 'ACTIVE'
+          return (
+            <Switch
+              on={on}
+              disabled={!can('users:put') || userMut.isPending}
+              label={on ? `Desactivar ${u.code}` : `Activar ${u.code}`}
+              testId={`user-switch-${u.code}`}
+              onToggle={() => requestUserToggle(u)}
+            />
+          )
+        },
+      }),
+    ],
+    [can, userMut.isPending, requestUserToggle],
+  )
+
+  const tableFilters = useMemo(
+    () => [
+      {
+        id: 'status',
+        label: 'Estado',
+        getValue: (r: ResponseUser) => r.statususer,
+        getLabel: (r: ResponseUser) => (r.statususer === 'ACTIVE' ? 'Activo' : 'Desactivado'),
+        options: [
+          { value: 'ACTIVE', label: 'Activo' },
+          { value: 'INACTIVE', label: 'Desactivado' },
+        ],
+      },
+    ],
+    [],
+  )
+
+  const roles = rolesQuery.data ?? []
 
   return (
     <RequirePermission permission="users:put">
-      <h1 className="page-title">Controladores de usuario</h1>
-      <div
-        style={{
-          maxWidth: 720,
-          background: 'var(--sasha-bg-raised)',
-          border: '1px solid var(--sasha-border-suave)',
-          borderRadius: '8px',
-          padding: '1.5rem',
-        }}
-      >
-        <Field label="Código de usuario" htmlFor="ctrl-code">
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input
-              id="ctrl-code"
-              className="field__input"
-              data-testid="controlador-code-input"
-              value={userCode}
-              onChange={(e) => {
-                setUserCode(e.target.value)
-                setLoaded(false)
-              }}
-              placeholder="Ej. ABC123"
-            />
-            <button type="button" className="btn btn--ghost" onClick={loadUser}>
-              Cargar
-            </button>
-          </div>
-        </Field>
+      <h1 className="page-title">Controladores</h1>
 
-        <Field label="Roles (multi-select)">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            {ASSIGNABLE.map((role) => (
-              <label
-                key={role}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}
-              >
-                <input
-                  type="checkbox"
-                  data-testid={`ctrl-role-${role}`}
-                  checked={roles.includes(role)}
-                  onChange={() => toggleRole(role)}
-                />
-                {roleLabel(role)}
-              </label>
-            ))}
+      <section className="ctrl-section" data-testid="ctrl-roles-section">
+        <h2 className="ctrl-section__title">Activación de roles</h2>
+        <p className="ctrl-section__hint texto-muted">
+          Enciende o apaga roles del sistema. Un rol inactivo no otorga permisos.
+        </p>
+        {rolesQuery.isLoading ? (
+          <div className="empty-state">Cargando roles…</div>
+        ) : rolesQuery.isError ? (
+          <div className="empty-state" role="alert">
+            {userMessageFromError(rolesQuery.error)}
           </div>
-        </Field>
+        ) : (
+          <div className="ctrl-roles">
+            {roles.map((role) => {
+              const on = role.status === 'ACTIVE'
+              const locked = role.name.toLowerCase() === 'admin'
+              return (
+                <div key={role.name} className="ctrl-roles__row">
+                  <span className="ctrl-roles__name">{roleLabel(role.name)}</span>
+                  <Can permission="roles:put">
+                    <Switch
+                      on={on}
+                      disabled={roleMut.isPending || (locked && on)}
+                      label={`${on ? 'Desactivar' : 'Activar'} rol ${roleLabel(role.name)}`}
+                      testId={`role-switch-${role.name}`}
+                      onToggle={() => requestRoleToggle(role)}
+                    />
+                  </Can>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
 
-        <h3 className="texto-muted" style={{ fontSize: '0.9rem' }}>
-          Permisos (upsert)
-        </h3>
-        {loaded && permisos.length === 0 ? (
-          <p className="texto-muted">Sin permisos personalizados. Agrega filas si necesitas overrides.</p>
-        ) : null}
-        {permisos.map((p, idx) => (
-          <div
-            key={idx}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 100px 80px auto',
-              gap: '0.5rem',
-              marginBottom: '0.5rem',
-              alignItems: 'end',
-            }}
-          >
-            <input
-              className="field__input"
-              placeholder="recurso"
-              value={p.resource}
-              onChange={(e) => updatePermiso(idx, { resource: e.target.value })}
-            />
-            <select
-              className="field__select"
-              value={p.action}
-              onChange={(e) => updatePermiso(idx, { action: e.target.value })}
-            >
-              {['get', 'post', 'put', 'delete'].map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-            <label style={{ fontSize: '0.8rem' }}>
-              <input
-                type="checkbox"
-                checked={p.permitido}
-                onChange={(e) => updatePermiso(idx, { permitido: e.target.checked })}
-              />{' '}
-              OK
-            </label>
-            <button type="button" className="btn btn--ghost btn--sm" onClick={() => removePermiso(idx)}>
-              Quitar
-            </button>
+      <section className="ctrl-section" data-testid="ctrl-users-section">
+        <h2 className="ctrl-section__title">Activar usuario específico</h2>
+        <p className="ctrl-section__hint texto-muted">
+          Activa o desactiva cuentas. Busca por texto o filtra por estado.
+        </p>
+        {usersQuery.isLoading ? (
+          <div className="empty-state">Cargando usuarios…</div>
+        ) : usersQuery.isError ? (
+          <div className="empty-state" role="alert">
+            {userMessageFromError(usersQuery.error)}
           </div>
-        ))}
-        <button type="button" className="btn btn--ghost btn--sm" onClick={addPermiso}>
-          + Permiso
-        </button>
-
-        <Can permission="users:put">
-          <div style={{ marginTop: '1.25rem' }}>
-            <button
-              type="button"
-              className="btn btn--primary"
-              data-testid="controlador-save-button"
-              disabled={!userCode.trim() || saveMut.isPending}
-              onClick={() => setConfirmSave(true)}
-            >
-              Guardar roles y permisos
-            </button>
-          </div>
-        </Can>
-      </div>
+        ) : (
+          <DataTable
+            data={usersQuery.data ?? []}
+            columns={columns}
+            filters={tableFilters}
+            searchPlaceholder="Buscar usuario…"
+          />
+        )}
+      </section>
 
       <ConfirmDialog
-        open={confirmSave}
-        title="Actualizar controladores"
-        message={`¿Confirmas actualizar roles y permisos del usuario ${userCode}?`}
-        onConfirm={() => saveMut.mutate()}
-        onCancel={() => setConfirmSave(false)}
+        open={Boolean(confirmRole)}
+        title="Desactivar rol"
+        message={`¿Desactivar el rol "${confirmRole ? roleLabel(confirmRole.name) : ''}"? Quienes solo tengan ese rol perderán esos permisos.`}
+        danger
+        confirmLabel="Desactivar"
+        onConfirm={() =>
+          confirmRole && roleMut.mutate({ name: confirmRole.name, status: 'INACTIVE' })
+        }
+        onCancel={() => setConfirmRole(null)}
+      />
+      <ConfirmDialog
+        open={Boolean(confirmUser)}
+        title="Desactivar usuario"
+        message={`¿Desactivar al usuario ${confirmUser?.code} (${confirmUser?.username})? No podrá iniciar sesión.`}
+        danger
+        confirmLabel="Desactivar"
+        onConfirm={() =>
+          confirmUser && userMut.mutate({ code: confirmUser.code, statususer: 'INACTIVE' })
+        }
+        onCancel={() => setConfirmUser(null)}
       />
     </RequirePermission>
   )

@@ -13,6 +13,7 @@ export interface CreateUserRequest {
 
 export interface CreateUserResult {
   code: string
+  userId: string
   pdfBlob: Blob
 }
 
@@ -32,11 +33,16 @@ export interface PermisoUsuario {
   permitido: boolean
 }
 
+export async function listUsers() {
+  return apiRequest<ResponseUser[]>('/users/')
+}
+
 export async function createUser(body: CreateUserRequest): Promise<CreateUserResult> {
   const res = await apiRequest<Response>('/users/', { method: 'POST', body, raw: true })
   const code = res.headers.get('X-User-Code') ?? ''
+  const userId = res.headers.get('X-User-Id') ?? ''
   const pdfBlob = await res.blob()
-  return { code, pdfBlob }
+  return { code, userId, pdfBlob }
 }
 
 export async function updateRoles(code: string, roles: string[]) {
