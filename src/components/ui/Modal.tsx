@@ -7,9 +7,13 @@ type ModalProps = {
   onClose: () => void
   footer?: ReactNode
   wide?: boolean
+  /** Modal más alto/ancho para wizards */
+  xl?: boolean
+  /** ~90% viewport — tablero de horarios */
+  board?: boolean
 }
 
-export function Modal({ open, title, children, onClose, footer, wide }: ModalProps) {
+export function Modal({ open, title, children, onClose, footer, wide, xl, board }: ModalProps) {
   const titleId = useId()
   const ref = useRef<HTMLDivElement>(null)
 
@@ -24,6 +28,8 @@ export function Modal({ open, title, children, onClose, footer, wide }: ModalPro
 
   if (!open) return null
 
+  const sizeClass = board ? ' modal--board' : xl ? ' modal--xl' : wide ? ' modal--wide' : ''
+
   return (
     <div
       className="modal-backdrop"
@@ -34,7 +40,7 @@ export function Modal({ open, title, children, onClose, footer, wide }: ModalPro
     >
       <div
         ref={ref}
-        className={`modal${wide ? ' modal--wide' : ''}`}
+        className={`modal${sizeClass}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
