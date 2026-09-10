@@ -3,54 +3,162 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
   useLegacyTable,
   type LegacyColumnDef,
 } from '@tanstack/react-table/legacy'
-import { useMemo, useState } from 'react'
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
+
+export type DataTableFilter<T> = {
+  id: string
+  label: string
+  /** Valor canónico para filtrar. Nunca usar código de catálogo. */
+  getValue: (row: T) => string
+  getLabel?: (row: T) => string
+  /** Si el filtro no es igualdad exacta (ej. usuario con varios roles). */
+  matches?: (row: T, selected: string) => boolean
+  /** Valores extra para armar opciones (ej. cada rol del usuario). */
+  getOptionValues?: (row: T) => string[]
+  /** Si se omite, se derivan de los datos únicos. */
+  options?: { value: string; label: string }[]
+}
 
 type DataTableProps<T extends RowData> = {
   data: T[]
   columns: LegacyColumnDef<T, any>[]
+  /** Si se pasa, renderiza el h1 con el conteo de filas al lado. */
+  title?: string
   searchPlaceholder?: string
+  /** Filtros clave (select). No incluir códigos. */
+  filters?: DataTableFilter<T>[]
   onRowContextMenu?: (row: T, event: React.MouseEvent) => void
-  toolbarExtra?: React.ReactNode
+  toolbarExtra?: ReactNode
   addLabel?: string
   onAdd?: () => void
   canAdd?: boolean
   onExport?: () => void
+  pageSize?: number
+}
+
+function isCodigoFilterId(id: string) {
+  const n = id.toLowerCase()
+  return n === 'codigo' || n === 'code' || n.endsWith('_codigo') || n.endsWith('_code') || n === 'user_code'
 }
 
 export function DataTable<T extends RowData>({
   data,
   columns,
+  title,
   searchPlaceholder = 'Buscar…',
+  filters = [],
   onRowContextMenu,
   toolbarExtra,
   addLabel = 'Agregar',
   onAdd,
   canAdd,
   onExport,
+  pageSize = 25,
 }: DataTableProps<T>) {
   const [globalFilter, setGlobalFilter] = useState('')
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([])
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+  const paginationRef = useRef({ pageIndex: 0, pageSize })
+
+  const safeFilters = useMemo(
+    () => filters.filter((f) => !isCodigoFilterId(f.id)),
+    [filters],
+  )
+
+  const filterOptions = useMemo(() => {
+    const map: Record<string, { value: string; label: string }[]> = {}
+    for (const f of safeFilters) {
+      if (f.options?.length) {
+        map[f.id] = f.options
+        continue
+      }
+      const seen = new Map<string, string>()
+      for (const row of data) {
+        const values = f.getOptionValues?.(row) ?? [String(f.getValue(row) ?? '').trim()]
+        for (const raw of values) {
+          const value = String(raw ?? '').trim()
+          if (!value) continue
+          if (!seen.has(value)) seen.set(value, f.getLabel?.(row) ?? value)
+        }
+      }
+      map[f.id] = [...seen.entries()]
+        .map(([value, label]) => ({ value, label }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es'))
+    }
+    return map
+  }, [data, safeFilters])
+
+  const filteredData = useMemo(() => {
+    return data.filter((row) => {
+      for (const f of safeFilters) {
+        const selected = filterValues[f.id]
+        if (!selected) continue
+        if (f.matches) {
+          if (!f.matches(row, selected)) return false
+        } else if (String(f.getValue(row) ?? '') !== selected) {
+          return false
+        }
+      }
+      return true
+    })
+  }, [data, safeFilters, filterValues])
+
+  const tableColumns = useMemo(() => {
+    const rowNum: LegacyColumnDef<T, any> = {
+      id: '_n',
+      header: '#',
+      enableSorting: false,
+      cell: ({ row }) => {
+        const { pageIndex, pageSize: ps } = paginationRef.current
+        return <span className="data-table__rownum">{pageIndex * ps + row.index + 1}</span>
+      },
+    }
+    return [rowNum, ...columns]
+  }, [columns])
 
   const table = useLegacyTable({
-    data,
-    columns,
-    state: { globalFilter },
+    data: filteredData,
+    columns: tableColumns,
+    state: { globalFilter, sorting },
     onGlobalFilterChange: setGlobalFilter,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
+    initialState: { pagination: { pageIndex: 0, pageSize } },
   })
+
+  paginationRef.current = {
+    pageIndex: table.getState().pagination.pageIndex,
+    pageSize: table.getState().pagination.pageSize,
+  }
 
   const rows = table.getRowModel().rows
   const pageCount = table.getPageCount()
+  const totalRows = data.length
+  const visibleRows = table.getFilteredRowModel().rows.length
+  const empty = rows.length === 0
 
-  const empty = useMemo(() => rows.length === 0, [rows.length])
+  const countLabel =
+    visibleRows === totalRows ? `${totalRows} filas` : `${visibleRows} de ${totalRows} filas`
 
   return (
     <div>
+      {title ? (
+        <div className="page-title-row">
+          <h1 className="page-title">{title}</h1>
+          <span className="page-title__count" data-testid="table-row-count">
+            {countLabel}
+          </span>
+        </div>
+      ) : null}
+
       <div className="panel-toolbar">
         <div className="panel-toolbar__search">
           <input
@@ -60,8 +168,37 @@ export function DataTable<T extends RowData>({
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder={searchPlaceholder}
             aria-label="Buscar"
+            data-testid="data-table-search"
           />
         </div>
+        {safeFilters.length > 0 ? (
+          <div className="panel-toolbar__filters" data-testid="data-table-filters">
+            {safeFilters.map((f) => (
+              <label key={f.id} className="panel-toolbar__filter">
+                <span className="panel-toolbar__filter-label">{f.label}</span>
+                <select
+                  className="field__select"
+                  value={filterValues[f.id] ?? ''}
+                  aria-label={`Filtrar por ${f.label}`}
+                  data-testid={`data-table-filter-${f.id}`}
+                  onChange={(e) =>
+                    setFilterValues((prev) => ({
+                      ...prev,
+                      [f.id]: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Todos</option>
+                  {(filterOptions[f.id] ?? []).map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </div>
+        ) : null}
         <div className="panel-toolbar__actions">
           {toolbarExtra}
           {onExport ? (
@@ -82,16 +219,42 @@ export function DataTable<T extends RowData>({
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
-                {hg.headers.map((h) => (
-                  <th key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</th>
-                ))}
+                {hg.headers.map((h) => {
+                  const canSort = h.column.getCanSort()
+                  const sorted = h.column.getIsSorted()
+                  return (
+                    <th
+                      key={h.id}
+                      className={canSort ? 'data-table__th--sortable' : undefined}
+                      aria-sort={
+                        sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
+                      }
+                      onClick={canSort ? h.column.getToggleSortingHandler() : undefined}
+                    >
+                      <span className="data-table__th-inner">
+                        {flexRender(h.column.columnDef.header, h.getContext())}
+                        {canSort ? (
+                          <span className="data-table__sort" aria-hidden>
+                            {sorted === 'asc' ? (
+                              <ArrowUp size={13} />
+                            ) : sorted === 'desc' ? (
+                              <ArrowDown size={13} />
+                            ) : (
+                              <ArrowUpDown size={13} />
+                            )}
+                          </span>
+                        ) : null}
+                      </span>
+                    </th>
+                  )
+                })}
               </tr>
             ))}
           </thead>
           <tbody>
             {empty ? (
               <tr>
-                <td colSpan={columns.length}>
+                <td colSpan={tableColumns.length}>
                   <div className="empty-state">Sin resultados</div>
                 </td>
               </tr>
@@ -115,17 +278,10 @@ export function DataTable<T extends RowData>({
         </table>
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: '0.5rem',
-          marginTop: '0.75rem',
-          alignItems: 'center',
-        }}
-      >
+      <div className="data-table__pager">
         <span className="texto-muted" style={{ fontSize: '0.8rem' }}>
-          Página {table.getState().pagination.pageIndex + 1} de {Math.max(pageCount, 1)}
+          Página {table.getState().pagination.pageIndex + 1} de {Math.max(pageCount, 1)} · {pageSize}{' '}
+          por página
         </span>
         <button
           type="button"
