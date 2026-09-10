@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -90,6 +91,17 @@ function CalificacionesPage() {
         header: 'Mora',
         cell: (i) => (i.getValue() ? 'Bloqueado' : '—'),
       }),
+    ],
+    [],
+  )
+
+  const notasFilters = useMemo(
+    () => [
+      {
+        id: 'liberado',
+        label: 'Liberado',
+        getValue: (r: { liberado: boolean }) => (r.liberado ? 'Sí' : 'No'),
+      },
     ],
     [],
   )
@@ -189,29 +201,24 @@ function CalificacionesPage() {
           }}
         >
           <Field label="Periodo académico">
-            <select
-              className="field__select"
+            <Combobox
               value={libForm.periodo_academico_id}
-              onChange={(e) => setLibForm((f) => ({ ...f, periodo_academico_id: e.target.value }))}
-            >
-              <option value="">Seleccionar…</option>
-              {periodos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setLibForm((f) => ({ ...f, periodo_academico_id: v }))}
+              options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+              placeholder="Buscar periodo…"
+            />
           </Field>
           <Field label="Alcance">
-            <select
-              className="field__select"
+            <Combobox
               value={libForm.alcance ?? 'periodo'}
-              onChange={(e) => setLibForm((f) => ({ ...f, alcance: e.target.value }))}
-            >
-              <option value="periodo">Periodo completo</option>
-              <option value="grado">Por grado</option>
-              <option value="seccion">Por sección</option>
-            </select>
+              onChange={(v) => setLibForm((f) => ({ ...f, alcance: v }))}
+              options={[
+                { value: 'periodo', label: 'Periodo completo' },
+                { value: 'grado', label: 'Por grado' },
+                { value: 'seccion', label: 'Por sección' },
+              ]}
+              placeholder="Buscar alcance…"
+            />
           </Field>
           <Field label="Liberado por (user ID)">
             <input
@@ -248,18 +255,12 @@ function CalificacionesPage() {
               />
             </Field>
             <Field label="Periodo académico">
-              <select
-                className="field__select"
+              <Combobox
                 value={notasPeriodo}
-                onChange={(e) => setNotasPeriodo(e.target.value)}
-              >
-                <option value="">Seleccionar…</option>
-                {periodos.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre}
-                  </option>
-                ))}
-              </select>
+                onChange={setNotasPeriodo}
+                options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+                placeholder="Buscar periodo…"
+              />
             </Field>
             <button
               type="button"
@@ -274,7 +275,7 @@ function CalificacionesPage() {
             </button>
           </div>
           {notasSearch.alumno && notasSearch.periodo ? (
-            <DataTable data={notas} columns={notasColumns} />
+            <DataTable data={notas} columns={notasColumns} filters={notasFilters} />
           ) : (
             <div className="empty-state">Indica alumno y periodo para consultar notas.</div>
           )}

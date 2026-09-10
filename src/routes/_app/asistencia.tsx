@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { userMessageFromError } from '#/lib/api'
@@ -16,6 +17,13 @@ const emptyRow: AsistenciaItem = {
   fecha: new Date().toISOString().slice(0, 10),
   tipo_codigo: 'presente',
 }
+
+const TIPO_ASISTENCIA_OPTIONS = [
+  { value: 'presente', label: 'Presente' },
+  { value: 'ausente', label: 'Ausente' },
+  { value: 'tarde', label: 'Tarde' },
+  { value: 'justificado', label: 'Justificado' },
+]
 
 function AsistenciaPage() {
   const [rows, setRows] = useState<AsistenciaItem[]>([{ ...emptyRow }])
@@ -89,17 +97,13 @@ function AsistenciaPage() {
               />
             </Field>
             <Field label={idx === 0 ? 'Tipo' : ''}>
-              <select
-                className="field__select"
+              <Combobox
                 data-testid={idx === 0 ? 'asistencia-tipo-select' : undefined}
                 value={row.tipo_codigo ?? 'presente'}
-                onChange={(e) => updateRow(idx, { tipo_codigo: e.target.value })}
-              >
-                <option value="presente">Presente</option>
-                <option value="ausente">Ausente</option>
-                <option value="tarde">Tarde</option>
-                <option value="justificado">Justificado</option>
-              </select>
+                onChange={(v) => updateRow(idx, { tipo_codigo: v })}
+                options={TIPO_ASISTENCIA_OPTIONS}
+                placeholder="Buscar tipo…"
+              />
             </Field>
             {rows.length > 1 ? (
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => removeRow(idx)}>

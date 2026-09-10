@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -56,10 +57,24 @@ function TareasPage() {
     [],
   )
 
+  const tableFilters = useMemo(
+    () => [
+      {
+        id: 'entregado',
+        label: 'Entregado',
+        getValue: (r: { entregado: boolean }) => (r.entregado ? 'Sí' : 'No'),
+      },
+      {
+        id: 'liberado',
+        label: 'Liberado',
+        getValue: (r: { liberado: boolean }) => (r.liberado ? 'Sí' : 'No'),
+      },
+    ],
+    [],
+  )
+
   return (
     <RequirePermission permission="tareas:get">
-      <h1 className="page-title">Tareas</h1>
-
       <div className="panel-toolbar" style={{ maxWidth: 720 }}>
         <div className="panel-toolbar__search">
           <Field label="Buscar por alumno ID">
@@ -103,7 +118,13 @@ function TareasPage() {
         isFetching ? (
           <div className="empty-state">Cargando tareas…</div>
         ) : (
-          <DataTable data={tareas} columns={columns} searchPlaceholder="Filtrar tareas…" />
+          <DataTable
+            title="Tareas"
+            data={tareas}
+            columns={columns}
+            filters={tableFilters}
+            searchPlaceholder="Filtrar tareas…"
+          />
         )
       ) : (
         <div className="empty-state">Busca tareas por ID de alumno.</div>
@@ -127,18 +148,16 @@ function TareasPage() {
         }
       >
         <Field label="Asignación docente">
-          <select
-            className="field__select"
+          <Combobox
             value={form.asignacion_docente_id}
-            onChange={(e) => setForm((f) => ({ ...f, asignacion_docente_id: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {asignaciones.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.id.slice(0, 8)}…
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, asignacion_docente_id: v }))}
+            options={asignaciones.map((a) => ({
+              value: a.id,
+              label: `${a.id.slice(0, 8)}…`,
+              keywords: a.id,
+            }))}
+            placeholder="Buscar asignación…"
+          />
         </Field>
         <Field label="Título" htmlFor="tarea-titulo">
           <input

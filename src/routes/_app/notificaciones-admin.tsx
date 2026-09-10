@@ -77,14 +77,23 @@ function NotificacionesAdminPage() {
     [],
   )
 
+  const tableFilters = useMemo(
+    () => [
+      { id: 'tipo', label: 'Tipo', getValue: (r: Notificacion) => r.tipo_codigo ?? '' },
+      { id: 'status', label: 'Estado', getValue: (r: Notificacion) => r.status },
+    ],
+    [],
+  )
+
   if (isLoading) return <div className="empty-state">Cargando notificaciones…</div>
 
   return (
     <RequirePermission permission="notificaciones:post">
-      <h1 className="page-title">Notificaciones (admin)</h1>
       <DataTable
+        title="Notificaciones (admin)"
         data={data}
         columns={columns}
+        filters={tableFilters}
         addLabel="Nueva notificación"
         canAdd={can('notificaciones:post')}
         onAdd={() => setModalOpen(true)}

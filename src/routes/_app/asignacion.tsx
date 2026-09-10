@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -81,14 +82,40 @@ function AsignacionPage() {
     [maestroMap, cursoMap, seccionMap, periodoMap],
   )
 
+  const tableFilters = useMemo(
+    () => [
+      {
+        id: 'maestro',
+        label: 'Maestro',
+        getValue: (r: Asignacion) => r.maestro_id,
+        getLabel: (r: Asignacion) => maestroMap[r.maestro_id] ?? r.maestro_id,
+      },
+      {
+        id: 'curso',
+        label: 'Curso',
+        getValue: (r: Asignacion) => r.curso_id,
+        getLabel: (r: Asignacion) => cursoMap[r.curso_id] ?? r.curso_id,
+      },
+      {
+        id: 'seccion',
+        label: 'Sección',
+        getValue: (r: Asignacion) => r.seccion_id,
+        getLabel: (r: Asignacion) => seccionMap[r.seccion_id] ?? r.seccion_id,
+      },
+      { id: 'status', label: 'Estado', getValue: (r: Asignacion) => r.status },
+    ],
+    [maestroMap, cursoMap, seccionMap],
+  )
+
   if (isLoading) return <div className="empty-state">Cargando asignaciones…</div>
 
   return (
     <RequirePermission permission="asignacion:get">
-      <h1 className="page-title">Asignación docente</h1>
       <DataTable
+        title="Asignación docente"
         data={data}
         columns={columns}
+        filters={tableFilters}
         addLabel="Nueva asignación"
         canAdd={can('asignacion:post')}
         onAdd={() => setModalOpen(true)}
@@ -140,65 +167,41 @@ function AsignacionPage() {
         }
       >
         <Field label="Maestro" htmlFor="asig-maestro">
-          <select
+          <Combobox
             id="asig-maestro"
-            className="field__select"
             data-testid="asignacion-maestro-select"
             value={form.maestro_id}
-            onChange={(e) => setForm((f) => ({ ...f, maestro_id: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {maestros.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, maestro_id: v }))}
+            options={maestros.map((m) => ({ value: m.id, label: m.nombre }))}
+            placeholder="Buscar maestro…"
+          />
         </Field>
         <Field label="Curso">
-          <select
-            className="field__select"
+          <Combobox
             data-testid="asignacion-curso-select"
             value={form.curso_id}
-            onChange={(e) => setForm((f) => ({ ...f, curso_id: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {cursos.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, curso_id: v }))}
+            options={cursos.map((c) => ({ value: c.id, label: c.nombre, keywords: c.codigo }))}
+            placeholder="Buscar curso…"
+          />
         </Field>
         <Field label="Sección">
-          <select
-            className="field__select"
+          <Combobox
             data-testid="asignacion-seccion-select"
             value={form.seccion_id}
-            onChange={(e) => setForm((f) => ({ ...f, seccion_id: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {secciones.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, seccion_id: v }))}
+            options={secciones.map((s) => ({ value: s.id, label: s.nombre, keywords: s.codigo }))}
+            placeholder="Buscar sección…"
+          />
         </Field>
         <Field label="Periodo académico">
-          <select
-            className="field__select"
+          <Combobox
             data-testid="asignacion-periodo-select"
             value={form.periodo_academico_id}
-            onChange={(e) => setForm((f) => ({ ...f, periodo_academico_id: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {periodos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setForm((f) => ({ ...f, periodo_academico_id: v }))}
+            options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+            placeholder="Buscar periodo…"
+          />
         </Field>
       </Modal>
 

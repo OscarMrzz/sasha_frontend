@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { Field } from '#/components/ui/Field'
 import { userMessageFromError } from '#/lib/api'
 import { listCursos, listGrados, listPeriodos, listSecciones } from '#/services/catalogos'
@@ -69,64 +70,40 @@ function SacePage() {
         }}
       >
         <Field label="Periodo académico">
-          <select
-            className="field__select"
+          <Combobox
             data-testid="sace-periodo-select"
             value={periodoId}
-            onChange={(e) => setPeriodoId(e.target.value)}
-          >
-            <option value="">Seleccionar…</option>
-            {periodos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={setPeriodoId}
+            options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+            placeholder="Buscar periodo…"
+          />
         </Field>
         <Field label="Grado">
-          <select
-            className="field__select"
+          <Combobox
             data-testid="sace-grado-select"
             value={gradoId}
-            onChange={(e) => setGradoId(e.target.value)}
-          >
-            <option value="">Seleccionar…</option>
-            {grados.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={setGradoId}
+            options={grados.map((g) => ({ value: g.id, label: g.nombre, keywords: g.codigo }))}
+            placeholder="Buscar grado…"
+          />
         </Field>
         <Field label="Sección">
-          <select
-            className="field__select"
+          <Combobox
             data-testid="sace-seccion-select"
             value={seccionId}
-            onChange={(e) => setSeccionId(e.target.value)}
-          >
-            <option value="">Seleccionar…</option>
-            {secciones.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={setSeccionId}
+            options={secciones.map((s) => ({ value: s.id, label: s.nombre, keywords: s.codigo }))}
+            placeholder="Buscar sección…"
+          />
         </Field>
         <Field label="Curso">
-          <select
-            className="field__select"
+          <Combobox
             data-testid="sace-curso-select"
             value={cursoId}
-            onChange={(e) => setCursoId(e.target.value)}
-          >
-            <option value="">Seleccionar…</option>
-            {cursos.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={setCursoId}
+            options={cursos.map((c) => ({ value: c.id, label: c.nombre, keywords: c.codigo }))}
+            placeholder="Buscar curso…"
+          />
         </Field>
         <Field label="Parciales (CSV)">
           <input

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { userMessageFromError } from '#/lib/api'
@@ -110,33 +111,25 @@ function PlanEstudioPage() {
             Crear plan
           </h3>
           <Field label="Asignación docente">
-            <select
-              className="field__select"
+            <Combobox
               data-testid="plan-asignacion-select"
               value={createForm.asignacion_docente_id}
-              onChange={(e) => setCreateForm((f) => ({ ...f, asignacion_docente_id: e.target.value }))}
-            >
-              <option value="">Seleccionar…</option>
-              {asignaciones.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.id.slice(0, 8)}…
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setCreateForm((f) => ({ ...f, asignacion_docente_id: v }))}
+              options={asignaciones.map((a) => ({
+                value: a.id,
+                label: `${a.id.slice(0, 8)}…`,
+                keywords: a.id,
+              }))}
+              placeholder="Buscar asignación…"
+            />
           </Field>
           <Field label="Periodo académico">
-            <select
-              className="field__select"
+            <Combobox
               value={createForm.periodo_academico_id}
-              onChange={(e) => setCreateForm((f) => ({ ...f, periodo_academico_id: e.target.value }))}
-            >
-              <option value="">Seleccionar…</option>
-              {periodos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setCreateForm((f) => ({ ...f, periodo_academico_id: v }))}
+              options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+              placeholder="Buscar periodo…"
+            />
           </Field>
           <h4 className="texto-muted" style={{ fontSize: '0.85rem' }}>
             Ítems
@@ -288,15 +281,16 @@ function PlanEstudioPage() {
         >
           <h4 style={{ marginTop: 0 }}>Actualizar cumplimiento: {editItem.titulo}</h4>
           <Field label="Estado">
-            <select
-              className="field__select"
+            <Combobox
               value={cumplimiento.estado_cumplimiento}
-              onChange={(e) => setCumplimiento((c) => ({ ...c, estado_cumplimiento: e.target.value }))}
-            >
-              <option value="pendiente">Pendiente</option>
-              <option value="en_progreso">En progreso</option>
-              <option value="completado">Completado</option>
-            </select>
+              onChange={(v) => setCumplimiento((c) => ({ ...c, estado_cumplimiento: v }))}
+              options={[
+                { value: 'pendiente', label: 'Pendiente' },
+                { value: 'en_progreso', label: 'En progreso' },
+                { value: 'completado', label: 'Completado' },
+              ]}
+              placeholder="Buscar estado…"
+            />
           </Field>
           <Field label="Porcentaje avance">
             <input

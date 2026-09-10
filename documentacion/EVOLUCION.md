@@ -18,6 +18,40 @@
 
 ## 2. Bitácora
 
+### 2026-09-05 — Controladores: roles y usuarios con switches
+
+- Sección activación de roles (GET/PUT `/roles/`) con interruptor verde.
+- Sección usuarios: tabla código/username + switch activo, buscador y filtro Activo/Desactivado.
+
+### 2026-09-05 — Sin parpadeo login↔dashboard al refrescar
+
+- Causa: SSR no ve `localStorage` y `beforeLoad` mandaba a `/login`; el cliente corregía después.
+- Rutas `/`, `/login`, `/_app` con `ssr: false` + chequeo de sesión solo en cliente.
+
+### 2026-09-05 — Usuarios como tabla + modal
+
+- `GET /users/` lista usuarios activos.
+- Pantalla Usuarios: DataTable (filtros username/rol/estado, Excel, agregar) y alta/edición en modal (PDF al crear).
+
+### 2026-09-05 — Tablas: filtros, orden, # y 25 filas
+
+- `DataTable`: buscador + filtros clave (nunca por código), orden al clic en cabecera, columna `#`, paginación 25, conteo sutil junto al título.
+- Aplicado en catálogos, personas, matrícula, asignación, pagos, notificaciones, auditoría, tareas, calificaciones y horarios.
+
+### 2026-09-05 — Calendario por modalidad (no institucional)
+
+- Configuración institucional: solo nombre, `codigo_sace` y umbrales de nota.
+- En cada modalidad (turno): duración hora/periodo/parcial, recreos.
+- Programa SACE (`modalidad_sace`) en **Configuración**.
+- Horarios y export SACE leen esos datos desde la modalidad de la sección.
+
+### 2026-09-05 — Panel de usuario y colapso sutil
+
+- Colapsar menú: icono discreto arriba del sidebar (ya no en el footer).
+- Footer del sidebar: panel de usuario (avatar, nombre, código) con menú → Mi perfil / Cerrar sesión.
+- Nueva ruta `/mi-perfil`: cambio de contraseña propia (`PUT /password/`) y foto (`POST /boveda/upload` tipo `perfil_foto`).
+- “Salir” eliminado del topbar; queda en el menú del usuario.
+
 ### 2026-09-05 — Roles internos sin combobox
 
 - Sin selector de rol en login ni en el shell.
@@ -45,7 +79,7 @@
 - `/login`, `/dashboard`
 - `/configuracion`
 - `/catalogos/{grados,modalidades,secciones,cursos,periodos}`
-- `/usuarios`, `/controladores`, `/personas`
+- `/usuarios`, `/controladores` (personas unificado en usuarios; `/personas` redirige)
 - `/matricula`, `/asignacion`, `/horarios`
 - `/plan-estudio`, `/asistencia`, `/tareas`, `/calificaciones`
 - `/pagos`, `/notificaciones-admin`, `/estadisticas`, `/sace`, `/auditoria`
@@ -72,11 +106,12 @@
 | Ruta | Permiso mínimo UI |
 |------|-------------------|
 | /dashboard | autenticado |
+| /mi-perfil | autenticado |
 | /configuracion | configuracion:get |
 | /catalogos/* | catalogos:get |
-| /usuarios | users:get |
+| /usuarios | users:get (alta crea también perfiles persona según rol) |
 | /controladores | users:put |
-| /personas | personas:get |
+| /personas | redirige a /usuarios |
 | /matricula | matricula:get |
 | /asignacion | asignacion:get |
 | /horarios | horarios:get |
@@ -116,9 +151,9 @@ El backend solo expone REST (`GET/POST /notificaciones/`, marcar leída). **No h
 - **Futuro (requiere permiso de backend — este FE no lo implementará sin ese permiso):** el backend debería añadir push (WebSocket/SSE o equivalente) para que una notificación “caiga sola” sin refrescar ni reabrir el panel.
 - Hasta entonces, **no está garantizado** el comportamiento “de la nada sin actualizar”.
 
-### Resolución user_id tras alta de usuario
+### Resolución user_id tras alta de usuario — RESUELTO
 
-`POST /users/` devuelve PDF + header `X-User-Code`, pero **no** expone el UUID (`user_id`) necesario para `POST /personas/*`. La UI pide el UUID manualmente. Ideal (backend futuro): header `X-User-Id`.
+`POST /users/` responde PDF + headers `X-User-Code` y `X-User-Id`. Al crear un usuario con rol alumno/maestro/responsable, el panel **Usuarios** crea automáticamente el perfil en `/personas/*`. El menú **Personas** se eliminó; `/personas` redirige a `/usuarios`.
 
 ### CORS
 

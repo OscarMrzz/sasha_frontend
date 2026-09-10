@@ -8,9 +8,11 @@ test.describe('modulos @critical', () => {
     await expect(page.getByText(/Configuraci|instituci/i).first()).toBeVisible()
   })
 
-  test('usuarios muestra formulario de alta', async ({ page }) => {
+  test('usuarios muestra tabla y alta en modal', async ({ page }) => {
     await loginAs(page)
     await page.getByRole('link', { name: 'Usuarios' }).click()
+    await expect(page.getByRole('heading', { name: 'Usuarios' })).toBeVisible({ timeout: 10_000 })
+    await page.getByTestId('data-table-add-button').click()
     await expect(page.getByLabel(/Primer nombre/i).first()).toBeVisible({ timeout: 10_000 })
   })
 

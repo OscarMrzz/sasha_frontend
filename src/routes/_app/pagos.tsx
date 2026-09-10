@@ -86,6 +86,15 @@ function PagosPage() {
     [],
   )
 
+  const moraFilters = useMemo(
+    () => [
+      { id: 'tipo_pago', label: 'Tipo', getValue: (r: Obligacion) => r.tipo_pago_codigo ?? '' },
+      { id: 'estado', label: 'Estado', getValue: (r: Obligacion) => r.estado },
+      { id: 'periodo', label: 'Periodo', getValue: (r: Obligacion) => r.periodo_label ?? '' },
+    ],
+    [],
+  )
+
   return (
     <RequirePermission permission="pagos:get">
       <h1 className="page-title">Pagos</h1>
@@ -229,30 +238,27 @@ function PagosPage() {
       ) : null}
 
       {tab === 'mora' || tab === 'cobro' ? (
-        <>
-          <h3 className="texto-muted" style={{ fontSize: '0.9rem' }}>
-            Obligaciones en mora
-          </h3>
-          {isLoading ? (
-            <div className="empty-state">Cargando mora…</div>
-          ) : (
-            <DataTable
-              data={mora}
-              columns={moraColumns}
-              onExport={() =>
-                downloadCsv(
-                  'mora.csv',
-                  mora.map((o) => ({
-                    tipo: o.tipo_pago_codigo,
-                    monto: o.monto,
-                    vencimiento: o.fecha_vencimiento,
-                    estado: o.estado,
-                  })),
-                )
-              }
-            />
-          )}
-        </>
+        isLoading ? (
+          <div className="empty-state">Cargando mora…</div>
+        ) : (
+          <DataTable
+            title="Obligaciones en mora"
+            data={mora}
+            columns={moraColumns}
+            filters={moraFilters}
+            onExport={() =>
+              downloadCsv(
+                'mora.csv',
+                mora.map((o) => ({
+                  tipo: o.tipo_pago_codigo,
+                  monto: o.monto,
+                  vencimiento: o.fecha_vencimiento,
+                  estado: o.estado,
+                })),
+              )
+            }
+          />
+        )
       ) : null}
 
       <ConfirmDialog

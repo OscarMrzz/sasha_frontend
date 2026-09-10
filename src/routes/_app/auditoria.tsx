@@ -50,10 +50,17 @@ function AuditoriaPage() {
     [],
   )
 
+  const tableFilters = useMemo(
+    () => [
+      { id: 'accion', label: 'Acción', getValue: (r: AuditoriaEvento) => r.accion },
+      { id: 'recurso', label: 'Recurso', getValue: (r: AuditoriaEvento) => r.recurso },
+      { id: 'estado', label: 'Estado', getValue: (r: AuditoriaEvento) => r.estado },
+    ],
+    [],
+  )
+
   return (
     <RequirePermission permission="auditoria:get">
-      <h1 className="page-title">Auditoría</h1>
-
       <div
         className="panel-toolbar"
         style={{
@@ -135,8 +142,10 @@ function AuditoriaPage() {
         <div className="empty-state">Cargando auditoría…</div>
       ) : (
         <DataTable
+          title="Auditoría"
           data={eventos}
           columns={columns}
+          filters={tableFilters}
           onExport={() =>
             downloadCsv(
               'auditoria.csv',

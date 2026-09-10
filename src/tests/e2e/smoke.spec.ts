@@ -57,4 +57,18 @@ test.describe('smoke @smoke @critical', () => {
     await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 })
     await expect(page.getByTestId('active-role-select')).toHaveCount(0)
   })
+
+  test('panel de usuario abre perfil y logout', async ({ page }) => {
+    await waitLoginReady(page)
+    await page.getByTestId('login-code').fill('1002026100')
+    await page.getByTestId('login-password').fill('Admin123!')
+    await page.getByTestId('login-submit').click()
+    await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 })
+    await expect(page.getByTestId('user-panel')).toBeVisible()
+    await page.getByTestId('user-panel').click()
+    await expect(page.getByTestId('user-menu')).toBeVisible()
+    await page.getByTestId('user-menu-profile').click()
+    await expect(page).toHaveURL(/mi-perfil/, { timeout: 10_000 })
+    await expect(page.getByTestId('mi-perfil-page')).toBeVisible()
+  })
 })

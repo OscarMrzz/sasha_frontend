@@ -22,6 +22,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppEstadisticasRouteImport } from './routes/_app/estadisticas'
 import { Route as AppHorariosRouteImport } from './routes/_app/horarios'
 import { Route as AppMatriculaRouteImport } from './routes/_app/matricula'
+import { Route as AppMiPerfilRouteImport } from './routes/_app/mi-perfil'
 import { Route as AppNotificacionesAdminRouteImport } from './routes/_app/notificaciones-admin'
 import { Route as AppPagosRouteImport } from './routes/_app/pagos'
 import { Route as AppPersonasRouteImport } from './routes/_app/personas'
@@ -99,6 +100,11 @@ const AppMatriculaRoute = AppMatriculaRouteImport.update({
   path: '/matricula',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMiPerfilRoute = AppMiPerfilRouteImport.update({
+  id: '/mi-perfil',
+  path: '/mi-perfil',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificacionesAdminRoute = AppNotificacionesAdminRouteImport.update({
   id: '/notificaciones-admin',
   path: '/notificaciones-admin',
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/estadisticas': typeof AppEstadisticasRoute
   '/horarios': typeof AppHorariosRoute
   '/matricula': typeof AppMatriculaRoute
+  '/mi-perfil': typeof AppMiPerfilRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/pagos': typeof AppPagosRoute
   '/personas': typeof AppPersonasRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/estadisticas': typeof AppEstadisticasRoute
   '/horarios': typeof AppHorariosRoute
   '/matricula': typeof AppMatriculaRoute
+  '/mi-perfil': typeof AppMiPerfilRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/pagos': typeof AppPagosRoute
   '/personas': typeof AppPersonasRoute
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/_app/estadisticas': typeof AppEstadisticasRoute
   '/_app/horarios': typeof AppHorariosRoute
   '/_app/matricula': typeof AppMatriculaRoute
+  '/_app/mi-perfil': typeof AppMiPerfilRoute
   '/_app/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/_app/pagos': typeof AppPagosRoute
   '/_app/personas': typeof AppPersonasRoute
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/estadisticas'
     | '/horarios'
     | '/matricula'
+    | '/mi-perfil'
     | '/notificaciones-admin'
     | '/pagos'
     | '/personas'
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/estadisticas'
     | '/horarios'
     | '/matricula'
+    | '/mi-perfil'
     | '/notificaciones-admin'
     | '/pagos'
     | '/personas'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/_app/estadisticas'
     | '/_app/horarios'
     | '/_app/matricula'
+    | '/_app/mi-perfil'
     | '/_app/notificaciones-admin'
     | '/_app/pagos'
     | '/_app/personas'
@@ -421,6 +433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMatriculaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/mi-perfil': {
+      id: '/_app/mi-perfil'
+      path: '/mi-perfil'
+      fullPath: '/mi-perfil'
+      preLoaderRoute: typeof AppMiPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notificaciones-admin': {
       id: '/_app/notificaciones-admin'
       path: '/notificaciones-admin'
@@ -519,6 +538,7 @@ interface AppRouteChildren {
   AppEstadisticasRoute: typeof AppEstadisticasRoute
   AppHorariosRoute: typeof AppHorariosRoute
   AppMatriculaRoute: typeof AppMatriculaRoute
+  AppMiPerfilRoute: typeof AppMiPerfilRoute
   AppNotificacionesAdminRoute: typeof AppNotificacionesAdminRoute
   AppPagosRoute: typeof AppPagosRoute
   AppPersonasRoute: typeof AppPersonasRoute
@@ -544,6 +564,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEstadisticasRoute: AppEstadisticasRoute,
   AppHorariosRoute: AppHorariosRoute,
   AppMatriculaRoute: AppMatriculaRoute,
+  AppMiPerfilRoute: AppMiPerfilRoute,
   AppNotificacionesAdminRoute: AppNotificacionesAdminRoute,
   AppPagosRoute: AppPagosRoute,
   AppPersonasRoute: AppPersonasRoute,

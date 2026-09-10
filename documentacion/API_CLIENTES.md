@@ -86,7 +86,7 @@ POST /users/
 X-Active-Role: admin
 ```
 
-Respuesta: **PDF** de credenciales (`application/pdf`) + header `X-User-Code` con el código generado. No es JSON.
+Respuesta: **PDF** de credenciales (`application/pdf`) + headers `X-User-Code` (código) y `X-User-Id` (UUID para vincular perfiles en `/personas/*`). No es JSON.
 
 ---
 
@@ -216,6 +216,19 @@ Crear ejemplo:
 }
 ```
 
+Asignación automática de sección (reparte entre secciones del mismo grado+modalidad, priorizando las con menos inscritos ACTIVE en el periodo; respeta `cupo_maximo`):
+
+```json
+{
+  "alumno_id": "<uuid>",
+  "periodo_academico_id": "<uuid>",
+  "asignar_seccion_automatica": true,
+  "grado_id": "<uuid>",
+  "modalidad_id": "<uuid>",
+  "generar_mensualidad": true
+}
+```
+
 Reingreso: `{ "user_code", "periodo_academico_id", "seccion_id?" }`. Sin `seccion_id` puede devolver sugerencia de grado.
 
 ---
@@ -227,14 +240,16 @@ Reingreso: `{ "user_code", "periodo_academico_id", "seccion_id?" }`. Sin `seccio
 - `GET /configuracion/` — `configuracion:get`
 - `PUT /configuracion/` — `configuracion:put` (campos parciales)
 
-Incluye nombre institución, umbrales de nota, duración hora/recreo, `codigo_sace`, `modalidad_sace`, etc.
+Incluye nombre de la institución, `codigo_sace` institucional y umbrales de calificación.  
+Calendario (hora clase, periodo, parciales, recreos) van en cada **modalidad** (turno).  
+`modalidad_sace` (programa académico SACE) va en **configuración** institucional.
 
 ### Catálogos (`catalogos:get|post|put|delete`)
 
 | Recurso | Rutas |
 |---------|--------|
 | Grados | `/catalogos/grados` (+ `/{id}`) |
-| Modalidades (turno) | `/catalogos/modalidades` (+ `/{id}`) — body incluye `hora_inicio`, `hora_fin`, `dias` |
+| Modalidades | `/catalogos/modalidades` (+ `/{id}`) — `hora_inicio`, `hora_fin`, `dias`, `duracion_hora_clase_minutos`, `duracion_periodo_meses`, `cantidad_parciales_por_periodo`, `duracion_parcial_dias`, `duracion_recreo_minutos`, `cantidad_recreos` |
 | Secciones | `/catalogos/secciones` (+ `/{id}`) — `grado_id`, `modalidad_id` |
 | Cursos | `/catalogos/cursos` (+ `/{id}`) — `horas_semana_minimas` |
 | Periodos | `/catalogos/periodos` (+ `/{id}`) |
@@ -353,7 +368,10 @@ Nota: en el JSON SACE, `modalidad` = programa académico y `jornada` = turno int
 
 | Método | Ruta |
 |--------|------|
+| GET | `/roles/` → lista `{name,status}` |
+| PUT | `/roles/{name}/status` → `{status:"ACTIVE"|"INACTIVE"}` (no se puede apagar `admin`) |
 | POST | `/users/` → PDF |
+| GET | `/users/` → lista `{code,username,roles,statususer}` |
 | PUT | `/users/{code}/roles`, `/status`, `/password` |
 | GET/PUT | `/users/{code}/permisos` |
 | DELETE | `/users/{code}` (soft), `/users/{code}/hard` |
@@ -400,7 +418,7 @@ No usar en código cliente como nombres de entidad: jornada, grupo, materia, ins
 1. Siempre `credentials: 'include'` (o equivalente) tras login.
 2. Siempre header `X-Active-Role`.
 3. Horarios: preview N veces → **confirm** solo al guardar.
-4. Alta usuario: manejar PDF + `X-User-Code`.
+4. Alta usuario: manejar PDF + `X-User-Code` + `X-User-Id` (crear perfil persona si aplica).
 5. Respetar permisos por rol (403 = rol/permiso incorrecto, no “API caída”).
 6. Bóveda: primero upload, luego guardar `object_key` en matrícula/pago/logo.
 
