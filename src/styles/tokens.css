@@ -1,40 +1,44 @@
-/* Sasha — industrial utilitario, dark por defecto, sin negros puros ni degradados */
+/* Sasha — paleta Lumier Dark: charcoal cálido, crema, acento naranja */
 
 :root {
-  --sasha-font-sans: 'IBM Plex Sans', 'Segoe UI', sans-serif;
-  --sasha-font-display: 'IBM Plex Serif', Georgia, serif;
+  --sasha-font-sans: 'Montserrat', sans-serif;
+  --sasha-font-display: 'Montserrat', sans-serif;
 
-  /* Dark (default) — charcoal, never #000 */
-  --sasha-bg-base: #0f1419;
-  --sasha-bg-raised: #161b22;
-  --sasha-bg-overlay: #1c2330;
-  --sasha-bg-muted: #242b36;
-  --sasha-bg-hover: #2a3340;
+  /* Fondos */
+  --sasha-bg-base: #181d24;
+  --sasha-bg-raised: #13171c;
+  --sasha-bg-overlay: rgba(20, 24, 30, 0.92);
+  --sasha-bg-muted: #1b2129;
+  --sasha-bg-hover: #232a34;
 
-  --sasha-border-suave: #2e3644;
-  --sasha-border-fuerte: #3d4756;
+  --sasha-border-suave: #232a34;
+  --sasha-border-fuerte: #2e3644;
 
-  --sasha-texto-primary: #e8edf4;
-  --sasha-texto-muted: #8b97a8;
-  --sasha-texto-emphasis: #f4f7fb;
-  --sasha-texto-title: #f7fafc;
-  --sasha-texto-inverse: #12171e;
+  /* Texto — crema, muted y dim del ejemplo Lumier */
+  --sasha-texto-primary: #ece3d4;
+  --sasha-texto-muted: #62707e;
+  --sasha-texto-emphasis: #ece3d4;
+  --sasha-texto-title: #ece3d4;
+  --sasha-texto-inverse: #13171c;
 
-  --sasha-accent: #3d8bfd;
-  --sasha-accent-hover: #5a9dff;
-  --sasha-accent-muted: #1e3a5f;
+  /* Acento naranja */
+  --sasha-accent: #ff5023;
+  --sasha-accent-hover: #e04218;
+  --sasha-accent-muted: rgba(255, 80, 35, 0.14);
 
   --sasha-success: #3d9a6a;
   --sasha-warning: #c9a227;
   --sasha-danger: #d64545;
   --sasha-danger-muted: #4a2222;
 
-  --sasha-table-row: #161b22;
-  --sasha-table-row-alt: #1a2029;
-  --sasha-table-row-hover: #222a36;
+  --sasha-table-row: #13171c;
+  --sasha-table-row-alt: #181d24;
+  --sasha-table-row-hover: #1f252e;
 
-  --sasha-shadow-modal: 0 16px 48px rgba(15, 20, 25, 0.55);
-  --sasha-radius: 6px;
+  --sasha-backdrop: rgba(24, 29, 36, 0.72);
+  --sasha-bg-glass: rgba(20, 24, 30, 0.85);
+  --sasha-shadow-modal: 0 30px 60px rgba(0, 0, 0, 0.5);
+  --sasha-radius: 4px;
   --sasha-sidebar-width: 240px;
   --sasha-sidebar-collapsed: 64px;
   --sasha-topbar-height: 52px;
@@ -43,34 +47,35 @@
 }
 
 [data-theme='light'] {
-  --sasha-bg-base: #f2f4f7;
-  --sasha-bg-raised: #ffffff;
+  --sasha-bg-base: #f0ebe3;
+  --sasha-bg-raised: #faf7f2;
   --sasha-bg-overlay: #ffffff;
-  --sasha-bg-muted: #e8ecf1;
-  --sasha-bg-hover: #dde3eb;
+  --sasha-bg-muted: #e8e2d8;
+  --sasha-bg-hover: #ddd5c8;
 
-  --sasha-border-suave: #d0d7e0;
-  --sasha-border-fuerte: #aeb8c5;
+  --sasha-border-suave: #d4cdc2;
+  --sasha-border-fuerte: #b8afa3;
 
   --sasha-texto-primary: #1a2230;
-  --sasha-texto-muted: #5c6b7d;
-  --sasha-texto-emphasis: #0f1419;
-  --sasha-texto-title: #0f1419;
-  --sasha-texto-inverse: #f4f7fb;
+  --sasha-texto-muted: #62707e;
+  --sasha-texto-emphasis: #13171c;
+  --sasha-texto-title: #13171c;
+  --sasha-texto-inverse: #ece3d4;
 
-  --sasha-accent: #2563c7;
-  --sasha-accent-hover: #1d4fa3;
-  --sasha-accent-muted: #d6e4f7;
+  --sasha-accent: #ff5023;
+  --sasha-accent-hover: #e04218;
+  --sasha-accent-muted: rgba(255, 80, 35, 0.12);
 
   --sasha-success: #2f7a52;
   --sasha-warning: #9a7a14;
   --sasha-danger: #b53a3a;
   --sasha-danger-muted: #f5d6d6;
 
-  --sasha-table-row: #ffffff;
-  --sasha-table-row-alt: #f7f9fb;
-  --sasha-table-row-hover: #eef2f7;
+  --sasha-table-row: #faf7f2;
+  --sasha-table-row-alt: #f5f0e8;
+  --sasha-table-row-hover: #ebe4d9;
 
+  --sasha-backdrop: rgba(26, 34, 48, 0.45);
   --sasha-shadow-modal: 0 16px 48px rgba(26, 34, 48, 0.18);
   color-scheme: light;
 }

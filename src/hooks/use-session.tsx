@@ -1,58 +1,80 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { setSessionRolesGetter } from '#/lib/api'
 import { ROLES, type RoleName } from '#/helpers/permissions'
-
-const STORAGE_KEY = 'sasha.session'
+import {
+  SESSION_STORAGE_KEY,
+  clearPersistedSession,
+  parseStoredSession,
+  setSessionFlagCookie,
+  type StoredSession,
+} from '#/lib/session-storage'
 
 export type SessionState = {
   code: string
+  username: string
   /** Roles del usuario según login; esta app envía todos en X-Active-Role. */
   knownRoles: RoleName[]
+  /** Key en bóveda de la foto de perfil (persistida en cliente tras subir). */
+  fotoKey?: string
 }
 
 type SessionContextValue = {
   session: SessionState | null
   isAuthenticated: boolean
+  /** false hasta hidratar localStorage (evita redirects prematuros). */
+  sessionReady: boolean
   setSession: (s: SessionState) => void
   clearSession: () => void
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null)
 
+function toSessionState(parsed: StoredSession): SessionState {
+  const rawUsername = parsed.username?.trim() || ''
+  const username = rawUsername && rawUsername !== parsed.code ? rawUsername : ''
+  return {
+    code: parsed.code,
+    username,
+    knownRoles: parsed.knownRoles,
+    fotoKey: parsed.fotoKey,
+  }
+}
+
 function readStored(): SessionState | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as SessionState & { activeRole?: RoleName }
-    if (!parsed.code || !parsed.knownRoles?.length) {
-      // migración: sesión vieja con solo activeRole
-      if (parsed.code && parsed.activeRole) {
-        return { code: parsed.code, knownRoles: [parsed.activeRole] }
-      }
-      return null
-    }
-    return { code: parsed.code, knownRoles: parsed.knownRoles }
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY)
+    const parsed = parseStoredSession(raw)
+    return parsed ? toSessionState(parsed) : null
   } catch {
     return null
   }
 }
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSessionState] = useState<SessionState | null>(() =>
-    typeof window !== 'undefined' ? readStored() : null,
-  )
+  // null en SSR y en el primer paint; se hidrata en useLayoutEffect vía useEffect
+  // para no divergir del HTML del servidor.
+  const [session, setSessionState] = useState<SessionState | null>(null)
+  const [sessionReady, setSessionReady] = useState(false)
+
+  useLayoutEffect(() => {
+    const stored = readStored()
+    setSessionState(stored)
+    setSessionFlagCookie(Boolean(stored))
+    setSessionReady(true)
+  }, [])
 
   useEffect(() => {
     setSessionRolesGetter(() => session?.knownRoles ?? [])
   }, [session?.knownRoles])
 
   const setSession = useCallback((s: SessionState) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(s))
+    setSessionFlagCookie(true)
     setSessionState(s)
   }, [])
 
   const clearSession = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY)
+    clearPersistedSession()
     setSessionState(null)
   }, [])
 
@@ -60,10 +82,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     () => ({
       session,
       isAuthenticated: Boolean(session),
+      sessionReady,
       setSession,
       clearSession,
     }),
-    [session, setSession, clearSession],
+    [session, sessionReady, setSession, clearSession],
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

@@ -31,6 +31,13 @@ export async function logout() {
   return apiRequest('/logout/', { method: 'POST', activeRoles: null })
 }
 
+export async function changeOwnPassword(currentPassword: string, newPassword: string) {
+  return apiRequest<{ message: string; status: string }>('/password/', {
+    method: 'PUT',
+    body: { current_password: currentPassword, new_password: newPassword },
+  })
+}
+
 export async function healthCheck() {
   return apiRequest<{ status: string }>('/health', { activeRoles: null })
 }

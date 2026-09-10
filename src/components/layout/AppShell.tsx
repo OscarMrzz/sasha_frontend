@@ -6,6 +6,7 @@ import {
   Calendar,
   CalendarDays,
   CheckSquare,
+  ChevronUp,
   ClipboardList,
   Clock,
   Download,
@@ -15,6 +16,9 @@ import {
   LayoutGrid,
   Link2,
   ListTodo,
+  LogOut,
+  PanelLeftClose,
+  PanelLeft,
   Search,
   Settings,
   Shield,
@@ -22,18 +26,17 @@ import {
   Users,
   Wallet,
   BarChart3,
-  PanelLeftClose,
-  PanelLeft,
 } from 'lucide-react'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Can, useCan } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
+import { NotificationsBell } from '#/components/layout/NotificationsBell'
 import { NAV_ITEMS } from '#/helpers/nav'
 import { useSession } from '#/hooks/use-session'
+import { userMessageFromError } from '#/lib/api'
 import { logout } from '#/services/auth'
 import { toast } from 'sonner'
-import { userMessageFromError } from '#/lib/api'
-import { NotificationsBell } from '#/components/layout/NotificationsBell'
+import { useBovedaImage } from '#/hooks/use-boveda-image'
 
 const ICONS: Record<string, ReactNode> = {
   home: <Home className="sidebar-nav__icon" />,
@@ -65,20 +68,50 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { can } = useCan()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [collapsed, setCollapsed] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof document === 'undefined') return 'dark'
     return (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') || 'dark'
   })
+  const fotoSrc = useBovedaImage(session?.fotoKey)
 
   const items = useMemo(() => {
-    type Item = { to: string; label: string; permission: (typeof NAV_ITEMS)[number]['permission'] | null; icon: string }
+    type Item = {
+      to: string
+      label: string
+      permission: (typeof NAV_ITEMS)[number]['permission'] | null
+      icon: string
+    }
     const base: Item[] = [
       { to: '/dashboard', label: 'Inicio', permission: null, icon: 'home' },
       ...NAV_ITEMS.filter((i) => i.to !== '/dashboard'),
     ]
     return base.filter((i) => (i.permission ? can(i.permission) : true))
   }, [can])
+
+  useEffect(() => {
+    if (!userMenuOpen) return
+    const onPointer = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setUserMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [userMenuOpen])
+
+  const panelTitle = session?.username
+    ? `${session.username} · ${session.code}`
+    : session?.code || 'Usuario'
 
   return (
     <div className="app-shell" data-theme={theme}>
@@ -87,17 +120,28 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Navegación principal"
       >
         <div className="sidebar-brand">
-          {!collapsed ? (
-            <>
-              <p className="sidebar-brand__name">Sasha</p>
-              <p className="sidebar-brand__sub">Gestión escolar</p>
-            </>
-          ) : (
-            <p className="sidebar-brand__name" style={{ fontSize: '1rem' }}>
-              S
-            </p>
-          )}
+          <div className="sidebar-brand__text">
+            {!collapsed ? (
+              <>
+                <p className="sidebar-brand__name">Sasha</p>
+                <p className="sidebar-brand__sub">Gestión escolar</p>
+              </>
+            ) : (
+              <p className="sidebar-brand__name sidebar-brand__name--mark">S</p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="sidebar-brand__collapse"
+            onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+            title={collapsed ? 'Expandir' : 'Colapsar'}
+            data-testid="sidebar-collapse"
+          >
+            {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+          </button>
         </div>
+
         <nav className="sidebar-nav">
           {items.map((item) => {
             const active = pathname === item.to || pathname.startsWith(item.to + '/')
@@ -114,15 +158,64 @@ export function AppShell({ children }: { children: ReactNode }) {
             )
           })}
         </nav>
-        <div className="sidebar-footer">
+
+        <div className="sidebar-footer" ref={userMenuRef}>
+          {userMenuOpen ? (
+            <div className="user-menu" role="menu" data-testid="user-menu">
+              <Link
+                to="/mi-perfil"
+                className="user-menu__item"
+                role="menuitem"
+                onClick={() => setUserMenuOpen(false)}
+                data-testid="user-menu-profile"
+              >
+                <User size={15} />
+                <span>Mi perfil</span>
+              </Link>
+              <button
+                type="button"
+                className="user-menu__item user-menu__item--danger"
+                role="menuitem"
+                onClick={() => {
+                  setUserMenuOpen(false)
+                  setConfirmLogout(true)
+                }}
+                data-testid="logout-button"
+              >
+                <LogOut size={15} />
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          ) : null}
+
           <button
             type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+            className={`user-panel${userMenuOpen ? ' user-panel--open' : ''}`}
+            onClick={() => setUserMenuOpen((o) => !o)}
+            aria-expanded={userMenuOpen}
+            aria-haspopup="menu"
+            data-testid="user-panel"
+            title={panelTitle}
           >
-            {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
-            {!collapsed ? ' Colapsar' : null}
+            <span className="user-panel__avatar" aria-hidden>
+              {fotoSrc ? (
+                <img src={fotoSrc} alt="" className="user-panel__avatar-img" />
+              ) : (
+                <User size={16} />
+              )}
+            </span>
+            {!collapsed ? (
+              <span className="user-panel__meta">
+                <span className="user-panel__name">{session?.username || 'Usuario'}</span>
+                <span className="user-panel__code">{session?.code}</span>
+              </span>
+            ) : null}
+            {!collapsed ? (
+              <ChevronUp
+                size={14}
+                className={`user-panel__chevron${userMenuOpen ? ' user-panel__chevron--open' : ''}`}
+              />
+            ) : null}
           </button>
         </div>
       </aside>
@@ -149,15 +242,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             }}
           >
             {theme === 'dark' ? 'Claro' : 'Oscuro'}
-          </button>
-
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => setConfirmLogout(true)}
-            data-testid="logout-button"
-          >
-            Salir
           </button>
         </header>
         <main className="app-shell__content">{children}</main>

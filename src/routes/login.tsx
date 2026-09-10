@@ -1,35 +1,61 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Field } from '#/components/ui/Field'
 import { type RoleName } from '#/helpers/permissions'
 import { useSession, isRoleName } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
+import { hasPersistedSession } from '#/lib/session-storage'
 import { login } from '#/services/auth'
 
 export const Route = createFileRoute('/login')({
+  ssr: false,
+  beforeLoad: () => {
+    if (hasPersistedSession()) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: LoginPage,
 })
 
+function LoginCardLeft() {
+  return (
+    <div className="card-left">
+      <div className="left-overlay" aria-hidden />
+      <div className="left-top">
+        <div className="logo">
+          <span className="logo-icon">⊙</span> SASHA
+        </div>
+      </div>
+
+      <div className="card-left__center">
+        <img
+          src="/images/logo/logo_principal.png"
+          alt="Instituto Evangélico Profa. Delfina Mejía"
+          className="card-left__logo"
+        />
+      </div>
+
+      <div className="left-bottom">
+        <div className="author-info" />
+      </div>
+    </div>
+  )
+}
+
 function LoginPage() {
   const navigate = useNavigate()
-  const { setSession, isAuthenticated } = useSession()
+  const { setSession, isAuthenticated, sessionReady } = useSession()
   const [user, setUser] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ user?: string; password?: string }>({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    setReady(true)
-  }, [])
-
-  useEffect(() => {
-    if (isAuthenticated) {
+    if (sessionReady && isAuthenticated) {
       void navigate({ to: '/dashboard' })
     }
-  }, [isAuthenticated, navigate])
+  }, [sessionReady, isAuthenticated, navigate])
 
   async function doLogin() {
     const nextErrors: { user?: string; password?: string } = {}
@@ -51,6 +77,7 @@ function LoginPage() {
       }
       setSession({
         code: res.code,
+        username: res.username,
         knownRoles,
       })
       toast.success('Sesión iniciada')
@@ -64,54 +91,84 @@ function LoginPage() {
     }
   }
 
+  if (!sessionReady || isAuthenticated) {
+    return (
+      <div className="login-page" data-theme="dark" data-testid="login-booting">
+        <div className="login-card" data-testid="login-form" data-ready="0">
+          <LoginCardLeft />
+          <div className="card-right">
+            <div className="login-header">
+              <h2>Cargando…</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="login-page" data-theme="dark">
-      <div className="login-card" data-testid="login-form" data-ready={ready ? '1' : '0'}>
-        <h1 className="login-card__brand">Sasha</h1>
-        <p className="login-card__hint">Ingresa con tu código institucional</p>
+      <div className="login-card" data-testid="login-form" data-ready="1">
+        <LoginCardLeft />
 
-        <Field label="Código" error={errors.user} htmlFor="user">
-          <input
-            id="user"
-            className="field__input"
-            autoComplete="username"
-            data-testid="login-code"
-            value={user}
-            onChange={(e) => setUser(e.target.value)}
-          />
-        </Field>
+        <div className="card-right">
+          <div className="login-header">
+            <h2>Bienvenido a Sasha</h2>
+          </div>
 
-        <Field label="Contraseña" error={errors.password} htmlFor="password">
-          <input
-            id="password"
-            type="password"
-            className="field__input"
-            autoComplete="current-password"
-            data-testid="login-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void doLogin()
+          <form
+            className="login-form"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void doLogin()
             }}
-          />
-        </Field>
+          >
+            <div className="input-group">
+              <input
+                type="text"
+                id="user"
+                required
+                placeholder=" "
+                autoComplete="username"
+                data-testid="login-code"
+                value={user}
+                onChange={(e) => setUser(e.target.value)}
+              />
+              <label htmlFor="user">Código de usuario</label>
+              {errors.user ? <span className="input-group__error">{errors.user}</span> : null}
+            </div>
 
-        {formError ? (
-          <p className="field__error" role="alert" data-testid="login-error">
-            {formError}
-          </p>
-        ) : null}
+            <div className="input-group">
+              <input
+                type="password"
+                id="password"
+                required
+                placeholder=" "
+                autoComplete="current-password"
+                data-testid="login-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <label htmlFor="password">Contraseña</label>
+              {errors.password ? <span className="input-group__error">{errors.password}</span> : null}
+            </div>
 
-        <button
-          type="button"
-          className="btn btn--primary"
-          style={{ width: '100%', marginTop: '0.5rem' }}
-          disabled={submitting}
-          data-testid="login-submit"
-          onClick={() => void doLogin()}
-        >
-          {submitting ? 'Entrando…' : 'Entrar'}
-        </button>
+            {formError ? (
+              <p className="login-form__error" role="alert" data-testid="login-error">
+                {formError}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              className="btn-submit"
+              disabled={submitting}
+              data-testid="login-submit"
+            >
+              {submitting ? 'Entrando…' : 'Iniciar sesión'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

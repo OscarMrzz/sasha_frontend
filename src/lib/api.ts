@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { clearPersistedSession } from '#/lib/session-storage'
 
 export const apiErrorSchema = z.object({
   message: z.string().optional(),
@@ -40,6 +41,23 @@ export function setSessionRolesGetter(fn: () => string[]) {
   sessionRolesGetter = fn
 }
 
+/** Evita bucles si varias peticiones fallan 401 a la vez. */
+let redirectingToLogin = false
+
+function handleUnauthorized(path: string) {
+  // Credenciales inválidas en login no son “sesión expirada”.
+  if (path.startsWith('/login')) return
+  if (typeof window === 'undefined') return
+  if (window.location.pathname.startsWith('/login')) {
+    clearPersistedSession()
+    return
+  }
+  if (redirectingToLogin) return
+  redirectingToLogin = true
+  clearPersistedSession()
+  window.location.assign('/login')
+}
+
 export async function apiRequest<T = unknown>(
   path: string,
   options: RequestOptions = {},
@@ -70,6 +88,10 @@ export async function apiRequest<T = unknown>(
     body: payload,
     signal,
   })
+
+  if (res.status === 401) {
+    handleUnauthorized(path)
+  }
 
   if (raw) {
     if (!res.ok) {

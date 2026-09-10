@@ -1,9 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { hasPersistedSession } from '#/lib/session-storage'
 
 export const Route = createFileRoute('/')({
+  ssr: false,
   beforeLoad: () => {
-    const raw = typeof window !== 'undefined' ? localStorage.getItem('sasha.session') : null
-    if (raw) {
+    if (hasPersistedSession()) {
       throw redirect({ to: '/dashboard' })
     }
     throw redirect({ to: '/login' })
