@@ -3,21 +3,27 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { MatriculaWizard } from '#/components/matricula/MatriculaWizard'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
 import { downloadCsv } from '#/helpers/export-csv'
 import { userMessageFromError } from '#/lib/api'
-import { listPeriodos, listSecciones } from '#/services/catalogos'
 import {
-  createMatricula,
+  listCursos,
+  listGrados,
+  listModalidades,
+  listPeriodos,
+  listSecciones,
+} from '#/services/catalogos'
+import {
   getSugerencia,
   listMatriculas,
   reingreso,
   type Matricula,
-  type MatriculaCreate,
   type SugerenciaResponse,
 } from '#/services/matricula'
 
@@ -31,19 +37,14 @@ function MatriculaPage() {
   const { data = [], isLoading } = useQuery({ queryKey: ['matriculas'], queryFn: listMatriculas })
   const { data: secciones = [] } = useQuery({ queryKey: ['secciones'], queryFn: listSecciones })
   const { data: periodos = [] } = useQuery({ queryKey: ['periodos'], queryFn: listPeriodos })
+  const { data: grados = [] } = useQuery({ queryKey: ['grados'], queryFn: listGrados })
+  const { data: modalidades = [] } = useQuery({ queryKey: ['modalidades'], queryFn: listModalidades })
+  const { data: cursos = [] } = useQuery({ queryKey: ['cursos'], queryFn: listCursos })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [reingresoOpen, setReingresoOpen] = useState(false)
   const [confirmSave, setConfirmSave] = useState(false)
-  const [mode, setMode] = useState<'create' | 'reingreso'>('create')
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Matricula } | null>(null)
-
-  const [createForm, setCreateForm] = useState<MatriculaCreate>({
-    alumno_id: '',
-    periodo_academico_id: '',
-    seccion_id: '',
-    generar_mensualidad: true,
-  })
 
   const [reingresoCode, setReingresoCode] = useState('')
   const [sugerencia, setSugerencia] = useState<SugerenciaResponse | null>(null)
@@ -57,17 +58,6 @@ function MatriculaPage() {
     window.addEventListener('click', h)
     return () => window.removeEventListener('click', h)
   }, [ctx, closeCtx])
-
-  const createMut = useMutation({
-    mutationFn: () => createMatricula(createForm),
-    onSuccess: () => {
-      toast.success('Matrícula creada')
-      qc.invalidateQueries({ queryKey: ['matriculas'] })
-      setCreateOpen(false)
-      setConfirmSave(false)
-    },
-    onError: (e) => toast.error(userMessageFromError(e)),
-  })
 
   const reingresoMut = useMutation({
     mutationFn: () =>
@@ -118,20 +108,31 @@ function MatriculaPage() {
     [secciones],
   )
 
+  const tableFilters = useMemo(
+    () => [
+      { id: 'grado_nombre', label: 'Grado', getValue: (r: Matricula) => r.grado_nombre ?? '' },
+      { id: 'status', label: 'Estado', getValue: (r: Matricula) => r.status },
+      {
+        id: 'es_reingreso',
+        label: 'Reingreso',
+        getValue: (r: Matricula) => (r.es_reingreso ? 'Sí' : 'No'),
+      },
+    ],
+    [],
+  )
+
   if (isLoading) return <div className="empty-state">Cargando matrículas…</div>
 
   return (
     <RequirePermission permission="matricula:get">
-      <h1 className="page-title">Matrícula</h1>
       <DataTable
+        title="Matrícula"
         data={data}
         columns={columns}
+        filters={tableFilters}
         addLabel="Nueva matrícula"
         canAdd={can('matricula:post')}
-        onAdd={() => {
-          setMode('create')
-          setCreateOpen(true)
-        }}
+        onAdd={() => setCreateOpen(true)}
         toolbarExtra={
           <Can permission="matricula:post">
             <button
@@ -176,76 +177,21 @@ function MatriculaPage() {
         </div>
       ) : null}
 
-      <Modal
+      <MatriculaWizard
         open={createOpen}
-        title="Nueva matrícula"
         onClose={() => setCreateOpen(false)}
-        footer={
-          <>
-            <button type="button" className="btn btn--ghost" onClick={() => setCreateOpen(false)}>
-              Cancelar
-            </button>
-            <Can permission="matricula:post">
-              <button
-                type="button"
-                className="btn btn--primary"
-                onClick={() => {
-                  setMode('create')
-                  setConfirmSave(true)
-                }}
-              >
-                Guardar
-              </button>
-            </Can>
-          </>
-        }
-      >
-        <Field label="Alumno ID" htmlFor="mat-alumno">
-          <input
-            id="mat-alumno"
-            className="field__input"
-            data-testid="matricula-alumno-input"
-            value={createForm.alumno_id}
-            onChange={(e) => setCreateForm((f) => ({ ...f, alumno_id: e.target.value }))}
-          />
-        </Field>
-        <Field label="Periodo académico">
-          <select
-            className="field__select"
-            value={createForm.periodo_academico_id}
-            onChange={(e) => setCreateForm((f) => ({ ...f, periodo_academico_id: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {periodos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Sección">
-          <select
-            className="field__select"
-            value={createForm.seccion_id}
-            onChange={(e) => setCreateForm((f) => ({ ...f, seccion_id: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {secciones.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <label style={{ fontSize: '0.85rem' }}>
-          <input
-            type="checkbox"
-            checked={createForm.generar_mensualidad ?? false}
-            onChange={(e) => setCreateForm((f) => ({ ...f, generar_mensualidad: e.target.checked }))}
-          />{' '}
-          Generar mensualidad
-        </label>
-      </Modal>
+        onCreated={() => {
+          qc.invalidateQueries({ queryKey: ['matriculas'] })
+          qc.invalidateQueries({ queryKey: ['alumnos'] })
+          qc.invalidateQueries({ queryKey: ['responsables'] })
+          qc.invalidateQueries({ queryKey: ['users'] })
+        }}
+        periodos={periodos}
+        secciones={secciones}
+        grados={grados}
+        modalidades={modalidades}
+        cursos={cursos}
+      />
 
       <Modal
         open={reingresoOpen}
@@ -262,10 +208,7 @@ function MatriculaPage() {
                 type="button"
                 className="btn btn--primary"
                 data-testid="reingreso-confirm-button"
-                onClick={() => {
-                  setMode('reingreso')
-                  setConfirmSave(true)
-                }}
+                onClick={() => setConfirmSave(true)}
               >
                 Confirmar reingreso
               </button>
@@ -306,45 +249,43 @@ function MatriculaPage() {
             {sugerencia.mensaje ? <p className="texto-muted" style={{ margin: 0 }}>{sugerencia.mensaje}</p> : null}
           </div>
         ) : null}
-        <Field label="Periodo académico">
-          <select
-            className="field__select"
+        <Field label="Periodo académico" htmlFor="reingreso-periodo">
+          <Combobox
+            id="reingreso-periodo"
             value={reingresoPeriodo}
-            onChange={(e) => setReingresoPeriodo(e.target.value)}
-          >
-            <option value="">Seleccionar…</option>
-            {periodos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={setReingresoPeriodo}
+            options={periodos.map((p) => ({
+              value: p.id,
+              label: p.nombre,
+              keywords: String(p.anio_lectivo),
+            }))}
+            placeholder="Buscar periodo…"
+          />
         </Field>
-        <Field label="Sección">
-          <select
-            className="field__select"
+        <Field label="Sección" htmlFor="reingreso-seccion">
+          <Combobox
+            id="reingreso-seccion"
             value={reingresoSeccion}
-            onChange={(e) => setReingresoSeccion(e.target.value)}
-          >
-            <option value="">Seleccionar…</option>
-            {secciones.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={setReingresoSeccion}
+            options={secciones.map((s) => {
+              const g = grados.find((x) => x.id === s.grado_id)
+              const m = modalidades.find((x) => x.id === s.modalidad_id)
+              return {
+                value: s.id,
+                label: [g?.nombre, m?.nombre, s.nombre].filter(Boolean).join(' · '),
+                keywords: s.codigo,
+              }
+            })}
+            placeholder="Buscar sección…"
+          />
         </Field>
       </Modal>
 
       <ConfirmDialog
         open={confirmSave}
-        title={mode === 'create' ? 'Crear matrícula' : 'Confirmar reingreso'}
-        message={
-          mode === 'create'
-            ? '¿Registrar esta matrícula?'
-            : `¿Confirmar reingreso del alumno ${reingresoCode}?`
-        }
-        onConfirm={() => (mode === 'create' ? createMut.mutate() : reingresoMut.mutate())}
+        title="Confirmar reingreso"
+        message={`¿Confirmar reingreso del alumno ${reingresoCode}?`}
+        onConfirm={() => reingresoMut.mutate()}
         onCancel={() => setConfirmSave(false)}
       />
     </RequirePermission>
