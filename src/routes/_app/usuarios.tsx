@@ -9,7 +9,7 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
-import { downloadCsv } from '#/helpers/export-csv'
+import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
 import { ROLES, roleLabel, type RoleName } from '#/helpers/permissions'
 import { userMessageFromError } from '#/lib/api'
 import {
@@ -54,21 +54,26 @@ function UsuariosPage() {
   })
 
   const [modalOpen, setModalOpen] = useState(false)
-  const [mode, setMode] = useState<'create' | 'edit' | 'view'>('create')
+  const [mode, setMode] = useState<'create' | 'edit'>('create')
   const [editing, setEditing] = useState<ResponseUser | null>(null)
   const [createForm, setCreateForm] = useState<CreateUserRequest>(defaultForm)
   const [editForm, setEditForm] = useState<EditForm>({ roles: [], statususer: 'ACTIVE' })
   const [confirmSave, setConfirmSave] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<ResponseUser | null>(null)
   const [createdCode, setCreatedCode] = useState<string | null>(null)
+  const [viewCode, setViewCode] = useState<string | null>(null)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: ResponseUser } | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
     if (!ctx) return
-    const h = () => closeCtx()
-    window.addEventListener('click', h)
-    return () => window.removeEventListener('click', h)
+    const h = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t?.closest('.ctx-menu')) return
+      closeCtx()
+    }
+    window.addEventListener('mousedown', h)
+    return () => window.removeEventListener('mousedown', h)
   }, [ctx, closeCtx])
 
   const openCreate = () => {
@@ -79,8 +84,8 @@ function UsuariosPage() {
     setModalOpen(true)
   }
 
-  const openRow = (row: ResponseUser, view: boolean) => {
-    setMode(view ? 'view' : 'edit')
+  const openEdit = (row: ResponseUser) => {
+    setMode('edit')
     setEditing(row)
     setEditForm({ roles: [...row.roles], statususer: row.statususer })
     setModalOpen(true)
@@ -202,7 +207,6 @@ function UsuariosPage() {
     [],
   )
 
-  const viewOnly = mode === 'view'
   const isCreate = mode === 'create'
 
   if (isLoading) return <div className="empty-state">Cargando usuarios…</div>
@@ -231,27 +235,38 @@ function UsuariosPage() {
         addLabel="Agregar usuario"
         canAdd={can('users:post')}
         onAdd={openCreate}
-        onExport={() =>
-          downloadCsv(
-            'usuarios.csv',
-            data.map((u) => ({
-              codigo: u.code,
-              username: u.username,
-              roles: u.roles.join('|'),
-              status: u.statususer,
-            })),
-          )
-        }
+        exportFilename="usuarios"
+        exportRows={data.map((u) => ({
+          codigo: u.code,
+          username: u.username,
+          roles: u.roles.join('|'),
+          status: u.statususer,
+        }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
       />
 
       {ctx ? (
         <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }}>
-          <button type="button" className="ctx-menu__item" onClick={() => openRow(ctx.row, true)}>
+          <button
+            type="button"
+            className="ctx-menu__item"
+            onClick={(e) => {
+              e.stopPropagation()
+              setViewCode(ctx.row.code)
+              closeCtx()
+            }}
+          >
             Ver
           </button>
           <Can permission="users:put">
-            <button type="button" className="ctx-menu__item" onClick={() => openRow(ctx.row, false)}>
+            <button
+              type="button"
+              className="ctx-menu__item"
+              onClick={(e) => {
+                e.stopPropagation()
+                openEdit(ctx.row)
+              }}
+            >
               Editar
             </button>
           </Can>
@@ -259,7 +274,8 @@ function UsuariosPage() {
             <button
               type="button"
               className="ctx-menu__item ctx-menu__item--danger"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation()
                 setConfirmDelete(ctx.row)
                 closeCtx()
               }}
@@ -270,45 +286,39 @@ function UsuariosPage() {
         </div>
       ) : null}
 
+      <UserFichaModal code={viewCode} onClose={() => setViewCode(null)} />
+
       <Modal
         open={modalOpen}
-        title={
-          viewOnly ? 'Ver usuario' : isCreate ? 'Nuevo usuario' : `Editar usuario ${editing?.code ?? ''}`
-        }
+        title={isCreate ? 'Nuevo usuario' : `Editar usuario ${editing?.code ?? ''}`}
         onClose={() => setModalOpen(false)}
         footer={
-          viewOnly ? (
+          <>
             <button type="button" className="btn btn--ghost" onClick={() => setModalOpen(false)}>
-              Cerrar
+              Cancelar
             </button>
-          ) : (
-            <>
-              <button type="button" className="btn btn--ghost" onClick={() => setModalOpen(false)}>
-                Cancelar
+            <Can permission={isCreate ? 'users:post' : 'users:put'}>
+              <button
+                type="button"
+                className="btn btn--primary"
+                data-testid={isCreate ? 'create-user-button' : 'save-user-button'}
+                disabled={
+                  isCreate
+                    ? createMut.isPending || createForm.roles.length === 0
+                    : saveEditMut.isPending || editForm.roles.length === 0
+                }
+                onClick={() => setConfirmSave(true)}
+              >
+                {isCreate
+                  ? createMut.isPending
+                    ? 'Creando…'
+                    : 'Crear y descargar PDF'
+                  : saveEditMut.isPending
+                    ? 'Guardando…'
+                    : 'Guardar'}
               </button>
-              <Can permission={isCreate ? 'users:post' : 'users:put'}>
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  data-testid={isCreate ? 'create-user-button' : 'save-user-button'}
-                  disabled={
-                    isCreate
-                      ? createMut.isPending || createForm.roles.length === 0
-                      : saveEditMut.isPending || editForm.roles.length === 0
-                  }
-                  onClick={() => setConfirmSave(true)}
-                >
-                  {isCreate
-                    ? createMut.isPending
-                      ? 'Creando…'
-                      : 'Crear y descargar PDF'
-                    : saveEditMut.isPending
-                      ? 'Guardando…'
-                      : 'Guardar'}
-                </button>
-              </Can>
-            </>
-          )
+            </Can>
+          </>
         }
       >
         {isCreate ? (
@@ -405,7 +415,6 @@ function UsuariosPage() {
                   >
                     <input
                       type="checkbox"
-                      disabled={viewOnly}
                       checked={editForm.roles.includes(role)}
                       onChange={() => toggleEditRole(role)}
                     />
@@ -416,7 +425,6 @@ function UsuariosPage() {
             </Field>
             <Field label="Estado">
               <Combobox
-                disabled={viewOnly}
                 value={editForm.statususer}
                 onChange={(v) => setEditForm((f) => ({ ...f, statususer: v }))}
                 options={STATUS_OPTIONS}
@@ -441,7 +449,7 @@ function UsuariosPage() {
       <ConfirmDialog
         open={Boolean(confirmDelete)}
         title="Eliminar usuario"
-        message={`¿Eliminar al usuario ${confirmDelete?.code} (${confirmDelete?.username})?`}
+        message={`¿Dar de baja al usuario ${confirmDelete?.code} (${confirmDelete?.username})? Es una eliminación lógica: el registro no se borra, queda inactivo.`}
         danger
         confirmLabel="Eliminar"
         onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.code)}

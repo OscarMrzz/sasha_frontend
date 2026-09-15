@@ -19,10 +19,10 @@ const emptyRow: AsistenciaItem = {
 }
 
 const TIPO_ASISTENCIA_OPTIONS = [
-  { value: 'presente', label: 'Presente' },
-  { value: 'ausente', label: 'Ausente' },
-  { value: 'tarde', label: 'Tarde' },
-  { value: 'justificado', label: 'Justificado' },
+  { value: 'presente', label: 'Asistió' },
+  { value: 'tarde', label: 'Llegada tarde' },
+  { value: 'injustificada', label: 'Falta' },
+  { value: 'justificada', label: 'Excusa' },
 ]
 
 function AsistenciaPage() {
