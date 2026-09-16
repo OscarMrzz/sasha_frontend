@@ -3,13 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { AsignacionFormModal } from '#/components/asignacion/AsignacionFormModal'
+import { CursoVerModal } from '#/components/catalogos/CursoVerModal'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
-import { downloadCsv } from '#/helpers/export-csv'
 import { userMessageFromError } from '#/lib/api'
 import {
   createCurso,
@@ -36,12 +37,13 @@ function CursosPage() {
   const { data = [], isLoading } = useQuery({ queryKey: ['cursos'], queryFn: listCursos })
 
   const [modalOpen, setModalOpen] = useState(false)
-  const [viewOnly, setViewOnly] = useState(false)
   const [editing, setEditing] = useState<Curso | null>(null)
   const [form, setForm] = useState<CursoCreate>(defaultForm)
   const [confirmDelete, setConfirmDelete] = useState<Curso | null>(null)
   const [confirmSave, setConfirmSave] = useState(false)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Curso } | null>(null)
+  const [verCurso, setVerCurso] = useState<Curso | null>(null)
+  const [asignarCurso, setAsignarCurso] = useState<Curso | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -53,14 +55,12 @@ function CursosPage() {
 
   const openCreate = () => {
     setEditing(null)
-    setViewOnly(false)
     setForm(defaultForm)
     setModalOpen(true)
   }
 
-  const openEdit = (row: Curso, view = false) => {
+  const openEdit = (row: Curso) => {
     setEditing(row)
-    setViewOnly(view)
     setForm({
       nombre: row.nombre,
       horas_semana_minimas: row.horas_semana_minimas,
@@ -69,6 +69,16 @@ function CursosPage() {
       detalles: row.detalles,
     })
     setModalOpen(true)
+    closeCtx()
+  }
+
+  const openVer = (row: Curso) => {
+    setVerCurso(row)
+    closeCtx()
+  }
+
+  const openAsignar = (row: Curso) => {
+    setAsignarCurso(row)
     closeCtx()
   }
 
@@ -126,25 +136,26 @@ function CursosPage() {
         addLabel="Agregar curso"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
-        onExport={() =>
-          downloadCsv(
-            'cursos.csv',
-            data.map((c) => ({
-              codigo: c.codigo,
-              nombre: c.nombre,
-              horas: c.horas_semana_minimas,
-              status: c.status,
-            })),
-          )
-        }
+        exportFilename="cursos"
+        exportRows={data.map((c) => ({
+          codigo: c.codigo,
+          nombre: c.nombre,
+          horas: c.horas_semana_minimas,
+          status: c.status,
+        }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
       />
 
       {ctx ? (
         <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }}>
-          <button type="button" className="ctx-menu__item" onClick={() => openEdit(ctx.row, true)}>
+          <button type="button" className="ctx-menu__item" onClick={() => openVer(ctx.row)}>
             Ver
           </button>
+          <Can permission="asignacion:post">
+            <button type="button" className="ctx-menu__item" onClick={() => openAsignar(ctx.row)}>
+              Asignar maestro
+            </button>
+          </Can>
           <Can permission="catalogos:put">
             <button type="button" className="ctx-menu__item" onClick={() => openEdit(ctx.row)}>
               Editar
@@ -167,25 +178,19 @@ function CursosPage() {
 
       <Modal
         open={modalOpen}
-        title={viewOnly ? 'Ver curso' : editing ? 'Editar curso' : 'Nuevo curso'}
+        title={editing ? 'Editar curso' : 'Nuevo curso'}
         onClose={() => setModalOpen(false)}
         footer={
-          viewOnly ? (
+          <>
             <button type="button" className="btn btn--ghost" onClick={() => setModalOpen(false)}>
-              Cerrar
+              Cancelar
             </button>
-          ) : (
-            <>
-              <button type="button" className="btn btn--ghost" onClick={() => setModalOpen(false)}>
-                Cancelar
+            <Can permission={editing ? 'catalogos:put' : 'catalogos:post'}>
+              <button type="button" className="btn btn--primary" onClick={() => setConfirmSave(true)}>
+                Guardar
               </button>
-              <Can permission={editing ? 'catalogos:put' : 'catalogos:post'}>
-                <button type="button" className="btn btn--primary" onClick={() => setConfirmSave(true)}>
-                  Guardar
-                </button>
-              </Can>
-            </>
-          )
+            </Can>
+          </>
         }
       >
         <Field label="Nombre" htmlFor="curso-nombre">
@@ -193,7 +198,6 @@ function CursosPage() {
             id="curso-nombre"
             className="field__input"
             data-testid="curso-nombre-input"
-            disabled={viewOnly}
             value={form.nombre}
             onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
           />
@@ -202,14 +206,12 @@ function CursosPage() {
           <input
             type="number"
             className="field__input"
-            disabled={viewOnly}
             value={form.horas_semana_minimas}
             onChange={(e) => setForm((f) => ({ ...f, horas_semana_minimas: Number(e.target.value) }))}
           />
         </Field>
         <Field label="Estado">
           <Combobox
-            disabled={viewOnly}
             value={form.status}
             onChange={(v) => setForm((f) => ({ ...f, status: v }))}
             options={STATUS_OPTIONS}
@@ -219,12 +221,32 @@ function CursosPage() {
         <Field label="Código SACE">
           <input
             className="field__input"
-            disabled={viewOnly}
             value={form.codigo_sace ?? ''}
             onChange={(e) => setForm((f) => ({ ...f, codigo_sace: e.target.value }))}
           />
         </Field>
       </Modal>
+
+      <CursoVerModal
+        open={Boolean(verCurso)}
+        curso={verCurso}
+        onClose={() => setVerCurso(null)}
+        onAsignar={
+          verCurso
+            ? () => {
+                setAsignarCurso(verCurso)
+                setVerCurso(null)
+              }
+            : undefined
+        }
+      />
+
+      <AsignacionFormModal
+        open={Boolean(asignarCurso)}
+        cursoId={asignarCurso?.id}
+        cursoNombre={asignarCurso?.nombre}
+        onClose={() => setAsignarCurso(null)}
+      />
 
       <ConfirmDialog
         open={confirmSave}
