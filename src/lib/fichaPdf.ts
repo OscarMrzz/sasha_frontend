@@ -48,14 +48,20 @@ export function downloadFichaPdf(ficha: UserFicha) {
   doc.text(`Ficha de usuario · ${u.code}`, 14, 22)
 
   let y = 28
+  const alumnoMatricula = ficha.alumno?.matriculas.find((x) => x.status === 'ACTIVE') ?? ficha.alumno?.matriculas[0]
   y = kvTable(doc, y, 'Cuenta', [
     ['Código', u.code],
     ['Username', u.username],
     ['Roles', u.roles.map((r) => roleLabel(r)).join(', ') || '—'],
     ['Estado', u.statususer],
+    ...(alumnoMatricula
+      ? ([['Grado / sección', `${alumnoMatricula.grado} · sec ${alumnoMatricula.seccion}`]] as [string, string][])
+      : []),
   ])
 
   const op = ficha.operativo
+  const isMaestro = Boolean(ficha.maestro)
+  const isAlumno = Boolean(ficha.alumno)
   if (op) {
     const clase =
       op.clase_actual.length > 0
@@ -68,17 +74,22 @@ export function downloadFichaPdf(ficha: UserFicha) {
       ['Clase actual', clase],
     ])
     if (op.horario_dia.length) {
+      const head = ['Hora', 'Curso']
+      if (isMaestro) head.push('Grado / sección')
+      if (isAlumno) head.push('Maestro', 'Asistencia')
       y = dataTable(
         doc,
         y + 8,
         'Horario del día',
-        ['Hora', 'Curso', 'Sección', 'Asistencia'],
-        op.horario_dia.map((s) => [
-          `${s.hora_inicio}-${s.hora_fin}`,
-          s.curso_nombre,
-          `${s.grado_nombre} sec ${s.seccion_nombre}`,
-          s.asistencia_nombre || labelAsistencia(s.asistencia_codigo),
-        ]),
+        head,
+        op.horario_dia.map((s) => {
+          const row = [`${s.hora_inicio}-${s.hora_fin}`, s.curso_nombre]
+          if (isMaestro) row.push(`${s.grado_nombre} sec ${s.seccion_nombre}`)
+          if (isAlumno) {
+            row.push(dash(s.maestro_nombre), s.asistencia_nombre || labelAsistencia(s.asistencia_codigo))
+          }
+          return row
+        }),
       )
     }
   }
@@ -155,12 +166,26 @@ export function downloadFichaPdf(ficha: UserFicha) {
 
   const m = ficha.maestro
   if (m) {
+    const diasCorto = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
     y = dataTable(
       doc,
       y + 8,
-      'Asignación docente',
-      ['Curso', 'Sección', 'Periodo', 'Estado'],
-      m.asignaciones.map((as) => [as.curso, as.seccion, as.periodo, as.status]),
+      'Cursos',
+      ['Curso', 'Grado', 'Sección', 'Periodo', 'Horarios', 'Estado'],
+      m.asignaciones.length
+        ? m.asignaciones.map((as) => [
+            as.curso,
+            dash(as.grado),
+            as.seccion,
+            as.periodo,
+            as.horarios?.length
+              ? as.horarios
+                  .map((h) => `${diasCorto[h.dia_semana] ?? h.dia_semana} ${h.hora_inicio}–${h.hora_fin}`)
+                  .join(', ')
+              : '—',
+            as.status,
+          ])
+        : [['—', '—', '—', '—', '—', '—']],
     )
     if (m.disponibilidad.length) {
       y = dataTable(

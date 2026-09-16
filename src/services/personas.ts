@@ -146,7 +146,14 @@ export interface UserFicha {
   }
   maestro?: {
     id: string
-    asignaciones: { curso: string; seccion: string; periodo: string; status: string }[]
+    asignaciones: {
+      curso: string
+      grado?: string
+      seccion: string
+      periodo: string
+      status: string
+      horarios?: { dia_semana: number; hora_inicio: string; hora_fin: string }[]
+    }[]
     disponibilidad: {
       modalidad?: string
       dia_semana?: number

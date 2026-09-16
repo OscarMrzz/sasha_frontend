@@ -18,8 +18,16 @@ import {
 } from '#/services/personas'
 
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+const DIAS_CORTO = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const yn = (v: boolean) => (v ? 'Sí' : 'No')
 const dash = (v?: string | number | null) => (v === undefined || v === null || v === '' ? '—' : String(v))
+
+function formatHorarios(horarios?: { dia_semana: number; hora_inicio: string; hora_fin: string }[]) {
+  if (!horarios?.length) return '—'
+  return horarios
+    .map((h) => `${DIAS_CORTO[h.dia_semana] ?? h.dia_semana} ${h.hora_inicio}–${h.hora_fin}`)
+    .join(', ')
+}
 
 function joinName(p?: UserFicha['perfil']) {
   if (!p) return ''
@@ -137,7 +145,7 @@ function OperativoSections({
                 <tr>
                   <th>Hora</th>
                   <th>Curso</th>
-                  <th>Grado / sección</th>
+                  {isMaestro ? <th>Grado / sección</th> : null}
                   {isAlumno ? <th>Maestro</th> : null}
                   {isAlumno ? <th>Asistencia</th> : null}
                 </tr>
@@ -149,9 +157,11 @@ function OperativoSections({
                       {s.hora_inicio}–{s.hora_fin}
                     </td>
                     <td>{s.curso_nombre}</td>
-                    <td>
-                      {s.grado_nombre} sec {s.seccion_nombre}
-                    </td>
+                    {isMaestro ? (
+                      <td>
+                        {s.grado_nombre} sec {s.seccion_nombre}
+                      </td>
+                    ) : null}
                     {isAlumno ? <td>{s.maestro_nombre}</td> : null}
                     {isAlumno ? (
                       <td>
@@ -277,8 +287,15 @@ function OperativoSections({
   )
 }
 
+function matriculaActivaLabel(alumno: NonNullable<UserFicha['alumno']>) {
+  const m = alumno.matriculas.find((x) => x.status === 'ACTIVE') ?? alumno.matriculas[0]
+  if (!m) return null
+  return `${m.grado} · sec ${m.seccion}`
+}
+
 function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null }) {
   const { user, perfil, alumno, maestro, responsable, operativo } = ficha
+  const alumnoGradoSeccion = alumno ? matriculaActivaLabel(alumno) : null
   return (
     <div className="ficha" data-testid="user-ficha">
       <div className="ficha__hero">
@@ -295,6 +312,7 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
           <p className="ficha__name">{joinName(perfil) || user.username}</p>
           <p className="texto-muted" style={{ margin: '0.2rem 0 0.6rem' }}>
             {user.code} · {user.username}
+            {alumnoGradoSeccion ? ` · ${alumnoGradoSeccion}` : ''}
           </p>
           <span className="ficha__chips">
             {user.roles.map((r) => (
@@ -464,16 +482,18 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
 
       {maestro ? (
         <>
-          <Section title="Maestro · asignaciones">
+          <Section title="Cursos">
             {maestro.asignaciones.length === 0 ? (
-              <p className="texto-muted">Sin asignaciones docentes.</p>
+              <p className="texto-muted">Sin cursos asignados.</p>
             ) : (
-              <table className="ficha-table">
+              <table className="ficha-table" data-testid="ficha-maestro-cursos">
                 <thead>
                   <tr>
                     <th>Curso</th>
+                    <th>Grado</th>
                     <th>Sección</th>
                     <th>Periodo</th>
+                    <th>Horarios</th>
                     <th>Estado</th>
                   </tr>
                 </thead>
@@ -481,8 +501,10 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
                   {maestro.asignaciones.map((as, i) => (
                     <tr key={`${as.curso}-${as.seccion}-${as.periodo}-${i}`}>
                       <td>{as.curso}</td>
+                      <td>{dash(as.grado)}</td>
                       <td>{as.seccion}</td>
                       <td>{as.periodo}</td>
+                      <td>{formatHorarios(as.horarios)}</td>
                       <td>
                         <span className="badge">{as.status}</span>
                       </td>
