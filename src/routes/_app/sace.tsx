@@ -6,6 +6,7 @@ import { RequirePermission } from '#/components/gates/Can'
 import { Combobox } from '#/components/ui/Combobox'
 import { Field } from '#/components/ui/Field'
 import { userMessageFromError } from '#/lib/api'
+import { periodoSelectOptions } from '#/helpers/periodos'
 import { listCursos, listGrados, listPeriodos, listSecciones } from '#/services/catalogos'
 import { exportSace, type SaceExportDocument } from '#/services/sace'
 
@@ -74,7 +75,7 @@ function SacePage() {
             data-testid="sace-periodo-select"
             value={periodoId}
             onChange={setPeriodoId}
-            options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+            options={periodoSelectOptions(periodos)}
             placeholder="Buscar periodo…"
           />
         </Field>

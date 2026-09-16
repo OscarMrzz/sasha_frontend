@@ -10,8 +10,8 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
-import { downloadCsv } from '#/helpers/export-csv'
 import { userMessageFromError } from '#/lib/api'
+import { periodoSelectOptions } from '#/helpers/periodos'
 import {
   listCursos,
   listGrados,
@@ -148,17 +148,13 @@ function MatriculaPage() {
             </button>
           </Can>
         }
-        onExport={() =>
-          downloadCsv(
-            'matriculas.csv',
-            data.map((m) => ({
-              alumno: m.alumno_code ?? m.alumno_id,
-              grado: m.grado_nombre,
-              reingreso: m.es_reingreso,
-              status: m.status,
-            })),
-          )
-        }
+        exportFilename="matriculas"
+        exportRows={data.map((m) => ({
+          alumno: m.alumno_code ?? m.alumno_id,
+          grado: m.grado_nombre,
+          reingreso: m.es_reingreso,
+          status: m.status,
+        }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
       />
 
@@ -254,11 +250,7 @@ function MatriculaPage() {
             id="reingreso-periodo"
             value={reingresoPeriodo}
             onChange={setReingresoPeriodo}
-            options={periodos.map((p) => ({
-              value: p.id,
-              label: p.nombre,
-              keywords: String(p.anio_lectivo),
-            }))}
+            options={periodoSelectOptions(periodos)}
             placeholder="Buscar periodo…"
           />
         </Field>

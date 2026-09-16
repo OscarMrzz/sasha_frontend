@@ -1,5 +1,5 @@
-import { useMutation } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { PhotoCapture } from '#/components/matricula/PhotoCapture'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
@@ -9,7 +9,14 @@ import { Modal } from '#/components/ui/Modal'
 import { WizardSteps } from '#/components/ui/WizardSteps'
 import { userMessageFromError } from '#/lib/api'
 import { upload } from '#/services/boveda'
-import type { Curso, Grado, Modalidad, Periodo, Seccion } from '#/services/catalogos'
+import { periodoSelectOptions } from '#/helpers/periodos'
+import type { Curso, Grado, ListaItem, Modalidad, Periodo, Seccion } from '#/services/catalogos'
+import {
+  listAlergias,
+  listCondicionesAprendizaje,
+  listParentescos,
+  listProfesiones,
+} from '#/services/catalogos'
 import { createMatricula, linkResponsable } from '#/services/matricula'
 import { createAlumno, createResponsable, getResponsableByCode } from '#/services/personas'
 import { createUser } from '#/services/users'
@@ -40,7 +47,6 @@ type AlumnoForm = {
   fecha_nacimiento: string
   telefono_contacto: string
   numero_identidad: string
-  tipo_documento_identidad: string
 }
 
 type HistorialForm = {
@@ -94,7 +100,6 @@ const emptyAlumno: AlumnoForm = {
   fecha_nacimiento: '',
   telefono_contacto: '',
   numero_identidad: '',
-  tipo_documento_identidad: 'HND',
 }
 
 const emptyHistorial: HistorialForm = {
@@ -130,7 +135,7 @@ function newResponsable(esPrincipal = false): ResponsableCard {
     primer_apellido: '',
     segundo_apellido: '',
     telefono_contacto: '',
-    parentesco: 'padre/madre',
+    parentesco: '',
     profesion: '',
     direccion_domicilio: '',
     direccion_trabajo: '',
@@ -182,9 +187,36 @@ function calcEdad(fecha: string): number | null {
   return age >= 0 ? age : null
 }
 
+function onlyDigits(s: string, max: number) {
+  return s.replace(/\D/g, '').slice(0, max)
+}
+
+function isTelefonoHN(s: string) {
+  return /^\d{8}$/.test(s)
+}
+
+function isIdentidadHN(s: string) {
+  return /^\d{13}$/.test(s)
+}
+
+function listaOptions(items: ListaItem[]) {
+  return items.map((i) => ({ value: i.nombre, label: i.nombre }))
+}
+
+function validateTelefono(label: string, value: string): string | null {
+  const t = value.trim()
+  if (!t) return null
+  if (!isTelefonoHN(t)) return `${label} debe tener 8 dígitos (ej. 88721992)`
+  return null
+}
+
 function validateResponsable(r: ResponsableCard): string | null {
   if (!r.mode) return 'Indica si el responsable ya está registrado'
   if (!r.parentesco.trim()) return 'Indica el parentesco de cada responsable'
+  const tel = validateTelefono('El teléfono de contacto', r.telefono_contacto)
+  if (tel) return tel
+  const telTrab = validateTelefono('El teléfono de trabajo', r.telefono_trabajo)
+  if (telTrab) return telTrab
   if (r.mode === 'existente') {
     if (!r.responsable_id) return 'Busca y confirma cada responsable existente por su código'
   } else if (!r.primer_nombre.trim() || !r.primer_apellido.trim()) {
@@ -203,6 +235,7 @@ export function MatriculaWizard({
   modalidades,
   cursos,
 }: Props) {
+  const qc = useQueryClient()
   const [step, setStep] = useState(0)
   const [alumno, setAlumno] = useState<AlumnoForm>(emptyAlumno)
   const [historial, setHistorial] = useState<HistorialForm>(emptyHistorial)
@@ -213,16 +246,45 @@ export function MatriculaWizard({
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [createdCode, setCreatedCode] = useState<string | null>(null)
   const [buscandoRespId, setBuscandoRespId] = useState<string | null>(null)
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null)
 
-  const periodoOptions = useMemo(
-    () =>
-      periodos.map((p) => ({
-        value: p.id,
-        label: p.nombre,
-        keywords: String(p.anio_lectivo),
-      })),
-    [periodos],
-  )
+  const { data: alergiasCat = [] } = useQuery({
+    queryKey: ['catalogo-alergias'],
+    queryFn: listAlergias,
+    enabled: open,
+  })
+  const { data: condicionesCat = [] } = useQuery({
+    queryKey: ['catalogo-condiciones'],
+    queryFn: listCondicionesAprendizaje,
+    enabled: open,
+  })
+  const { data: parentescosCat = [] } = useQuery({
+    queryKey: ['catalogo-parentescos'],
+    queryFn: listParentescos,
+    enabled: open,
+  })
+  const { data: profesionesCat = [] } = useQuery({
+    queryKey: ['catalogo-profesiones'],
+    queryFn: listProfesiones,
+    enabled: open,
+  })
+
+  const alergiaOptions = useMemo(() => listaOptions(alergiasCat), [alergiasCat])
+  const condicionOptions = useMemo(() => listaOptions(condicionesCat), [condicionesCat])
+  const parentescoOptions = useMemo(() => listaOptions(parentescosCat), [parentescosCat])
+  const profesionOptions = useMemo(() => listaOptions(profesionesCat), [profesionesCat])
+
+  useEffect(() => {
+    if (!foto) {
+      setFotoUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(foto)
+    setFotoUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [foto])
+
+  const periodoOptions = useMemo(() => periodoSelectOptions(periodos), [periodos])
   const gradoOptions = useMemo(
     () =>
       grados.map((g) => ({
@@ -308,6 +370,11 @@ export function MatriculaWizard({
       }
       if (!alumno.sexo) return 'Selecciona el sexo del alumno'
       if (!alumno.fecha_nacimiento) return 'Indica la fecha de nacimiento'
+      const telAl = validateTelefono('El teléfono de contacto', alumno.telefono_contacto)
+      if (telAl) return telAl
+      if (alumno.numero_identidad.trim() && !isIdentidadHN(alumno.numero_identidad.trim())) {
+        return 'El número de identidad debe tener 13 dígitos (ej. 1804199704869)'
+      }
     }
     if (i === 1) {
       if (historial.procede_otra_institucion === null) {
@@ -419,7 +486,7 @@ export function MatriculaWizard({
         primer_apellido: alumno.primer_apellido.trim(),
         segundo_apellido: alumno.segundo_apellido.trim() || undefined,
         numero_identidad: alumno.numero_identidad.trim() || undefined,
-        tipo_documento_identidad: alumno.tipo_documento_identidad.trim() || undefined,
+        tipo_documento_identidad: 'HND',
         fecha_nacimiento: alumno.fecha_nacimiento || undefined,
         sexo: alumno.sexo || undefined,
         telefono_contacto: alumno.telefono_contacto.trim() || undefined,
@@ -519,6 +586,10 @@ export function MatriculaWizard({
     onSuccess: (code) => {
       setCreatedCode(code)
       setConfirmSave(false)
+      qc.invalidateQueries({ queryKey: ['catalogo-alergias'] })
+      qc.invalidateQueries({ queryKey: ['catalogo-condiciones'] })
+      qc.invalidateQueries({ queryKey: ['catalogo-parentescos'] })
+      qc.invalidateQueries({ queryKey: ['catalogo-profesiones'] })
       toast.success(`Matrícula registrada. Código alumno: ${code}`)
       onCreated()
     },
@@ -585,7 +656,7 @@ export function MatriculaWizard({
                 </button>
               ) : null}
               {step < STEPS.length - 1 ? (
-                <button type="button" className="btn btn--primary" onClick={goNext}>
+                <button type="button" className="btn btn--primary" data-testid="matricula-wizard-next" onClick={goNext}>
                   Siguiente
                 </button>
               ) : (
@@ -696,26 +767,26 @@ export function MatriculaWizard({
                 <input
                   className="field__input"
                   data-testid="matricula-telefono"
+                  inputMode="numeric"
+                  maxLength={8}
+                  placeholder="88721992"
                   value={alumno.telefono_contacto}
-                  onChange={(e) => setAlumno((f) => ({ ...f, telefono_contacto: e.target.value }))}
-                />
-              </Field>
-              <Field label="Tipo documento">
-                <input
-                  className="field__input"
-                  value={alumno.tipo_documento_identidad}
                   onChange={(e) =>
-                    setAlumno((f) => ({ ...f, tipo_documento_identidad: e.target.value }))
+                    setAlumno((f) => ({ ...f, telefono_contacto: onlyDigits(e.target.value, 8) }))
                   }
-                  placeholder="HND"
                 />
               </Field>
               <Field label="Número de identidad">
                 <input
                   className="field__input"
                   data-testid="matricula-identidad"
+                  inputMode="numeric"
+                  maxLength={13}
+                  placeholder="1804199704869"
                   value={alumno.numero_identidad}
-                  onChange={(e) => setAlumno((f) => ({ ...f, numero_identidad: e.target.value }))}
+                  onChange={(e) =>
+                    setAlumno((f) => ({ ...f, numero_identidad: onlyDigits(e.target.value, 13) }))
+                  }
                 />
               </Field>
             </div>
@@ -778,19 +849,23 @@ export function MatriculaWizard({
                 </p>
                 {historial.alergias.map((a, idx) => (
                   <Field key={`alergia-${idx}`} label={idx === 0 ? 'Alergia' : `Alergia ${idx + 1}`}>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <input
-                        className="field__input"
-                        data-testid={idx === 0 ? 'matricula-alergia' : undefined}
-                        value={a}
-                        onChange={(e) =>
-                          setHistorial((f) => {
-                            const next = [...f.alergias]
-                            next[idx] = e.target.value
-                            return { ...f, alergias: next }
-                          })
-                        }
-                      />
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Combobox
+                          data-testid={idx === 0 ? 'matricula-alergia' : undefined}
+                          allowCustom
+                          value={a}
+                          onChange={(v) =>
+                            setHistorial((f) => {
+                              const next = [...f.alergias]
+                              next[idx] = v
+                              return { ...f, alergias: next }
+                            })
+                          }
+                          options={alergiaOptions}
+                          placeholder="Elegir o escribir…"
+                        />
+                      </div>
                       {historial.alergias.length > 1 ? (
                         <button
                           type="button"
@@ -841,20 +916,24 @@ export function MatriculaWizard({
                     {historial.condiciones_aprendizaje.map((c, idx) => (
                       <Field
                         key={`cond-${idx}`}
-                        label={idx === 0 ? 'Descripción' : `Descripción ${idx + 1}`}
+                        label={idx === 0 ? 'Condición' : `Condición ${idx + 1}`}
                       >
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <input
-                            className="field__input"
-                            value={c}
-                            onChange={(e) =>
-                              setHistorial((f) => {
-                                const next = [...f.condiciones_aprendizaje]
-                                next[idx] = e.target.value
-                                return { ...f, condiciones_aprendizaje: next }
-                              })
-                            }
-                          />
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <Combobox
+                              allowCustom
+                              value={c}
+                              onChange={(v) =>
+                                setHistorial((f) => {
+                                  const next = [...f.condiciones_aprendizaje]
+                                  next[idx] = v
+                                  return { ...f, condiciones_aprendizaje: next }
+                                })
+                              }
+                              options={condicionOptions}
+                              placeholder="Elegir o escribir…"
+                            />
+                          </div>
                           {historial.condiciones_aprendizaje.length > 1 ? (
                             <button
                               type="button"
@@ -1311,10 +1390,12 @@ export function MatriculaWizard({
                     ) : null}
                     <div className="wizard-grid">
                       <Field label="Parentesco">
-                        <input
-                          className="field__input"
+                        <Combobox
+                          allowCustom
                           value={r.parentesco}
-                          onChange={(e) => updateResp(r.id, { parentesco: e.target.value })}
+                          onChange={(v) => updateResp(r.id, { parentesco: v })}
+                          options={parentescoOptions}
+                          placeholder="Elegir o escribir…"
                         />
                       </Field>
                       <label
@@ -1369,22 +1450,31 @@ export function MatriculaWizard({
                     <Field label="Teléfono de contacto">
                       <input
                         className="field__input"
+                        inputMode="numeric"
+                        maxLength={8}
+                        placeholder="88721992"
                         value={r.telefono_contacto}
-                        onChange={(e) => updateResp(r.id, { telefono_contacto: e.target.value })}
+                        onChange={(e) =>
+                          updateResp(r.id, { telefono_contacto: onlyDigits(e.target.value, 8) })
+                        }
                       />
                     </Field>
                     <Field label="Parentesco">
-                      <input
-                        className="field__input"
+                      <Combobox
+                        allowCustom
                         value={r.parentesco}
-                        onChange={(e) => updateResp(r.id, { parentesco: e.target.value })}
+                        onChange={(v) => updateResp(r.id, { parentesco: v })}
+                        options={parentescoOptions}
+                        placeholder="Elegir o escribir…"
                       />
                     </Field>
                     <Field label="Profesión">
-                      <input
-                        className="field__input"
+                      <Combobox
+                        allowCustom
                         value={r.profesion}
-                        onChange={(e) => updateResp(r.id, { profesion: e.target.value })}
+                        onChange={(v) => updateResp(r.id, { profesion: v })}
+                        options={profesionOptions}
+                        placeholder="Elegir o escribir…"
                       />
                     </Field>
                     <div className="wizard-grid--full">
@@ -1408,8 +1498,13 @@ export function MatriculaWizard({
                     <Field label="Teléfono de trabajo">
                       <input
                         className="field__input"
+                        inputMode="numeric"
+                        maxLength={8}
+                        placeholder="88721992"
                         value={r.telefono_trabajo}
-                        onChange={(e) => updateResp(r.id, { telefono_trabajo: e.target.value })}
+                        onChange={(e) =>
+                          updateResp(r.id, { telefono_trabajo: onlyDigits(e.target.value, 8) })
+                        }
                       />
                     </Field>
                     <label className="wizard-grid--full" style={{ fontSize: '0.85rem' }}>
@@ -1454,6 +1549,18 @@ export function MatriculaWizard({
               código y contraseña.
             </p>
             <div className="wizard-summary">
+              {fotoUrl ? (
+                <div className="wizard-summary__photo">
+                  <div className="photo-capture__frame" aria-label="Fotografía del alumno">
+                    <img src={fotoUrl} alt="Fotografía del alumno" className="photo-capture__img" />
+                  </div>
+                </div>
+              ) : (
+                <div className="wizard-summary__row">
+                  <span className="wizard-summary__label">Foto</span>
+                  <span className="wizard-summary__value">Sin foto</span>
+                </div>
+              )}
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Alumno</span>
                 <span className="wizard-summary__value">{fullName(alumno)}</span>
@@ -1483,7 +1590,7 @@ export function MatriculaWizard({
                 <div className="wizard-summary__row">
                   <span className="wizard-summary__label">Identidad</span>
                   <span className="wizard-summary__value">
-                    {alumno.tipo_documento_identidad} {alumno.numero_identidad}
+                  <span className="wizard-summary__value">{alumno.numero_identidad}</span>
                   </span>
                 </div>
               ) : null}
@@ -1554,10 +1661,6 @@ export function MatriculaWizard({
                     })
                     .join('; ')}
                 </span>
-              </div>
-              <div className="wizard-summary__row">
-                <span className="wizard-summary__label">Foto</span>
-                <span className="wizard-summary__value">{foto ? foto.name : 'Sin foto'}</span>
               </div>
             </div>
           </div>

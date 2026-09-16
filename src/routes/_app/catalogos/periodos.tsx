@@ -9,7 +9,6 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
-import { downloadCsv } from '#/helpers/export-csv'
 import { userMessageFromError } from '#/lib/api'
 import {
   createPeriodo,
@@ -19,6 +18,7 @@ import {
   type Periodo,
   type PeriodoCreate,
 } from '#/services/catalogos'
+import { periodoEstadoPalabra } from '#/helpers/periodos'
 
 export const Route = createFileRoute('/_app/catalogos/periodos')({ component: PeriodosPage })
 
@@ -28,12 +28,12 @@ const defaultForm: PeriodoCreate = {
   anio_lectivo: new Date().getFullYear(),
   fecha_inicio: '',
   fecha_fin: '',
-  status: 'ACTIVE',
+  status: 'INACTIVE',
 }
 
 const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'ACTIVE' },
-  { value: 'INACTIVE', label: 'INACTIVE' },
+  { value: 'ACTIVE', label: 'Activo' },
+  { value: 'INACTIVE', label: 'Inactivo' },
 ]
 
 function PeriodosPage() {
@@ -114,7 +114,17 @@ function PeriodosPage() {
         header: 'Fin',
         cell: (i) => String(i.getValue()).slice(0, 10),
       }),
-      col.accessor('status', { header: 'Estado', cell: (i) => <span className="badge">{i.getValue()}</span> }),
+      col.accessor('status', {
+        header: 'Estado',
+        cell: (i) => {
+          const activo = i.getValue() === 'ACTIVE'
+          return (
+            <span className={`badge${activo ? '' : ' badge--muted'}`}>
+              {periodoEstadoPalabra(String(i.getValue()))}
+            </span>
+          )
+        },
+      }),
     ],
     [],
   )
@@ -123,7 +133,12 @@ function PeriodosPage() {
     () => [
       { id: 'nombre', label: 'Nombre', getValue: (r: Periodo) => r.nombre },
       { id: 'anio_lectivo', label: 'Año lectivo', getValue: (r: Periodo) => String(r.anio_lectivo) },
-      { id: 'status', label: 'Estado', getValue: (r: Periodo) => r.status },
+      {
+        id: 'status',
+        label: 'Estado',
+        getValue: (r: Periodo) => r.status,
+        getLabel: (r: Periodo) => periodoEstadoPalabra(r.status),
+      },
     ],
     [],
   )
@@ -140,18 +155,14 @@ function PeriodosPage() {
         addLabel="Agregar periodo"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
-        onExport={() =>
-          downloadCsv(
-            'periodos.csv',
-            data.map((p) => ({
-              nombre: p.nombre,
-              anio: p.anio_lectivo,
-              inicio: p.fecha_inicio,
-              fin: p.fecha_fin,
-              status: p.status,
-            })),
-          )
-        }
+        exportFilename="periodos"
+        exportRows={data.map((p) => ({
+          nombre: p.nombre,
+          anio: p.anio_lectivo,
+          inicio: p.fecha_inicio,
+          fin: p.fecha_fin,
+          status: p.status,
+        }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
       />
 
@@ -256,7 +267,11 @@ function PeriodosPage() {
       <ConfirmDialog
         open={confirmSave}
         title="Confirmar guardado"
-        message="¿Guardar los datos del periodo?"
+        message={
+          form.status === 'ACTIVE'
+            ? '¿Guardar el periodo como activo? Si había otro activo, pasará a inactivo.'
+            : '¿Guardar los datos del periodo?'
+        }
         onConfirm={() => saveMut.mutate()}
         onCancel={() => setConfirmSave(false)}
       />

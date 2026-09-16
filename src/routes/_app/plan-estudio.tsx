@@ -7,6 +7,7 @@ import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { userMessageFromError } from '#/lib/api'
+import { periodoSelectOptions } from '#/helpers/periodos'
 import { listPeriodos } from '#/services/catalogos'
 import { listAsignaciones } from '#/services/asignacion'
 import {
@@ -127,7 +128,7 @@ function PlanEstudioPage() {
             <Combobox
               value={createForm.periodo_academico_id}
               onChange={(v) => setCreateForm((f) => ({ ...f, periodo_academico_id: v }))}
-              options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+              options={periodoSelectOptions(periodos)}
               placeholder="Buscar periodo…"
             />
           </Field>

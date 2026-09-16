@@ -20,6 +20,7 @@ import { Modal } from '#/components/ui/Modal'
 import { WizardSteps } from '#/components/ui/WizardSteps'
 import { addMinutes, buildClassSlots, mergeTimeIntervals, suggestRecess, type TimeInterval } from '#/lib/horarioGrid'
 import { userMessageFromError } from '#/lib/api'
+import { periodoSelectOptions } from '#/helpers/periodos'
 import { listAsignaciones } from '#/services/asignacion'
 import {
   listCursos,
@@ -548,7 +549,7 @@ function HorariosPage() {
             onChange={setListPeriodoId}
             options={[
               { value: '', label: 'Todos los periodos' },
-              ...periodos.map((p) => ({ value: p.id, label: p.nombre })),
+              ...periodoSelectOptions(periodos),
             ]}
             placeholder="Filtrar por periodo…"
           />
@@ -648,7 +649,7 @@ function HorariosPage() {
                   value={periodoId}
                   onChange={setPeriodoId}
                   disabled={isEditing}
-                  options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+                  options={periodoSelectOptions(periodos)}
                   placeholder="Buscar periodo…"
                 />
               </Field>

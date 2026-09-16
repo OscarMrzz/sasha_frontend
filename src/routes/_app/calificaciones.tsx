@@ -10,6 +10,7 @@ import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { useSession } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
+import { periodoSelectOptions } from '#/helpers/periodos'
 import { listPeriodos } from '#/services/catalogos'
 import {
   getNotas,
@@ -204,7 +205,7 @@ function CalificacionesPage() {
             <Combobox
               value={libForm.periodo_academico_id}
               onChange={(v) => setLibForm((f) => ({ ...f, periodo_academico_id: v }))}
-              options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+              options={periodoSelectOptions(periodos)}
               placeholder="Buscar periodo…"
             />
           </Field>
@@ -258,7 +259,7 @@ function CalificacionesPage() {
               <Combobox
                 value={notasPeriodo}
                 onChange={setNotasPeriodo}
-                options={periodos.map((p) => ({ value: p.id, label: p.nombre }))}
+                options={periodoSelectOptions(periodos)}
                 placeholder="Buscar periodo…"
               />
             </Field>
