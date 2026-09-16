@@ -7,7 +7,6 @@ import { RequirePermission, Can } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
-import { downloadCsv } from '#/helpers/export-csv'
 import { userMessageFromError } from '#/lib/api'
 import {
   cobro,
@@ -246,17 +245,13 @@ function PagosPage() {
             data={mora}
             columns={moraColumns}
             filters={moraFilters}
-            onExport={() =>
-              downloadCsv(
-                'mora.csv',
-                mora.map((o) => ({
-                  tipo: o.tipo_pago_codigo,
-                  monto: o.monto,
-                  vencimiento: o.fecha_vencimiento,
-                  estado: o.estado,
-                })),
-              )
-            }
+            exportFilename="mora"
+            exportRows={mora.map((o) => ({
+              tipo: o.tipo_pago_codigo,
+              monto: o.monto,
+              vencimiento: o.fecha_vencimiento,
+              estado: o.estado,
+            }))}
           />
         )
       ) : null}

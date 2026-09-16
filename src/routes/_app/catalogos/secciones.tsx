@@ -9,7 +9,6 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
-import { downloadCsv } from '#/helpers/export-csv'
 import { userMessageFromError } from '#/lib/api'
 import {
   createSeccion,
@@ -154,18 +153,14 @@ function SeccionesPage() {
         addLabel="Agregar sección"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
-        onExport={() =>
-          downloadCsv(
-            'secciones.csv',
-            data.map((s) => ({
-              codigo: s.codigo,
-              nombre: s.nombre,
-              grado: gradoMap[s.grado_id],
-              modalidad: modalidadMap[s.modalidad_id],
-              status: s.status,
-            })),
-          )
-        }
+        exportFilename="secciones"
+        exportRows={data.map((s) => ({
+          codigo: s.codigo,
+          nombre: s.nombre,
+          grado: gradoMap[s.grado_id],
+          modalidad: modalidadMap[s.modalidad_id],
+          status: s.status,
+        }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
       />
 

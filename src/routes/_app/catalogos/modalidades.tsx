@@ -10,7 +10,6 @@ import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
 import { WizardSteps } from '#/components/ui/WizardSteps'
-import { downloadCsv } from '#/helpers/export-csv'
 import { userMessageFromError } from '#/lib/api'
 import {
   createModalidad,
@@ -234,18 +233,14 @@ function ModalidadesPage() {
         addLabel="Agregar modalidad"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
-        onExport={() =>
-          downloadCsv(
-            'modalidades.csv',
-            data.map((m) => ({
-              codigo: m.codigo,
-              nombre: m.nombre,
-              hora_inicio: m.hora_inicio,
-              hora_fin: m.hora_fin,
-              status: m.status,
-            })),
-          )
-        }
+        exportFilename="modalidades"
+        exportRows={data.map((m) => ({
+          codigo: m.codigo,
+          nombre: m.nombre,
+          hora_inicio: m.hora_inicio,
+          hora_fin: m.hora_fin,
+          status: m.status,
+        }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
       />
 

@@ -1,5 +1,7 @@
 # Evolución del frontend Sasha
 
+Mapa de módulos y flujos: [`MAPA.md`](MAPA.md).
+
 Última actualización: 04/09/2026
 
 ## 1. Estado global

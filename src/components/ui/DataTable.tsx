@@ -7,8 +7,10 @@ import {
   useLegacyTable,
   type LegacyColumnDef,
 } from '@tanstack/react-table/legacy'
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { downloadCsv } from '#/helpers/export-csv'
+import { downloadTablePdf } from '#/helpers/export-pdf'
 
 export type DataTableFilter<T> = {
   id: string
@@ -38,6 +40,9 @@ type DataTableProps<T extends RowData> = {
   onAdd?: () => void
   canAdd?: boolean
   onExport?: () => void
+  /** Filas para Descargar (Excel + PDF). Si se pasa, se ignora onExport. */
+  exportFilename?: string
+  exportRows?: Record<string, unknown>[]
   pageSize?: number
 }
 
@@ -58,11 +63,14 @@ export function DataTable<T extends RowData>({
   onAdd,
   canAdd,
   onExport,
+  exportFilename,
+  exportRows,
   pageSize = 25,
 }: DataTableProps<T>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([])
   const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+  const exportRef = useRef<HTMLDetailsElement>(null)
   const paginationRef = useRef({ pageIndex: 0, pageSize })
 
   const safeFilters = useMemo(
@@ -148,6 +156,28 @@ export function DataTable<T extends RowData>({
   const countLabel =
     visibleRows === totalRows ? `${totalRows} filas` : `${visibleRows} de ${totalRows} filas`
 
+  const canExport = Boolean(exportRows) || Boolean(onExport)
+
+  const closeExport = () => {
+    if (exportRef.current) exportRef.current.open = false
+  }
+
+  const handleExcel = () => {
+    closeExport()
+    if (exportRows && exportFilename) {
+      downloadCsv(exportFilename.endsWith('.csv') ? exportFilename : `${exportFilename}.csv`, exportRows)
+      return
+    }
+    onExport?.()
+  }
+
+  const handlePdf = () => {
+    closeExport()
+    if (exportRows && exportFilename) {
+      downloadTablePdf(exportFilename, title ?? 'Listado', exportRows)
+    }
+  }
+
   return (
     <div>
       {title ? (
@@ -201,10 +231,26 @@ export function DataTable<T extends RowData>({
         ) : null}
         <div className="panel-toolbar__actions">
           {toolbarExtra}
-          {onExport ? (
-            <button type="button" className="btn btn--ghost" onClick={onExport}>
-              Descargar Excel
-            </button>
+          {canExport ? (
+            <details className="export-menu" ref={exportRef}>
+              <summary
+                className="btn btn--ghost"
+                data-testid="data-table-download"
+              >
+                Descargar
+                <ChevronDown size={14} />
+              </summary>
+              <div className="export-menu__list" role="menu">
+                <button type="button" className="ctx-menu__item" role="menuitem" onClick={handleExcel}>
+                  Excel (.csv)
+                </button>
+                {exportRows ? (
+                  <button type="button" className="ctx-menu__item" role="menuitem" onClick={handlePdf}>
+                    PDF
+                  </button>
+                ) : null}
+              </div>
+            </details>
           ) : null}
           {canAdd && onAdd ? (
             <button type="button" className="btn btn--primary" data-testid="data-table-add-button" onClick={onAdd}>

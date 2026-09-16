@@ -9,7 +9,6 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
-import { downloadCsv } from '#/helpers/export-csv'
 import { userMessageFromError } from '#/lib/api'
 import {
   createGrado,
@@ -153,17 +152,13 @@ function GradosPage() {
         addLabel="Agregar grado"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
-        onExport={() =>
-          downloadCsv(
-            'grados.csv',
-            data.map((g) => ({
-              codigo: g.codigo,
-              nombre: g.nombre,
-              nivel_academico: labelNivel(g.orden),
-              status: g.status,
-            })),
-          )
-        }
+        exportFilename="grados"
+        exportRows={data.map((g) => ({
+          codigo: g.codigo,
+          nombre: g.nombre,
+          nivel_academico: labelNivel(g.orden),
+          status: g.status,
+        }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
       />
 

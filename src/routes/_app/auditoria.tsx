@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import { RequirePermission } from '#/components/gates/Can'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
-import { downloadCsv } from '#/helpers/export-csv'
 import { listAuditoria, type AuditoriaEvento, type AuditoriaListFilters } from '#/services/auditoria'
 
 export const Route = createFileRoute('/_app/auditoria')({ component: AuditoriaPage })
@@ -146,18 +145,14 @@ function AuditoriaPage() {
           data={eventos}
           columns={columns}
           filters={tableFilters}
-          onExport={() =>
-            downloadCsv(
-              'auditoria.csv',
-              eventos.map((e) => ({
-                fecha: e.creado_en,
-                actor: e.actor_codigo,
-                accion: e.accion,
-                recurso: e.recurso,
-                estado: e.estado,
-              })),
-            )
-          }
+          exportFilename="auditoria"
+          exportRows={eventos.map((e) => ({
+            fecha: e.creado_en,
+            actor: e.actor_codigo,
+            accion: e.accion,
+            recurso: e.recurso,
+            estado: e.estado,
+          }))}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
         />
       )}

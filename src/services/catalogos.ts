@@ -185,3 +185,24 @@ export async function updatePeriodo(id: string, body: PeriodoCreate) {
 export async function deletePeriodo(id: string) {
   return apiRequest<{ message: string }>(`/catalogos/periodos/${id}`, { method: 'DELETE' })
 }
+
+export interface ListaItem {
+  id: string
+  nombre: string
+}
+
+export async function listAlergias() {
+  return apiRequest<ListaItem[]>('/catalogos/alergias')
+}
+
+export async function listCondicionesAprendizaje() {
+  return apiRequest<ListaItem[]>('/catalogos/condiciones-aprendizaje')
+}
+
+export async function listParentescos() {
+  return apiRequest<ListaItem[]>('/catalogos/parentescos')
+}
+
+export async function listProfesiones() {
+  return apiRequest<ListaItem[]>('/catalogos/profesiones')
+}
