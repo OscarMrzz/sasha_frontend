@@ -35,6 +35,7 @@ type DataTableProps<T extends RowData> = {
   /** Filtros clave (select). No incluir códigos. */
   filters?: DataTableFilter<T>[]
   onRowContextMenu?: (row: T, event: React.MouseEvent) => void
+  onRowClick?: (row: T, event: React.MouseEvent) => void
   toolbarExtra?: ReactNode
   addLabel?: string
   onAdd?: () => void
@@ -58,6 +59,7 @@ export function DataTable<T extends RowData>({
   searchPlaceholder = 'Buscar…',
   filters = [],
   onRowContextMenu,
+  onRowClick,
   toolbarExtra,
   addLabel = 'Agregar',
   onAdd,
@@ -308,6 +310,11 @@ export function DataTable<T extends RowData>({
               rows.map((row) => (
                 <tr
                   key={row.id}
+                  style={onRowClick ? { cursor: 'pointer' } : undefined}
+                  onClick={(e) => {
+                    if (!onRowClick) return
+                    onRowClick(row.original as T, e)
+                  }}
                   onContextMenu={(e) => {
                     if (!onRowContextMenu) return
                     e.preventDefault()

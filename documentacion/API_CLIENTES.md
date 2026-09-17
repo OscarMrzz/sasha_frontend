@@ -287,11 +287,20 @@ Permiso: `asignacion:get|post`.
 
 ### Plan (`planestudio:get|post|put`)
 
-- `POST /planestudio/` — plan + items
-- `GET /planestudio/{id}`
+- `GET /planestudio/` — listado (filtros: periodo, curso, maestro, modalidad, grado; maestro solo ve los suyos)
+- `POST /planestudio/` — plan + items (`estado_aprobacion=pendiente`; primer plan de la asignación queda `es_activo`)
+- `GET /planestudio/{id}` — detalle + items + comentarios de auditoría
+- `PUT /planestudio/{id}` — editar items (maestro dueño)
+- `PUT /planestudio/activar/{id}` — activar plan (desactiva hermanos de la misma asignación)
+- `PUT /planestudio/aprobacion/{id}` — `aprobado` \| `denegado` \| `pendiente` (admin/director/consejería)
+- `POST /planestudio/auditoria/{id}` — comentario por ítem (tarea para el maestro)
+- `PUT /planestudio/auditoria/{id}/resolver` — marcar tarea resuelta (+ opcional editar ítem)
+- `GET /planestudio/pdf/{id}` — PDF del plan
 - `GET /planestudio/vistas/diario?plan_estudio_id=` (o `asignacion_docente_id` / `periodo_academico_id`)
 - `GET /planestudio/vistas/gobierno?...`
-- `PUT /planestudio/items/{itemId}` — cumplimiento / % avance
+- `PUT /planestudio/cumplimiento/{itemId}` — cumplimiento / % avance
+
+Campos de plan: `estado_aprobacion`, `es_activo`, `estado_auditoria_maestro` (`sin_revisar` \| `en_progreso` \| `finalizado`).
 
 ### Asistencia (`asistencia:post`)
 

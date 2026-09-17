@@ -32,7 +32,7 @@ Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API tambié
 | `/matricula` | Listado, alta (wizard) y reingreso. |
 | `/asignacion` | Maestro ↔ curso/sección/periodo. Alta vía `AsignacionFormModal` (maestro, curso, grado → sección, periodo). |
 | `/horarios` | Cuadrícula por sección; confirmar versión. |
-| `/plan-estudio` | Plan por asignación. |
+| `/plan-estudio` | Admin/director/consejería: tabla + filtros (sin crear); Ver / Auditar. Maestro: crear, tabla propia, Activar, Auditoría → Resolver. Estados: pendiente/denegado/aprobado + progreso de auditoría. |
 | `/asistencia` | Pase de lista. |
 | `/tareas` | Tareas por curso. |
 | `/calificaciones` | Notas por parcial. |

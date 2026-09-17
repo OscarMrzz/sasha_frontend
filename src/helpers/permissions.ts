@@ -44,7 +44,6 @@ const adminPerms: Permission[] = [
   'horarios:post',
   'horarios:put',
   'planestudio:get',
-  'planestudio:post',
   'planestudio:put',
   'asistencia:get',
   'asistencia:post',
@@ -68,7 +67,7 @@ const adminPerms: Permission[] = [
 
 export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
   admin: adminPerms,
-  admin_temporal: adminPerms,
+  admin_temporal: [...adminPerms, 'planestudio:post'],
   secretaria: [
     'users:get',
     'users:post',
@@ -95,6 +94,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'matricula:get',
     'horarios:get',
     'planestudio:get',
+    'planestudio:put',
     'calificaciones:get',
     'calificaciones:put',
     'estadisticas:get',
@@ -104,6 +104,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
   ],
   consejeria: [
     'planestudio:get',
+    'planestudio:put',
     'asistencia:get',
     'tareas:get',
     'calificaciones:get',
