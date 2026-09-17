@@ -8,6 +8,8 @@ export interface PlanItemCreate {
   fecha_inicio: string
   fecha_fin: string
   orden: number
+  puntos?: number
+  materiales?: string
 }
 
 export interface PlanCreate {
@@ -28,6 +30,8 @@ export interface PlanItem {
   porcentaje_avance: number
   orden?: number
   descripcion?: string
+  puntos?: number
+  materiales?: string
 }
 
 export interface PlanComentario {
@@ -122,6 +126,9 @@ export interface PlanItemUpdate {
   orden?: number
   estado_cumplimiento?: string
   porcentaje_avance?: number
+  puntos?: number
+  materiales?: string
+  parcial_id?: string
 }
 
 function vistaQuery(filters: PlanVistaFilters) {

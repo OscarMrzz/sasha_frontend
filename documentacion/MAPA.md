@@ -24,7 +24,7 @@ Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API tambié
 | `/catalogos/grados` | CRUD grados. |
 | `/catalogos/modalidades` | CRUD turnos (horarios, recreos, parciales). |
 | `/catalogos/secciones` | CRUD secciones (grado + modalidad). |
-| `/catalogos/cursos` | CRUD cursos. Menú: Ver (maestros asignados + PDF), Asignar maestro (curso fijo), Editar, Eliminar. |
+| `/catalogos/cursos` | CRUD cursos con sílabo (requisitos, horas, objetivos, competencias, estrategias, evaluación, recursos, bibliografía). Menú: Ver (maestros asignados + PDF), Asignar maestro (curso fijo), Editar, Eliminar. |
 | `/catalogos/periodos` | CRUD periodos lectivos. Solo uno puede estar **activo**; al activar otro, el anterior pasa a inactivo. |
 | `/usuarios` | Alta/edición de usuarios; al crear alumno/maestro/responsable también crea el perfil. DataTable: Descargar (Excel/PDF), menú Ver / Editar / Eliminar lógico. Ver abre la ficha (`UserFichaModal`). |
 | `/controladores` | Activar/desactivar roles y usuarios. |
@@ -32,7 +32,7 @@ Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API tambié
 | `/matricula` | Listado, alta (wizard) y reingreso. |
 | `/asignacion` | Maestro ↔ curso/sección/periodo. Alta vía `AsignacionFormModal` (maestro, curso, grado → sección, periodo). |
 | `/horarios` | Cuadrícula por sección; confirmar versión. |
-| `/plan-estudio` | Admin/director/consejería: tabla + filtros (sin crear); Ver / Auditar. Maestro: crear, tabla propia, Activar, Auditoría → Resolver. Estados: pendiente/denegado/aprobado + progreso de auditoría. |
+| `/plan-estudio` | Admin/director/consejería: tabla + filtros (sin crear); Ver / Auditar (ítems con puntos/materiales). Maestro: crear (wizard: cabecera auto + sílabo lectura + parciales Σ100 pts), tabla propia, Activar, Auditoría → Resolver. Estados: pendiente/denegado/aprobado + progreso de auditoría. |
 | `/asistencia` | Pase de lista. |
 | `/tareas` | Tareas por curso. |
 | `/calificaciones` | Notas por parcial. |

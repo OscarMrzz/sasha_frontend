@@ -71,6 +71,30 @@ export interface SeccionCreate {
   cupo_maximo?: number
 }
 
+export interface CursoTextoItem {
+  id?: string
+  texto: string
+  orden: number
+}
+
+export interface CursoRecurso {
+  id?: string
+  tipo: string
+  texto: string
+  orden: number
+}
+
+export interface CursoBibliografia {
+  id?: string
+  tipo: string
+  autor?: string
+  titulo: string
+  editorial?: string
+  anio?: number
+  url?: string
+  orden: number
+}
+
 export interface Curso {
   id: string
   codigo: string
@@ -79,6 +103,19 @@ export interface Curso {
   status: string
   codigo_sace?: string
   detalles?: string
+  carrera?: string
+  unidades_academicas?: number
+  horas_teoricas_semana?: number
+  horas_practicas_semana?: number
+  horas_totales_periodo?: number
+  objetivo_general?: string
+  prerrequisitos?: CursoTextoItem[]
+  objetivos_especificos?: CursoTextoItem[]
+  competencias?: CursoTextoItem[]
+  estrategias?: CursoTextoItem[]
+  actividades_evaluacion?: CursoTextoItem[]
+  recursos?: CursoRecurso[]
+  bibliografia?: CursoBibliografia[]
 }
 
 export interface CursoCreate {
@@ -87,6 +124,29 @@ export interface CursoCreate {
   status: string
   codigo_sace?: string
   detalles?: string
+  carrera?: string
+  unidades_academicas?: number
+  horas_teoricas_semana?: number
+  horas_practicas_semana?: number
+  horas_totales_periodo?: number
+  objetivo_general?: string
+  prerrequisitos?: CursoTextoItem[]
+  objetivos_especificos?: CursoTextoItem[]
+  competencias?: CursoTextoItem[]
+  estrategias?: CursoTextoItem[]
+  actividades_evaluacion?: CursoTextoItem[]
+  recursos?: CursoRecurso[]
+  bibliografia?: CursoBibliografia[]
+}
+
+export interface Parcial {
+  id: string
+  periodo_academico_id: string
+  numero: number
+  nombre: string
+  fecha_inicio: string
+  fecha_fin: string
+  status: string
 }
 
 export interface Periodo {
@@ -158,6 +218,10 @@ export async function listCursos() {
   return apiRequest<Curso[]>('/catalogos/cursos')
 }
 
+export async function getCurso(id: string) {
+  return apiRequest<Curso>(`/catalogos/cursos/${id}`)
+}
+
 export async function createCurso(body: CursoCreate) {
   return apiRequest<Curso>('/catalogos/cursos', { method: 'POST', body })
 }
@@ -172,6 +236,12 @@ export async function deleteCurso(id: string) {
 
 export async function listPeriodos() {
   return apiRequest<Periodo[]>('/catalogos/periodos')
+}
+
+export async function listParciales(periodoAcademicoId: string) {
+  return apiRequest<Parcial[]>(
+    `/catalogos/periodos/${periodoAcademicoId}/parciales`,
+  )
 }
 
 export async function createPeriodo(body: PeriodoCreate) {

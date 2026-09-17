@@ -15,21 +15,79 @@ import { userMessageFromError } from '#/lib/api'
 import {
   createCurso,
   deleteCurso,
+  getCurso,
   listCursos,
   updateCurso,
   type Curso,
   type CursoCreate,
+  type CursoTextoItem,
 } from '#/services/catalogos'
 
 export const Route = createFileRoute('/_app/catalogos/cursos')({ component: CursosPage })
 
 const col = createColumnHelper<Curso>()
-const defaultForm: CursoCreate = { nombre: '', horas_semana_minimas: 2, status: 'ACTIVE' }
+const defaultForm: CursoCreate = {
+  nombre: '',
+  horas_semana_minimas: 2,
+  status: 'ACTIVE',
+  prerrequisitos: [],
+  objetivos_especificos: [],
+  competencias: [],
+  estrategias: [],
+  actividades_evaluacion: [],
+  recursos: [],
+  bibliografia: [],
+}
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE' },
   { value: 'INACTIVE', label: 'INACTIVE' },
 ]
+
+function TextListEditor({
+  label,
+  items,
+  onChange,
+}: {
+  label: string
+  items: CursoTextoItem[]
+  onChange: (items: CursoTextoItem[]) => void
+}) {
+  return (
+    <div style={{ marginBottom: '0.75rem' }}>
+      <div className="page-title-row" style={{ marginBottom: '0.35rem' }}>
+        <strong>{label}</strong>
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          onClick={() => onChange([...(items ?? []), { texto: '', orden: (items?.length ?? 0) + 1 }])}
+        >
+          +
+        </button>
+      </div>
+      {(items ?? []).map((it, idx) => (
+        <div key={idx} style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.35rem' }}>
+          <input
+            className="field__input"
+            value={it.texto}
+            onChange={(e) => {
+              const next = [...items]
+              next[idx] = { ...next[idx], texto: e.target.value, orden: idx + 1 }
+              onChange(next)
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => onChange(items.filter((_, i) => i !== idx))}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function CursosPage() {
   const qc = useQueryClient()
@@ -59,17 +117,35 @@ function CursosPage() {
     setModalOpen(true)
   }
 
-  const openEdit = (row: Curso) => {
-    setEditing(row)
-    setForm({
-      nombre: row.nombre,
-      horas_semana_minimas: row.horas_semana_minimas,
-      status: row.status,
-      codigo_sace: row.codigo_sace,
-      detalles: row.detalles,
-    })
-    setModalOpen(true)
+  const openEdit = async (row: Curso) => {
     closeCtx()
+    try {
+      const full = await getCurso(row.id)
+      setEditing(full)
+      setForm({
+        nombre: full.nombre,
+        horas_semana_minimas: full.horas_semana_minimas,
+        status: full.status,
+        codigo_sace: full.codigo_sace,
+        detalles: full.detalles,
+        carrera: full.carrera,
+        unidades_academicas: full.unidades_academicas,
+        horas_teoricas_semana: full.horas_teoricas_semana,
+        horas_practicas_semana: full.horas_practicas_semana,
+        horas_totales_periodo: full.horas_totales_periodo,
+        objetivo_general: full.objetivo_general,
+        prerrequisitos: full.prerrequisitos ?? [],
+        objetivos_especificos: full.objetivos_especificos ?? [],
+        competencias: full.competencias ?? [],
+        estrategias: full.estrategias ?? [],
+        actividades_evaluacion: full.actividades_evaluacion ?? [],
+        recursos: full.recursos ?? [],
+        bibliografia: full.bibliografia ?? [],
+      })
+      setModalOpen(true)
+    } catch (e) {
+      toast.error(userMessageFromError(e))
+    }
   }
 
   const openVer = (row: Curso) => {
@@ -179,6 +255,7 @@ function CursosPage() {
       <Modal
         open={modalOpen}
         title={editing ? 'Editar curso' : 'Nuevo curso'}
+        xl
         onClose={() => setModalOpen(false)}
         footer={
           <>
@@ -202,14 +279,62 @@ function CursosPage() {
             onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
           />
         </Field>
-        <Field label="Horas semana mínimas">
+        <Field label="Carrera">
           <input
-            type="number"
             className="field__input"
-            value={form.horas_semana_minimas}
-            onChange={(e) => setForm((f) => ({ ...f, horas_semana_minimas: Number(e.target.value) }))}
+            value={form.carrera ?? ''}
+            onChange={(e) => setForm((f) => ({ ...f, carrera: e.target.value }))}
           />
         </Field>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+          <Field label="Horas semana mínimas">
+            <input
+              type="number"
+              className="field__input"
+              value={form.horas_semana_minimas}
+              onChange={(e) => setForm((f) => ({ ...f, horas_semana_minimas: Number(e.target.value) }))}
+            />
+          </Field>
+          <Field label="Unidades académicas">
+            <input
+              type="number"
+              className="field__input"
+              value={form.unidades_academicas ?? ''}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  unidades_academicas: e.target.value === '' ? undefined : Number(e.target.value),
+                }))
+              }
+            />
+          </Field>
+          <Field label="Horas teóricas/semana">
+            <input
+              type="number"
+              className="field__input"
+              value={form.horas_teoricas_semana ?? ''}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  horas_teoricas_semana: e.target.value === '' ? undefined : Number(e.target.value),
+                }))
+              }
+            />
+          </Field>
+          <Field label="Horas prácticas/semana">
+            <input
+              type="number"
+              className="field__input"
+              value={form.horas_practicas_semana ?? ''}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  horas_practicas_semana: e.target.value === '' ? undefined : Number(e.target.value),
+                }))
+              }
+            />
+          </Field>
+        </div>
         <Field label="Estado">
           <Combobox
             value={form.status}
@@ -225,6 +350,160 @@ function CursosPage() {
             onChange={(e) => setForm((f) => ({ ...f, codigo_sace: e.target.value }))}
           />
         </Field>
+        <Field label="Objetivo general">
+          <textarea
+            className="field__input"
+            rows={3}
+            value={form.objetivo_general ?? ''}
+            onChange={(e) => setForm((f) => ({ ...f, objetivo_general: e.target.value }))}
+          />
+        </Field>
+        <TextListEditor
+          label="Prerrequisitos"
+          items={form.prerrequisitos ?? []}
+          onChange={(prerrequisitos) => setForm((f) => ({ ...f, prerrequisitos }))}
+        />
+        <TextListEditor
+          label="Objetivos específicos"
+          items={form.objetivos_especificos ?? []}
+          onChange={(objetivos_especificos) => setForm((f) => ({ ...f, objetivos_especificos }))}
+        />
+        <TextListEditor
+          label="Competencias"
+          items={form.competencias ?? []}
+          onChange={(competencias) => setForm((f) => ({ ...f, competencias }))}
+        />
+        <TextListEditor
+          label="Estrategias de enseñanza"
+          items={form.estrategias ?? []}
+          onChange={(estrategias) => setForm((f) => ({ ...f, estrategias }))}
+        />
+        <TextListEditor
+          label="Actividades de evaluación"
+          items={form.actividades_evaluacion ?? []}
+          onChange={(actividades_evaluacion) => setForm((f) => ({ ...f, actividades_evaluacion }))}
+        />
+        <div style={{ marginBottom: '0.75rem' }}>
+          <div className="page-title-row" style={{ marginBottom: '0.35rem' }}>
+            <strong>Recursos</strong>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() =>
+                setForm((f) => ({
+                  ...f,
+                  recursos: [...(f.recursos ?? []), { tipo: 'didactico', texto: '', orden: (f.recursos?.length ?? 0) + 1 }],
+                }))
+              }
+            >
+              +
+            </button>
+          </div>
+          {(form.recursos ?? []).map((r, idx) => (
+            <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: '0.35rem', marginBottom: '0.35rem' }}>
+              <select
+                className="field__input"
+                value={r.tipo}
+                onChange={(e) => {
+                  const recursos = [...(form.recursos ?? [])]
+                  recursos[idx] = { ...recursos[idx], tipo: e.target.value }
+                  setForm((f) => ({ ...f, recursos }))
+                }}
+              >
+                <option value="didactico">Didáctico</option>
+                <option value="computacional">Computacional</option>
+                <option value="bibliohemerografico">Bibliohemerográfico</option>
+                <option value="espacio_fisico">Espacio físico</option>
+              </select>
+              <input
+                className="field__input"
+                value={r.texto}
+                onChange={(e) => {
+                  const recursos = [...(form.recursos ?? [])]
+                  recursos[idx] = { ...recursos[idx], texto: e.target.value }
+                  setForm((f) => ({ ...f, recursos }))
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() =>
+                  setForm((f) => ({ ...f, recursos: (f.recursos ?? []).filter((_, i) => i !== idx) }))
+                }
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginBottom: '0.75rem' }}>
+          <div className="page-title-row" style={{ marginBottom: '0.35rem' }}>
+            <strong>Bibliografía</strong>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() =>
+                setForm((f) => ({
+                  ...f,
+                  bibliografia: [
+                    ...(f.bibliografia ?? []),
+                    { tipo: 'principal', titulo: '', orden: (f.bibliografia?.length ?? 0) + 1 },
+                  ],
+                }))
+              }
+            >
+              +
+            </button>
+          </div>
+          {(form.bibliografia ?? []).map((b, idx) => (
+            <div key={idx} style={{ display: 'grid', gap: '0.35rem', marginBottom: '0.5rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>
+              <select
+                className="field__input"
+                value={b.tipo}
+                onChange={(e) => {
+                  const bibliografia = [...(form.bibliografia ?? [])]
+                  bibliografia[idx] = { ...bibliografia[idx], tipo: e.target.value }
+                  setForm((f) => ({ ...f, bibliografia }))
+                }}
+              >
+                <option value="principal">Principal</option>
+                <option value="complementaria">Complementaria</option>
+              </select>
+              <input
+                className="field__input"
+                placeholder="Título"
+                value={b.titulo}
+                onChange={(e) => {
+                  const bibliografia = [...(form.bibliografia ?? [])]
+                  bibliografia[idx] = { ...bibliografia[idx], titulo: e.target.value }
+                  setForm((f) => ({ ...f, bibliografia }))
+                }}
+              />
+              <input
+                className="field__input"
+                placeholder="Autor"
+                value={b.autor ?? ''}
+                onChange={(e) => {
+                  const bibliografia = [...(form.bibliografia ?? [])]
+                  bibliografia[idx] = { ...bibliografia[idx], autor: e.target.value }
+                  setForm((f) => ({ ...f, bibliografia }))
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() =>
+                  setForm((f) => ({
+                    ...f,
+                    bibliografia: (f.bibliografia ?? []).filter((_, i) => i !== idx),
+                  }))
+                }
+              >
+                Quitar
+              </button>
+            </div>
+          ))}
+        </div>
       </Modal>
 
       <CursoVerModal

@@ -13,7 +13,19 @@ import { Modal } from '#/components/ui/Modal'
 import { labelPeriodo } from '#/helpers/periodos'
 import { userMessageFromError } from '#/lib/api'
 import { listAsignaciones } from '#/services/asignacion'
-import { listCursos, listGrados, listModalidades, listPeriodos } from '#/services/catalogos'
+import {
+  getCurso,
+  listCursos,
+  listGrados,
+  listModalidades,
+  listParciales,
+  listPeriodos,
+  listSecciones,
+  type Curso,
+  type Parcial,
+} from '#/services/catalogos'
+import { getConfiguracion } from '#/services/configuracion'
+import { useSession } from '#/hooks/use-session'
 import {
   activarPlan,
   addAuditoria,
@@ -26,7 +38,6 @@ import {
   updatePlan,
   type Plan,
   type PlanComentario,
-  type PlanCreate,
   type PlanItem,
 } from '#/services/planestudio'
 
@@ -39,9 +50,13 @@ const REVIEWER_ROLES = new Set(['admin', 'director', 'consejeria'])
 const emptyItem = {
   parcial_id: '',
   titulo: '',
+  descripcion: '',
+  tipo_item: 'tema',
   fecha_inicio: '',
   fecha_fin: '',
   orden: 1,
+  puntos: 0,
+  materiales: '',
 }
 
 function labelAprobacion(v: string) {
@@ -534,7 +549,9 @@ function VerPlanModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
             <th>#</th>
             <th>Título</th>
             <th>Tipo</th>
+            <th>Puntos</th>
             <th>Fechas</th>
+            <th>Materiales</th>
             <th>Cumplimiento</th>
           </tr>
         </thead>
@@ -544,9 +561,11 @@ function VerPlanModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
               <td>{idx + 1}</td>
               <td>{it.titulo}</td>
               <td>{it.tipo_item}</td>
+              <td>{it.puntos ?? 0}</td>
               <td>
                 {it.fecha_inicio?.slice(0, 10)} — {it.fecha_fin?.slice(0, 10)}
               </td>
+              <td>{it.materiales || '—'}</td>
               <td>
                 {it.estado_cumplimiento} ({it.porcentaje_avance}%)
               </td>
@@ -647,7 +666,9 @@ function AuditarModal({
             <tr>
               <th>#</th>
               <th>Título</th>
+              <th>Puntos</th>
               <th>Fechas</th>
+              <th>Materiales</th>
               <th></th>
             </tr>
           </thead>
@@ -655,10 +676,19 @@ function AuditarModal({
             {(plan.items ?? []).map((it, idx) => (
               <tr key={it.id}>
                 <td>{idx + 1}</td>
-                <td>{it.titulo}</td>
+                <td>
+                  {it.titulo}
+                  {it.descripcion ? (
+                    <div className="texto-muted" style={{ fontSize: '0.85em' }}>
+                      {it.descripcion}
+                    </div>
+                  ) : null}
+                </td>
+                <td>{it.puntos ?? 0}</td>
                 <td>
                   {it.fecha_inicio?.slice(0, 10)} — {it.fecha_fin?.slice(0, 10)}
                 </td>
+                <td>{it.materiales || '—'}</td>
                 <td>
                   <button
                     type="button"
@@ -737,17 +767,75 @@ function CrearPlanModal({
   onClose: () => void
   onCreated: () => void
 }) {
+  const { session } = useSession()
+  const { data: config } = useQuery({ queryKey: ['configuracion'], queryFn: getConfiguracion })
   const { data: cursos = [] } = useQuery({ queryKey: ['cursos'], queryFn: listCursos })
-  const cursoMap = useMemo(() => Object.fromEntries(cursos.map((c) => [c.id, c.nombre])), [cursos])
-  const [form, setForm] = useState<PlanCreate>({
-    asignacion_docente_id: '',
-    periodo_academico_id: '',
-    items: [{ ...emptyItem }],
-  })
+  const { data: secciones = [] } = useQuery({ queryKey: ['secciones'], queryFn: listSecciones })
+  const { data: grados = [] } = useQuery({ queryKey: ['grados'], queryFn: listGrados })
+  const { data: modalidades = [] } = useQuery({ queryKey: ['modalidades'], queryFn: listModalidades })
+
+  const [asigId, setAsigId] = useState('')
+  const [periodoId, setPeriodoId] = useState('')
+  const [silabo, setSilabo] = useState<Curso | null>(null)
+  const [parcialBlocks, setParcialBlocks] = useState<{ parcial_id: string; items: typeof emptyItem[] }[]>([])
   const [confirm, setConfirm] = useState(false)
 
+  const { data: parciales = [] } = useQuery({
+    queryKey: ['parciales', periodoId],
+    queryFn: () => listParciales(periodoId),
+    enabled: Boolean(periodoId),
+  })
+
+  const selectedAsig = asignaciones.find((a) => a.id === asigId)
+  const curso = cursos.find((c) => c.id === selectedAsig?.curso_id)
+  const seccion = secciones.find((s) => s.id === selectedAsig?.seccion_id)
+  const grado = grados.find((g) => g.id === seccion?.grado_id)
+  const modalidad = modalidades.find((m) => m.id === seccion?.modalidad_id)
+
+  useEffect(() => {
+    if (!selectedAsig?.curso_id) {
+      setSilabo(null)
+      return
+    }
+    void getCurso(selectedAsig.curso_id)
+      .then(setSilabo)
+      .catch(() => setSilabo(null))
+  }, [selectedAsig?.curso_id])
+
+  useEffect(() => {
+    if (!periodoId || parciales.length === 0) return
+    if (parcialBlocks.length > 0) return
+    const first = parciales[0]
+    setParcialBlocks([
+      {
+        parcial_id: first.id,
+        items: [{ ...emptyItem, parcial_id: first.id, puntos: 100 }],
+      },
+    ])
+  }, [periodoId, parciales, parcialBlocks.length])
+
+  const flatItems = useMemo(
+    () =>
+      parcialBlocks.flatMap((b, bi) =>
+        b.items.map((it, ii) => ({
+          ...it,
+          parcial_id: b.parcial_id,
+          orden: bi * 100 + ii + 1,
+          puntos: Number(it.puntos) || 0,
+          descripcion: it.descripcion || undefined,
+          materiales: it.materiales || undefined,
+        })),
+      ),
+    [parcialBlocks],
+  )
+
   const mut = useMutation({
-    mutationFn: () => createPlan(form),
+    mutationFn: () =>
+      createPlan({
+        asignacion_docente_id: asigId,
+        periodo_academico_id: periodoId,
+        items: flatItems,
+      }),
     onSuccess: () => {
       toast.success('Plan creado')
       onCreated()
@@ -755,16 +843,22 @@ function CrearPlanModal({
     onError: (e) => toast.error(userMessageFromError(e)),
   })
 
-  const asigOpts = asignaciones.map((a) => ({
-    value: a.id,
-    label: `${cursoMap[a.curso_id] ?? a.curso_id} · ${a.id.slice(0, 8)}`,
-  }))
+  const asigOpts = asignaciones.map((a) => {
+    const cn = cursos.find((c) => c.id === a.curso_id)?.nombre ?? a.curso_id
+    return { value: a.id, label: `${cn} · ${a.id.slice(0, 8)}` }
+  })
+
+  const usedParcialIds = new Set(parcialBlocks.map((b) => b.parcial_id))
+  const availableParciales = (parciales as Parcial[]).filter((p) => !usedParcialIds.has(p.id))
+
+  const sumParcial = (items: typeof emptyItem[]) =>
+    items.reduce((acc, it) => acc + (Number(it.puntos) || 0), 0)
 
   return (
     <>
       <Modal
         open
-        title="Crear plan"
+        title="Crear plan de estudio"
         xl
         onClose={onClose}
         footer={
@@ -777,95 +871,203 @@ function CrearPlanModal({
               className="btn btn--primary"
               data-testid="plan-create-submit"
               onClick={() => setConfirm(true)}
+              disabled={!asigId || !periodoId || flatItems.length === 0}
             >
               Crear
             </button>
           </>
         }
       >
-        <div style={{ display: 'grid', gap: '0.75rem' }}>
-          <Field label="Asignación">
+        <div style={{ display: 'grid', gap: '0.75rem' }} data-testid="plan-create-wizard">
+          <p className="texto-muted">
+            <strong>Institución:</strong> {config?.nombre_institucion ?? '—'}
+            <br />
+            <strong>Maestro:</strong> {session?.username ?? session?.code ?? '—'}
+          </p>
+
+          <Field label="Asignación (curso / sección)">
             <Combobox
               options={asigOpts}
-              value={form.asignacion_docente_id}
+              value={asigId}
               onChange={(v) => {
                 const a = asignaciones.find((x) => x.id === v)
-                setForm((f) => ({
-                  ...f,
-                  asignacion_docente_id: v,
-                  periodo_academico_id: a?.periodo_academico_id || f.periodo_academico_id,
-                }))
+                setAsigId(v)
+                setPeriodoId(a?.periodo_academico_id || '')
+                setParcialBlocks([])
               }}
               placeholder="Elegir asignación"
             />
           </Field>
-          <Field label="Periodo">
-            <select
-              className="field__input"
-              value={form.periodo_academico_id}
-              onChange={(e) => setForm((f) => ({ ...f, periodo_academico_id: e.target.value }))}
+
+          {selectedAsig ? (
+            <p data-testid="plan-create-meta">
+              Curso: <strong>{curso?.nombre ?? '—'}</strong> · Grado: {grado?.nombre ?? '—'} · Modalidad:{' '}
+              {modalidad?.nombre ?? '—'} · Periodo:{' '}
+              {labelPeriodo(periodos.find((p) => p.id === periodoId) ?? { nombre: '', anio_lectivo: 0, status: '', id: '', fecha_inicio: '', fecha_fin: '' })}
+            </p>
+          ) : null}
+
+          {silabo?.objetivo_general ? (
+            <details>
+              <summary>Sílabo del curso (solo lectura)</summary>
+              <p style={{ whiteSpace: 'pre-wrap' }}>{silabo.objetivo_general}</p>
+              {(silabo.prerrequisitos?.length ?? 0) > 0 ? (
+                <p>
+                  <strong>Prerrequisitos:</strong>{' '}
+                  {silabo.prerrequisitos!.map((p) => p.texto).join('; ')}
+                </p>
+              ) : null}
+            </details>
+          ) : null}
+
+          {parcialBlocks.map((block, bi) => {
+            const parcial = parciales.find((p) => p.id === block.parcial_id)
+            const sum = sumParcial(block.items)
+            return (
+              <div
+                key={block.parcial_id}
+                style={{ border: '1px solid #ddd', borderRadius: 8, padding: '0.75rem' }}
+                data-testid={`plan-parcial-block-${bi}`}
+              >
+                <div className="page-title-row">
+                  <h3 style={{ margin: 0 }}>{parcial?.nombre ?? `Parcial ${bi + 1}`}</h3>
+                  <span className={sum === 100 ? 'badge' : 'badge'} style={{ color: sum > 100 || sum < 100 ? '#b00' : undefined }}>
+                    {sum} / 100 pts
+                  </span>
+                </div>
+                {block.items.map((it, ii) => (
+                  <div key={ii} style={{ display: 'grid', gap: '0.35rem', marginTop: '0.5rem' }}>
+                    <input
+                      className="field__input"
+                      placeholder="Título"
+                      value={it.titulo}
+                      data-testid={bi === 0 && ii === 0 ? 'plan-item-titulo' : undefined}
+                      onChange={(e) => {
+                        const next = [...parcialBlocks]
+                        next[bi] = {
+                          ...next[bi],
+                          items: next[bi].items.map((x, j) =>
+                            j === ii ? { ...x, titulo: e.target.value } : x,
+                          ),
+                        }
+                        setParcialBlocks(next)
+                      }}
+                    />
+                    <textarea
+                      className="field__input"
+                      rows={2}
+                      placeholder="Descripción"
+                      value={it.descripcion}
+                      onChange={(e) => {
+                        const next = [...parcialBlocks]
+                        next[bi].items[ii] = { ...next[bi].items[ii], descripcion: e.target.value }
+                        setParcialBlocks([...next])
+                      }}
+                    />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.35rem' }}>
+                      <select
+                        className="field__input"
+                        value={it.tipo_item}
+                        onChange={(e) => {
+                          const next = [...parcialBlocks]
+                          next[bi].items[ii] = { ...next[bi].items[ii], tipo_item: e.target.value }
+                          setParcialBlocks([...next])
+                        }}
+                      >
+                        <option value="tema">Tema</option>
+                        <option value="tarea">Tarea</option>
+                        <option value="examen">Examen</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                      <input
+                        className="field__input"
+                        type="number"
+                        placeholder="Puntos"
+                        value={it.puntos}
+                        onChange={(e) => {
+                          const next = [...parcialBlocks]
+                          next[bi].items[ii] = { ...next[bi].items[ii], puntos: Number(e.target.value) }
+                          setParcialBlocks([...next])
+                        }}
+                      />
+                      <input
+                        className="field__input"
+                        type="date"
+                        value={it.fecha_inicio}
+                        onChange={(e) => {
+                          const next = [...parcialBlocks]
+                          next[bi].items[ii] = { ...next[bi].items[ii], fecha_inicio: e.target.value }
+                          setParcialBlocks([...next])
+                        }}
+                      />
+                      <input
+                        className="field__input"
+                        type="date"
+                        value={it.fecha_fin}
+                        onChange={(e) => {
+                          const next = [...parcialBlocks]
+                          next[bi].items[ii] = { ...next[bi].items[ii], fecha_fin: e.target.value }
+                          setParcialBlocks([...next])
+                        }}
+                      />
+                    </div>
+                    <input
+                      className="field__input"
+                      placeholder="Materiales necesarios"
+                      value={it.materiales}
+                      onChange={(e) => {
+                        const next = [...parcialBlocks]
+                        next[bi].items[ii] = { ...next[bi].items[ii], materiales: e.target.value }
+                        setParcialBlocks([...next])
+                      }}
+                    />
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  style={{ marginTop: '0.5rem' }}
+                  data-testid="plan-add-item"
+                  onClick={() => {
+                    const next = [...parcialBlocks]
+                    next[bi] = {
+                      ...next[bi],
+                      items: [
+                        ...next[bi].items,
+                        { ...emptyItem, parcial_id: block.parcial_id, puntos: 0 },
+                      ],
+                    }
+                    setParcialBlocks(next)
+                  }}
+                >
+                  + Ítem
+                </button>
+              </div>
+            )
+          })}
+
+          {availableParciales.length > 0 ? (
+            <button
+              type="button"
+              className="btn btn--primary"
+              data-testid="plan-add-parcial"
+              onClick={() => {
+                const p = availableParciales[0]
+                setParcialBlocks((blocks) => [
+                  ...blocks,
+                  { parcial_id: p.id, items: [{ ...emptyItem, parcial_id: p.id, puntos: 100 }] },
+                ])
+              }}
             >
-              <option value="">—</option>
-              {periodos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {labelPeriodo(p)}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <h3>Ítems</h3>
-          {form.items.map((it, idx) => (
-            <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem' }}>
-              <input
-                className="field__input"
-                placeholder="Título"
-                value={it.titulo}
-                onChange={(e) => {
-                  const items = [...form.items]
-                  items[idx] = { ...items[idx], titulo: e.target.value, orden: idx + 1 }
-                  setForm((f) => ({ ...f, items }))
-                }}
-              />
-              <input
-                className="field__input"
-                type="date"
-                value={it.fecha_inicio}
-                onChange={(e) => {
-                  const items = [...form.items]
-                  items[idx] = { ...items[idx], fecha_inicio: e.target.value }
-                  setForm((f) => ({ ...f, items }))
-                }}
-              />
-              <input
-                className="field__input"
-                type="date"
-                value={it.fecha_fin}
-                onChange={(e) => {
-                  const items = [...form.items]
-                  items[idx] = { ...items[idx], fecha_fin: e.target.value }
-                  setForm((f) => ({ ...f, items }))
-                }}
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            className="btn btn--ghost"
-            onClick={() =>
-              setForm((f) => ({
-                ...f,
-                items: [...f.items, { ...emptyItem, orden: f.items.length + 1 }],
-              }))
-            }
-          >
-            + Ítem
-          </button>
+              + Agregar parcial
+            </button>
+          ) : null}
         </div>
       </Modal>
       <ConfirmDialog
         open={confirm}
         title="Crear plan"
-        message="¿Crear este plan de estudio?"
+        message="¿Crear este plan? Cada parcial debe sumar exactamente 100 puntos."
         onCancel={() => setConfirm(false)}
         onConfirm={() => {
           setConfirm(false)
@@ -900,6 +1102,9 @@ function EditarPlanModal({
           orden: it.orden ?? 0,
           estado_cumplimiento: it.estado_cumplimiento,
           porcentaje_avance: it.porcentaje_avance,
+          puntos: it.puntos ?? 0,
+          materiales: it.materiales || undefined,
+          parcial_id: it.parcial_id,
         })),
       ),
     onSuccess: () => {
@@ -908,6 +1113,8 @@ function EditarPlanModal({
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
+
+  const sumaPuntos = items.reduce((acc, it) => acc + (Number(it.puntos) || 0), 0)
 
   return (
     <Modal
@@ -926,6 +1133,9 @@ function EditarPlanModal({
         </>
       }
     >
+      <p className="texto-muted" style={{ marginBottom: '0.75rem' }}>
+        Σ puntos (todos los ítems): {sumaPuntos} — cada parcial debe sumar 100
+      </p>
       {items.map((it, idx) => (
         <div key={it.id} style={{ marginBottom: '0.75rem', display: 'grid', gap: '0.35rem' }}>
           <Field label={`Ítem ${idx + 1}`}>
@@ -949,6 +1159,33 @@ function EditarPlanModal({
               setItems(next)
             }}
           />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <Field label="Puntos">
+              <input
+                className="field__input"
+                type="number"
+                min={0}
+                step={0.5}
+                value={it.puntos ?? 0}
+                onChange={(e) => {
+                  const next = [...items]
+                  next[idx] = { ...next[idx], puntos: Number(e.target.value) }
+                  setItems(next)
+                }}
+              />
+            </Field>
+            <Field label="Materiales">
+              <input
+                className="field__input"
+                value={it.materiales ?? ''}
+                onChange={(e) => {
+                  const next = [...items]
+                  next[idx] = { ...next[idx], materiales: e.target.value }
+                  setItems(next)
+                }}
+              />
+            </Field>
+          </div>
         </div>
       ))}
     </Modal>
@@ -993,6 +1230,25 @@ function ResolverModal({ plan: initial, onClose }: { plan: Plan; onClose: () => 
     setPlan(p)
   }
 
+  const allItemsPayload = (override?: PlanItem) =>
+    (plan.items ?? []).map((it) => {
+      const src = override && override.id === it.id ? override : it
+      return {
+        id: src.id,
+        titulo: src.titulo,
+        descripcion: src.descripcion,
+        tipo_item: src.tipo_item,
+        fecha_inicio: src.fecha_inicio.slice(0, 10),
+        fecha_fin: src.fecha_fin.slice(0, 10),
+        orden: src.orden,
+        estado_cumplimiento: src.estado_cumplimiento,
+        porcentaje_avance: src.porcentaje_avance,
+        puntos: src.puntos ?? 0,
+        materiales: src.materiales || undefined,
+        parcial_id: src.parcial_id,
+      }
+    })
+
   const toggleMut = useMutation({
     mutationFn: async (c: PlanComentario) => {
       const body: { resuelto: boolean; item?: Parameters<typeof resolverAuditoria>[1]['item'] } = {
@@ -1009,6 +1265,9 @@ function ResolverModal({ plan: initial, onClose }: { plan: Plan; onClose: () => 
           orden: draft.orden,
           estado_cumplimiento: draft.estado_cumplimiento,
           porcentaje_avance: draft.porcentaje_avance,
+          puntos: draft.puntos ?? 0,
+          materiales: draft.materiales || undefined,
+          parcial_id: draft.parcial_id,
         }
       }
       return resolverAuditoria(c.id, body)
@@ -1023,20 +1282,7 @@ function ResolverModal({ plan: initial, onClose }: { plan: Plan; onClose: () => 
   const saveMut = useMutation({
     mutationFn: async () => {
       if (!draft) return
-      // save item via first open comment or just update plan
-      await updatePlan(plan.id, [
-        {
-          id: draft.id,
-          titulo: draft.titulo,
-          descripcion: draft.descripcion,
-          tipo_item: draft.tipo_item,
-          fecha_inicio: draft.fecha_inicio.slice(0, 10),
-          fecha_fin: draft.fecha_fin.slice(0, 10),
-          orden: draft.orden,
-          estado_cumplimiento: draft.estado_cumplimiento,
-          porcentaje_avance: draft.porcentaje_avance,
-        },
-      ])
+      await updatePlan(plan.id, allItemsPayload(draft))
     },
     onSuccess: async () => {
       toast.success('Guardado')
@@ -1145,6 +1391,23 @@ function ResolverModal({ plan: initial, onClose }: { plan: Plan; onClose: () => 
                   type="date"
                   value={draft.fecha_fin.slice(0, 10)}
                   onChange={(e) => setDraft({ ...draft, fecha_fin: e.target.value })}
+                />
+              </Field>
+              <Field label="Puntos">
+                <input
+                  className="field__input"
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={draft.puntos ?? 0}
+                  onChange={(e) => setDraft({ ...draft, puntos: Number(e.target.value) })}
+                />
+              </Field>
+              <Field label="Materiales">
+                <input
+                  className="field__input"
+                  value={draft.materiales ?? ''}
+                  onChange={(e) => setDraft({ ...draft, materiales: e.target.value })}
                 />
               </Field>
             </div>

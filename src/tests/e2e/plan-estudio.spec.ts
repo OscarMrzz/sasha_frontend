@@ -43,6 +43,12 @@ test.describe('plan de estudio @critical', () => {
     await row.click({ button: 'right' })
     await expect(page.getByRole('button', { name: 'Ver' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Auditoría' })).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await page.getByTestId('data-table-add-button').click()
+    await expect(page.getByTestId('plan-create-wizard')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText(/Institución:/i)).toBeVisible()
+    await expect(page.getByText(/Maestro:/i)).toBeVisible()
   })
 
   test('consejeria puede auditar', async ({ page }) => {
