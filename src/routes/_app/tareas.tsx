@@ -9,6 +9,7 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
+import { SearchInput } from '#/components/ui/SearchInput'
 import { userMessageFromError } from '#/lib/api'
 import { listAsignaciones } from '#/services/asignacion'
 import { createTarea, listTareasByAlumno, type TareaCreate } from '#/services/tareas'
@@ -77,15 +78,13 @@ function TareasPage() {
     <RequirePermission permission="tareas:get">
       <div className="panel-toolbar" style={{ maxWidth: 720 }}>
         <div className="panel-toolbar__search">
-          <Field label="Buscar por alumno ID">
-            <input
-              className="field__input"
-              data-testid="tareas-alumno-search"
-              value={alumnoId}
-              onChange={(e) => setAlumnoId(e.target.value)}
-              placeholder="UUID del alumno"
-            />
-          </Field>
+          <SearchInput
+            data-testid="tareas-alumno-search"
+            value={alumnoId}
+            onChange={(e) => setAlumnoId(e.target.value)}
+            placeholder="Buscar…"
+            aria-label="Buscar por ID de alumno"
+          />
         </div>
         <div className="panel-toolbar__actions">
           <button
@@ -123,7 +122,7 @@ function TareasPage() {
             data={tareas}
             columns={columns}
             filters={tableFilters}
-            searchPlaceholder="Filtrar tareas…"
+            searchPlaceholder="Buscar…"
           />
         )
       ) : (

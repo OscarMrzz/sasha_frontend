@@ -5,26 +5,14 @@ import { MessageSquare } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, useCan } from '#/components/gates/Can'
-import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
+import { SearchInput } from '#/components/ui/SearchInput'
 import { labelPeriodo } from '#/helpers/periodos'
 import { userMessageFromError } from '#/lib/api'
-import { listAsignaciones } from '#/services/asignacion'
-import {
-  getCurso,
-  listCursos,
-  listGrados,
-  listModalidades,
-  listParciales,
-  listPeriodos,
-  listSecciones,
-  type Curso,
-  type Parcial,
-} from '#/services/catalogos'
-import { getConfiguracion } from '#/services/configuracion'
+import { listPeriodos } from '#/services/catalogos'
 import { useSession } from '#/hooks/use-session'
 import {
   activarPlan,
@@ -32,10 +20,13 @@ import {
   createPlan,
   downloadPlanPdf,
   getPlan,
+  listMisCursos,
   listPlanes,
   resolverAuditoria,
   setAprobacion,
   updatePlan,
+  updatePlanItem,
+  type MisCurso,
   type Plan,
   type PlanComentario,
   type PlanItem,
@@ -51,12 +42,24 @@ const emptyItem = {
   parcial_id: '',
   titulo: '',
   descripcion: '',
-  tipo_item: 'tema',
+  tipo_item: 'teorico',
   fecha_inicio: '',
   fecha_fin: '',
   orden: 1,
   puntos: 0,
   materiales: '',
+}
+
+const TIPO_ITEM_OPTIONS = [
+  { value: 'teorico', label: 'Teórico' },
+  { value: 'practico', label: 'Práctico' },
+  { value: 'social', label: 'Social' },
+  { value: 'prueba', label: 'Prueba' },
+  { value: 'examen', label: 'Examen' },
+] as const
+
+function labelTipoItem(v: string) {
+  return TIPO_ITEM_OPTIONS.find((o) => o.value === v)?.label ?? v
 }
 
 function labelAprobacion(v: string) {
@@ -187,7 +190,7 @@ function ReviewerView({ canPut }: { canPut: boolean }) {
         data={data}
         columns={columns}
         filters={tableFilters}
-        searchPlaceholder="Buscar plan…"
+        searchPlaceholder="Buscar…"
         canAdd={false}
         exportFilename="planes-estudio"
         exportRows={data.map((p) => ({
@@ -233,7 +236,19 @@ function ReviewerView({ canPut }: { canPut: boolean }) {
       {verPlan ? (
         <VerPlanModal
           plan={verPlan}
+          canToggleCumplimiento={canPut}
           onClose={() => setVerPlan(null)}
+          onItemUpdated={(item) => {
+            setVerPlan((p) =>
+              p
+                ? {
+                    ...p,
+                    items: (p.items ?? []).map((it) => (it.id === item.id ? { ...it, ...item } : it)),
+                  }
+                : p,
+            )
+            void qc.invalidateQueries({ queryKey: ['planes'] })
+          }}
         />
       ) : null}
 
@@ -257,11 +272,11 @@ function ReviewerView({ canPut }: { canPut: boolean }) {
 function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean }) {
   const qc = useQueryClient()
   const { data = [], isLoading } = useQuery({ queryKey: ['planes'], queryFn: () => listPlanes() })
-  const { data: asignaciones = [] } = useQuery({ queryKey: ['asignaciones'], queryFn: listAsignaciones })
-  const { data: periodos = [] } = useQuery({ queryKey: ['periodos'], queryFn: listPeriodos })
-  const { data: cursos = [] } = useQuery({ queryKey: ['cursos'], queryFn: listCursos })
-  const { data: grados = [] } = useQuery({ queryKey: ['grados'], queryFn: listGrados })
-  const { data: modalidades = [] } = useQuery({ queryKey: ['modalidades'], queryFn: listModalidades })
+  const { data: periodos = [] } = useQuery({
+    queryKey: ['periodos'],
+    queryFn: listPeriodos,
+    retry: false,
+  })
 
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Plan } | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
@@ -277,13 +292,6 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
     window.addEventListener('click', h)
     return () => window.removeEventListener('click', h)
   }, [ctx, closeCtx])
-
-  const cursoMap = useMemo(() => Object.fromEntries(cursos.map((c) => [c.id, c.nombre])), [cursos])
-  const gradoMap = useMemo(() => Object.fromEntries(grados.map((g) => [g.id, g.nombre])), [grados])
-  const modalidadMap = useMemo(
-    () => Object.fromEntries(modalidades.map((m) => [m.id, m.nombre])),
-    [modalidades],
-  )
 
   const openVer = async (row: Plan) => {
     try {
@@ -351,22 +359,22 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
         id: 'curso',
         label: 'Curso',
         getValue: (r: Plan) => r.curso_id || '',
-        getLabel: (r: Plan) => r.curso_nombre || cursoMap[r.curso_id || ''] || '',
+        getLabel: (r: Plan) => r.curso_nombre || '',
       },
       {
         id: 'grado',
         label: 'Grado',
         getValue: (r: Plan) => r.grado_id || '',
-        getLabel: (r: Plan) => r.grado_nombre || gradoMap[r.grado_id || ''] || '',
+        getLabel: (r: Plan) => r.grado_nombre || '',
       },
       {
         id: 'modalidad',
         label: 'Modalidad',
         getValue: (r: Plan) => r.modalidad_id || '',
-        getLabel: (r: Plan) => r.modalidad_nombre || modalidadMap[r.modalidad_id || ''] || '',
+        getLabel: (r: Plan) => r.modalidad_nombre || '',
       },
     ],
-    [periodos, cursoMap, gradoMap, modalidadMap],
+    [periodos],
   )
 
   if (isLoading) return <div className="empty-state">Cargando planes…</div>
@@ -378,7 +386,7 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
         data={data}
         columns={columns}
         filters={tableFilters}
-        searchPlaceholder="Buscar plan…"
+        searchPlaceholder="Buscar…"
         addLabel="Crear plan"
         canAdd={canPost}
         onAdd={() => setCreateOpen(true)}
@@ -432,8 +440,6 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
 
       {createOpen ? (
         <CrearPlanModal
-          asignaciones={asignaciones}
-          periodos={periodos}
           onClose={() => setCreateOpen(false)}
           onCreated={() => {
             setCreateOpen(false)
@@ -442,7 +448,24 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
         />
       ) : null}
 
-      {verPlan ? <VerPlanModal plan={verPlan} onClose={() => setVerPlan(null)} /> : null}
+      {verPlan ? (
+        <VerPlanModal
+          plan={verPlan}
+          canToggleCumplimiento={canPut}
+          onClose={() => setVerPlan(null)}
+          onItemUpdated={(item) => {
+            setVerPlan((p) =>
+              p
+                ? {
+                    ...p,
+                    items: (p.items ?? []).map((it) => (it.id === item.id ? { ...it, ...item } : it)),
+                  }
+                : p,
+            )
+            void qc.invalidateQueries({ queryKey: ['planes'] })
+          }}
+        />
+      ) : null}
 
       {editPlan ? (
         <EditarPlanModal
@@ -513,12 +536,79 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
   )
 }
 
-function VerPlanModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
+function labelCumplimiento(v: string) {
+  if (v === 'iniciado') return 'Iniciado'
+  if (v === 'finalizado') return 'Finalizado'
+  return 'Pendiente'
+}
+
+const CUMPLIMIENTO_CYCLE = [
+  { estado: 'pendiente', avance: 0, label: 'Pendiente' },
+  { estado: 'iniciado', avance: 50, label: 'Iniciado' },
+  { estado: 'finalizado', avance: 100, label: 'Finalizado' },
+] as const
+
+function nextCumplimiento(actual: string) {
+  const idx = CUMPLIMIENTO_CYCLE.findIndex((c) => c.estado === actual)
+  return CUMPLIMIENTO_CYCLE[(idx + 1) % CUMPLIMIENTO_CYCLE.length]
+}
+
+function VerPlanModal({
+  plan,
+  onClose,
+  canToggleCumplimiento = false,
+  onItemUpdated,
+}: {
+  plan: Plan
+  onClose: () => void
+  canToggleCumplimiento?: boolean
+  onItemUpdated?: (item: PlanItem) => void
+}) {
+  const [q, setQ] = useState('')
+  const [tipo, setTipo] = useState('')
+  const [cumplimiento, setCumplimiento] = useState('')
+  const [fechaDesde, setFechaDesde] = useState('')
+  const [fechaHasta, setFechaHasta] = useState('')
+  const [pendingId, setPendingId] = useState<string | null>(null)
+
+  const items = useMemo(() => {
+    const needle = q.trim().toLowerCase()
+    return (plan.items ?? []).filter((it) => {
+      if (tipo && it.tipo_item !== tipo) return false
+      if (cumplimiento && it.estado_cumplimiento !== cumplimiento) return false
+      const ini = it.fecha_inicio?.slice(0, 10) || ''
+      const fin = it.fecha_fin?.slice(0, 10) || ''
+      if (fechaDesde && fin && fin < fechaDesde) return false
+      if (fechaHasta && ini && ini > fechaHasta) return false
+      if (!needle) return true
+      const hay = `${it.titulo} ${it.descripcion ?? ''} ${it.materiales ?? ''} ${labelTipoItem(it.tipo_item)}`.toLowerCase()
+      return hay.includes(needle)
+    })
+  }, [plan.items, q, tipo, cumplimiento, fechaDesde, fechaHasta])
+
+  const toggleCumplimiento = async (it: PlanItem) => {
+    if (!canToggleCumplimiento || pendingId) return
+    const next = nextCumplimiento(it.estado_cumplimiento)
+    setPendingId(it.id)
+    try {
+      const updated = await updatePlanItem(it.id, {
+        estado_cumplimiento: next.estado,
+        porcentaje_avance: next.avance,
+      })
+      onItemUpdated?.(updated)
+      toast.success(`Marcado como ${next.label.toLowerCase()}`)
+    } catch (e) {
+      toast.error(userMessageFromError(e))
+    } finally {
+      setPendingId(null)
+    }
+  }
+
   return (
     <Modal
       open
       title="Ver plan"
-      wide
+      xl
       onClose={onClose}
       footer={
         <>
@@ -543,36 +633,128 @@ function VerPlanModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
         <br />
         Aprobación: {labelAprobacion(plan.estado_aprobacion)} · Auditoría: {labelAuditoria(plan.estado_auditoria_maestro)}
       </p>
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Título</th>
-            <th>Tipo</th>
-            <th>Puntos</th>
-            <th>Fechas</th>
-            <th>Materiales</th>
-            <th>Cumplimiento</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(plan.items ?? []).map((it, idx) => (
-            <tr key={it.id}>
-              <td>{idx + 1}</td>
-              <td>{it.titulo}</td>
-              <td>{it.tipo_item}</td>
-              <td>{it.puntos ?? 0}</td>
-              <td>
-                {it.fecha_inicio?.slice(0, 10)} — {it.fecha_fin?.slice(0, 10)}
-              </td>
-              <td>{it.materiales || '—'}</td>
-              <td>
-                {it.estado_cumplimiento} ({it.porcentaje_avance}%)
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      <div
+        style={{
+          display: 'grid',
+          gap: '0.5rem',
+          marginBottom: '1rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        }}
+        data-testid="plan-ver-filtros"
+      >
+        <SearchInput
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          data-testid="plan-ver-buscar"
+          style={{ minWidth: 0 }}
+        />
+        <Field label="Tipo">
+          <select className="field__input" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <option value="">Todos</option>
+            {TIPO_ITEM_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Desde">
+          <input
+            className="field__input"
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
+          />
+        </Field>
+        <Field label="Hasta">
+          <input
+            className="field__input"
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => setFechaHasta(e.target.value)}
+          />
+        </Field>
+        <Field label="Cumplimiento">
+          <select
+            className="field__input"
+            value={cumplimiento}
+            onChange={(e) => setCumplimiento(e.target.value)}
+          >
+            <option value="">Todos</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="iniciado">Iniciado</option>
+            <option value="finalizado">Finalizado</option>
+          </select>
+        </Field>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="texto-muted">No hay ítems con esos filtros.</p>
+      ) : (
+        <div style={{ display: 'grid', gap: '0.75rem' }} data-testid="plan-ver-cards">
+          {items.map((it, idx) => {
+            const estado = ['pendiente', 'iniciado', 'finalizado'].includes(it.estado_cumplimiento)
+              ? it.estado_cumplimiento
+              : 'pendiente'
+            return (
+              <article
+                key={it.id}
+                className={`neon-surface neon-surface--${estado} neon-card-row`}
+              >
+                <div className="neon-card-row__body">
+                  <div className="page-title-row" style={{ marginBottom: '0.35rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1rem' }}>
+                      {idx + 1}. {it.titulo}
+                    </h3>
+                    <span className="badge">{labelCumplimiento(it.estado_cumplimiento)}</span>
+                  </div>
+                  {it.descripcion ? (
+                    <p style={{ margin: '0 0 0.5rem', whiteSpace: 'pre-wrap' }}>{it.descripcion}</p>
+                  ) : null}
+                  <p className="texto-muted" style={{ margin: 0, fontSize: '0.9rem' }}>
+                    <strong>Tipo:</strong> {labelTipoItem(it.tipo_item)} · <strong>Puntos:</strong>{' '}
+                    {it.puntos ?? 0} · <strong>Avance:</strong> {it.porcentaje_avance}%
+                    <br />
+                    <strong>Fechas:</strong> {it.fecha_inicio?.slice(0, 10) || '—'} —{' '}
+                    {it.fecha_fin?.slice(0, 10) || '—'}
+                    <br />
+                    <strong>Materiales:</strong> {it.materiales || '—'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className={`neon-check neon-check--${estado}`}
+                  aria-label={`Cumplimiento: ${labelCumplimiento(estado)}. Clic para cambiar`}
+                  data-testid={`plan-item-check-${it.id}`}
+                  disabled={!canToggleCumplimiento || pendingId === it.id}
+                  onClick={() => void toggleCumplimiento(it)}
+                  title={`${labelCumplimiento(estado)} → ${nextCumplimiento(estado).label}`}
+                >
+                  <span className="neon-check__box" aria-hidden>
+                    {estado === 'finalizado' ? (
+                      <svg viewBox="0 0 24 24" className="neon-check__mark">
+                        <path
+                          d="M5 13l4 4L19 7"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    ) : null}
+                    {estado === 'iniciado' ? <span className="neon-check__dot" /> : null}
+                  </span>
+                  <span className="neon-check__label">{labelCumplimiento(estado)}</span>
+                </button>
+              </article>
+            )
+          })}
+        </div>
+      )}
+
       {(plan.comentarios?.length ?? 0) > 0 ? (
         <div style={{ marginTop: '1.25rem' }}>
           <h3>Comentarios de auditoría</h3>
@@ -756,63 +938,30 @@ function AuditarModal({
   )
 }
 
-function CrearPlanModal({
-  asignaciones,
-  periodos,
-  onClose,
-  onCreated,
-}: {
-  asignaciones: { id: string; curso_id: string; seccion_id: string; periodo_academico_id: string }[]
-  periodos: { id: string; nombre: string; anio_lectivo: number; status: string }[]
-  onClose: () => void
-  onCreated: () => void
-}) {
+function CrearPlanModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { session } = useSession()
-  const { data: config } = useQuery({ queryKey: ['configuracion'], queryFn: getConfiguracion })
-  const { data: cursos = [] } = useQuery({ queryKey: ['cursos'], queryFn: listCursos })
-  const { data: secciones = [] } = useQuery({ queryKey: ['secciones'], queryFn: listSecciones })
-  const { data: grados = [] } = useQuery({ queryKey: ['grados'], queryFn: listGrados })
-  const { data: modalidades = [] } = useQuery({ queryKey: ['modalidades'], queryFn: listModalidades })
+  const { data: mis, isLoading } = useQuery({
+    queryKey: ['planestudio', 'mis-cursos'],
+    queryFn: listMisCursos,
+  })
 
   const [asigId, setAsigId] = useState('')
-  const [periodoId, setPeriodoId] = useState('')
-  const [silabo, setSilabo] = useState<Curso | null>(null)
   const [parcialBlocks, setParcialBlocks] = useState<{ parcial_id: string; items: typeof emptyItem[] }[]>([])
   const [confirm, setConfirm] = useState(false)
 
-  const { data: parciales = [] } = useQuery({
-    queryKey: ['parciales', periodoId],
-    queryFn: () => listParciales(periodoId),
-    enabled: Boolean(periodoId),
-  })
-
-  const selectedAsig = asignaciones.find((a) => a.id === asigId)
-  const curso = cursos.find((c) => c.id === selectedAsig?.curso_id)
-  const seccion = secciones.find((s) => s.id === selectedAsig?.seccion_id)
-  const grado = grados.find((g) => g.id === seccion?.grado_id)
-  const modalidad = modalidades.find((m) => m.id === seccion?.modalidad_id)
+  const cursos = mis?.cursos ?? []
+  const selected: MisCurso | undefined = cursos.find((c) => c.asignacion_docente_id === asigId)
+  const parciales = selected?.parciales ?? []
 
   useEffect(() => {
-    if (!selectedAsig?.curso_id) {
-      setSilabo(null)
-      return
-    }
-    void getCurso(selectedAsig.curso_id)
-      .then(setSilabo)
-      .catch(() => setSilabo(null))
-  }, [selectedAsig?.curso_id])
-
-  useEffect(() => {
-    if (!periodoId || parciales.length === 0) return
-    if (parcialBlocks.length > 0) return
-    const first = parciales[0]
+    if (!selected || parciales.length === 0) return
     setParcialBlocks([
       {
-        parcial_id: first.id,
-        items: [{ ...emptyItem, parcial_id: first.id, puntos: 100 }],
+        parcial_id: parciales[0].id,
+        items: [{ ...emptyItem, parcial_id: parciales[0].id, puntos: 100 }],
       },
     ])
-  }, [periodoId, parciales, parcialBlocks.length])
+  }, [selected?.asignacion_docente_id])
 
   const flatItems = useMemo(
     () =>
@@ -833,7 +982,7 @@ function CrearPlanModal({
     mutationFn: () =>
       createPlan({
         asignacion_docente_id: asigId,
-        periodo_academico_id: periodoId,
+        periodo_academico_id: selected!.periodo_academico_id,
         items: flatItems,
       }),
     onSuccess: () => {
@@ -843,14 +992,8 @@ function CrearPlanModal({
     onError: (e) => toast.error(userMessageFromError(e)),
   })
 
-  const asigOpts = asignaciones.map((a) => {
-    const cn = cursos.find((c) => c.id === a.curso_id)?.nombre ?? a.curso_id
-    return { value: a.id, label: `${cn} · ${a.id.slice(0, 8)}` }
-  })
-
   const usedParcialIds = new Set(parcialBlocks.map((b) => b.parcial_id))
-  const availableParciales = (parciales as Parcial[]).filter((p) => !usedParcialIds.has(p.id))
-
+  const availableParciales = parciales.filter((p) => !usedParcialIds.has(p.id))
   const sumParcial = (items: typeof emptyItem[]) =>
     items.reduce((acc, it) => acc + (Number(it.puntos) || 0), 0)
 
@@ -871,7 +1014,7 @@ function CrearPlanModal({
               className="btn btn--primary"
               data-testid="plan-create-submit"
               onClick={() => setConfirm(true)}
-              disabled={!asigId || !periodoId || flatItems.length === 0}
+              disabled={!asigId || !selected || flatItems.length === 0}
             >
               Crear
             </button>
@@ -880,43 +1023,48 @@ function CrearPlanModal({
       >
         <div style={{ display: 'grid', gap: '0.75rem' }} data-testid="plan-create-wizard">
           <p className="texto-muted">
-            <strong>Institución:</strong> {config?.nombre_institucion ?? '—'}
+            <strong>Institución:</strong> {mis?.institucion_nombre || '—'}
             <br />
-            <strong>Maestro:</strong> {session?.username ?? session?.code ?? '—'}
+            <strong>Maestro:</strong> {session?.username || session?.code || '—'}
           </p>
 
-          <Field label="Asignación (curso / sección)">
-            <Combobox
-              options={asigOpts}
+          <Field label="Curso">
+            <select
+              className="field__input"
               value={asigId}
-              onChange={(v) => {
-                const a = asignaciones.find((x) => x.id === v)
-                setAsigId(v)
-                setPeriodoId(a?.periodo_academico_id || '')
+              data-testid="plan-create-curso"
+              disabled={isLoading}
+              onChange={(e) => {
+                setAsigId(e.target.value)
                 setParcialBlocks([])
               }}
-              placeholder="Elegir asignación"
-            />
+            >
+              <option value="">{isLoading ? 'Cargando cursos…' : 'Elegir curso…'}</option>
+              {cursos.map((c) => (
+                <option key={c.asignacion_docente_id} value={c.asignacion_docente_id}>
+                  {[c.curso_nombre, c.grado_nombre, c.modalidad_nombre].filter(Boolean).join(' · ')}
+                  {c.periodo_nombre ? ` · ${c.periodo_nombre}` : ''}
+                  {` (${c.parciales?.length ?? 0} parciales)`}
+                </option>
+              ))}
+            </select>
           </Field>
 
-          {selectedAsig ? (
+          {!isLoading && cursos.length === 0 ? (
+            <p className="texto-muted">No tienes cursos asignados en este periodo.</p>
+          ) : null}
+
+          {selected ? (
             <p data-testid="plan-create-meta">
-              Curso: <strong>{curso?.nombre ?? '—'}</strong> · Grado: {grado?.nombre ?? '—'} · Modalidad:{' '}
-              {modalidad?.nombre ?? '—'} · Periodo:{' '}
-              {labelPeriodo(periodos.find((p) => p.id === periodoId) ?? { nombre: '', anio_lectivo: 0, status: '', id: '', fecha_inicio: '', fecha_fin: '' })}
+              Curso: <strong>{selected.curso_nombre}</strong> · Grado: {selected.grado_nombre || '—'} ·
+              Modalidad: {selected.modalidad_nombre || '—'} · Periodo: {selected.periodo_nombre || '—'}
             </p>
           ) : null}
 
-          {silabo?.objetivo_general ? (
+          {selected?.objetivo_general ? (
             <details>
               <summary>Sílabo del curso (solo lectura)</summary>
-              <p style={{ whiteSpace: 'pre-wrap' }}>{silabo.objetivo_general}</p>
-              {(silabo.prerrequisitos?.length ?? 0) > 0 ? (
-                <p>
-                  <strong>Prerrequisitos:</strong>{' '}
-                  {silabo.prerrequisitos!.map((p) => p.texto).join('; ')}
-                </p>
-              ) : null}
+              <p style={{ whiteSpace: 'pre-wrap' }}>{selected.objetivo_general}</p>
             </details>
           ) : null}
 
@@ -931,57 +1079,74 @@ function CrearPlanModal({
               >
                 <div className="page-title-row">
                   <h3 style={{ margin: 0 }}>{parcial?.nombre ?? `Parcial ${bi + 1}`}</h3>
-                  <span className={sum === 100 ? 'badge' : 'badge'} style={{ color: sum > 100 || sum < 100 ? '#b00' : undefined }}>
-                    {sum} / 100 pts
-                  </span>
+                  <span style={{ color: sum !== 100 ? '#b00' : undefined }}>{sum} / 100 pts</span>
                 </div>
                 {block.items.map((it, ii) => (
-                  <div key={ii} style={{ display: 'grid', gap: '0.35rem', marginTop: '0.5rem' }}>
-                    <input
-                      className="field__input"
-                      placeholder="Título"
-                      value={it.titulo}
-                      data-testid={bi === 0 && ii === 0 ? 'plan-item-titulo' : undefined}
-                      onChange={(e) => {
-                        const next = [...parcialBlocks]
-                        next[bi] = {
-                          ...next[bi],
-                          items: next[bi].items.map((x, j) =>
-                            j === ii ? { ...x, titulo: e.target.value } : x,
-                          ),
-                        }
-                        setParcialBlocks(next)
-                      }}
-                    />
-                    <textarea
-                      className="field__input"
-                      rows={2}
-                      placeholder="Descripción"
-                      value={it.descripcion}
-                      onChange={(e) => {
-                        const next = [...parcialBlocks]
-                        next[bi].items[ii] = { ...next[bi].items[ii], descripcion: e.target.value }
-                        setParcialBlocks([...next])
-                      }}
-                    />
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.35rem' }}>
+                  <div
+                    key={ii}
+                    style={{
+                      display: 'grid',
+                      gap: '0.5rem',
+                      marginTop: '0.75rem',
+                      paddingTop: ii > 0 ? '0.75rem' : 0,
+                      borderTop: ii > 0 ? '1px solid #eee' : undefined,
+                    }}
+                  >
+                    <Field label="Título">
+                      <input
+                        className="field__input"
+                        placeholder="Título del ítem"
+                        value={it.titulo}
+                        data-testid={bi === 0 && ii === 0 ? 'plan-item-titulo' : undefined}
+                        onChange={(e) => {
+                          const next = [...parcialBlocks]
+                          next[bi] = {
+                            ...next[bi],
+                            items: next[bi].items.map((x, j) =>
+                              j === ii ? { ...x, titulo: e.target.value } : x,
+                            ),
+                          }
+                          setParcialBlocks(next)
+                        }}
+                      />
+                    </Field>
+                    <Field label="Descripción">
+                      <textarea
+                        className="field__input"
+                        rows={2}
+                        placeholder="Descripción"
+                        value={it.descripcion}
+                        onChange={(e) => {
+                          const next = [...parcialBlocks]
+                          next[bi].items[ii] = { ...next[bi].items[ii], descripcion: e.target.value }
+                          setParcialBlocks([...next])
+                        }}
+                      />
+                    </Field>
+                    <Field label="Tipo">
                       <select
                         className="field__input"
                         value={it.tipo_item}
+                        data-testid={bi === 0 && ii === 0 ? 'plan-item-tipo' : undefined}
                         onChange={(e) => {
                           const next = [...parcialBlocks]
                           next[bi].items[ii] = { ...next[bi].items[ii], tipo_item: e.target.value }
                           setParcialBlocks([...next])
                         }}
                       >
-                        <option value="tema">Tema</option>
-                        <option value="tarea">Tarea</option>
-                        <option value="examen">Examen</option>
-                        <option value="otro">Otro</option>
+                        {TIPO_ITEM_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
                       </select>
+                    </Field>
+                    <Field label="Puntos">
                       <input
                         className="field__input"
                         type="number"
+                        min={0}
+                        step={0.5}
                         placeholder="Puntos"
                         value={it.puntos}
                         onChange={(e) => {
@@ -990,37 +1155,45 @@ function CrearPlanModal({
                           setParcialBlocks([...next])
                         }}
                       />
-                      <input
-                        className="field__input"
-                        type="date"
-                        value={it.fecha_inicio}
-                        onChange={(e) => {
-                          const next = [...parcialBlocks]
-                          next[bi].items[ii] = { ...next[bi].items[ii], fecha_inicio: e.target.value }
-                          setParcialBlocks([...next])
-                        }}
-                      />
-                      <input
-                        className="field__input"
-                        type="date"
-                        value={it.fecha_fin}
-                        onChange={(e) => {
-                          const next = [...parcialBlocks]
-                          next[bi].items[ii] = { ...next[bi].items[ii], fecha_fin: e.target.value }
-                          setParcialBlocks([...next])
-                        }}
-                      />
+                    </Field>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      <Field label="Fecha inicio (aprox.)">
+                        <input
+                          className="field__input"
+                          type="date"
+                          value={it.fecha_inicio}
+                          onChange={(e) => {
+                            const next = [...parcialBlocks]
+                            next[bi].items[ii] = { ...next[bi].items[ii], fecha_inicio: e.target.value }
+                            setParcialBlocks([...next])
+                          }}
+                        />
+                      </Field>
+                      <Field label="Fecha fin (aprox.)">
+                        <input
+                          className="field__input"
+                          type="date"
+                          value={it.fecha_fin}
+                          onChange={(e) => {
+                            const next = [...parcialBlocks]
+                            next[bi].items[ii] = { ...next[bi].items[ii], fecha_fin: e.target.value }
+                            setParcialBlocks([...next])
+                          }}
+                        />
+                      </Field>
                     </div>
-                    <input
-                      className="field__input"
-                      placeholder="Materiales necesarios"
-                      value={it.materiales}
-                      onChange={(e) => {
-                        const next = [...parcialBlocks]
-                        next[bi].items[ii] = { ...next[bi].items[ii], materiales: e.target.value }
-                        setParcialBlocks([...next])
-                      }}
-                    />
+                    <Field label="Materiales">
+                      <input
+                        className="field__input"
+                        placeholder="Materiales necesarios"
+                        value={it.materiales}
+                        onChange={(e) => {
+                          const next = [...parcialBlocks]
+                          next[bi].items[ii] = { ...next[bi].items[ii], materiales: e.target.value }
+                          setParcialBlocks([...next])
+                        }}
+                      />
+                    </Field>
                   </div>
                 ))}
                 <button
@@ -1032,10 +1205,7 @@ function CrearPlanModal({
                     const next = [...parcialBlocks]
                     next[bi] = {
                       ...next[bi],
-                      items: [
-                        ...next[bi].items,
-                        { ...emptyItem, parcial_id: block.parcial_id, puntos: 0 },
-                      ],
+                      items: [...next[bi].items, { ...emptyItem, parcial_id: block.parcial_id, puntos: 0 }],
                     }
                     setParcialBlocks(next)
                   }}
@@ -1046,13 +1216,18 @@ function CrearPlanModal({
             )
           })}
 
-          {availableParciales.length > 0 ? (
+          {selected ? (
             <button
               type="button"
-              className="btn btn--primary"
+              className="btn btn--ghost"
               data-testid="plan-add-parcial"
+              style={{ width: '100%', marginTop: '0.25rem' }}
               onClick={() => {
                 const p = availableParciales[0]
+                if (!p) {
+                  toast.message('No hay más parciales en este periodo')
+                  return
+                }
                 setParcialBlocks((blocks) => [
                   ...blocks,
                   { parcial_id: p.id, items: [{ ...emptyItem, parcial_id: p.id, puntos: 100 }] },

@@ -209,7 +209,7 @@ function ControladoresPage() {
             data={usersQuery.data ?? []}
             columns={columns}
             filters={tableFilters}
-            searchPlaceholder="Buscar usuario…"
+            searchPlaceholder="Buscar…"
           />
         )}
       </section>

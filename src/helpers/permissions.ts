@@ -134,7 +134,6 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'calificaciones:get',
     'horarios:get',
     'personas:get',
-    'matricula:get',
   ],
   responsable: [
     'tareas:get',

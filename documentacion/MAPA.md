@@ -31,9 +31,9 @@ Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API tambié
 | `/personas` | Redirige a `/usuarios`. |
 | `/matricula` | Listado, alta (wizard) y reingreso. |
 | `/asignacion` | Maestro ↔ curso/sección/periodo. Alta vía `AsignacionFormModal` (maestro, curso, grado → sección, periodo). |
-| `/horarios` | Cuadrícula por sección; confirmar versión. |
+| `/horarios` | **Admin:** lista de versiones (confirmar/activar). **Maestro:** `MaestroHorarioView` — grilla personal Hora×Lun–Dom (`GET /horarios/mio`), buscador, filtro grado·sección; Ver → plan de la semana + tareas del día. |
 | `/plan-estudio` | Admin/director/consejería: tabla + filtros (sin crear); Ver / Auditar (ítems con puntos/materiales). Maestro: crear (wizard: cabecera auto + sílabo lectura + parciales Σ100 pts), tabla propia, Activar, Auditoría → Resolver. Estados: pendiente/denegado/aprobado + progreso de auditoría. |
-| `/asistencia` | Pase de lista. |
+| `/asistencia` | Materias del **periodo activo** que aparecen en el **horario activo** (maestro: solo las suyas). Sin filtro ni columna Periodo. Menú: Ver / Asistencia / Editar / Inasistencias. Grilla semana A/T/E/F; día de hoy más intenso, otros más opacos; **días futuros no editables**. |
 | `/tareas` | Tareas por curso. |
 | `/calificaciones` | Notas por parcial. |
 | `/pagos` | Obligaciones / mora. |
@@ -45,7 +45,9 @@ Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API tambié
 ## Componentes que importan
 
 - `Combobox` — filtrar lista. Con `allowCustom` también se puede escribir un valor nuevo (Enter, blur o «Usar «texto»»).
+- `SearchInput` — buscador con icono lupa y placeholder «Buscar…» (DataTable, asistencia, horario maestro, etc.).
 - `Field`, `Modal`, `ConfirmDialog`, `DataTable`, `WizardSteps`.
+- `MaestroHorarioView` — horario personal del maestro (página `/horarios`).
 - `PhotoCapture` — archivo o cámara; preview con `object URL`.
 - `MatriculaWizard` — alta de matrícula (ver abajo).
 - `UserFichaModal` — ficha de usuario (ver abajo).

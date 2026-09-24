@@ -15,6 +15,10 @@ export interface Asignacion {
   seccion_id: string
   periodo_academico_id: string
   status: string
+  curso_nombre?: string
+  grado_nombre?: string
+  modalidad_nombre?: string
+  seccion_nombre?: string
 }
 
 export async function listAsignaciones() {

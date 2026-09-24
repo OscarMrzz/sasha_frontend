@@ -49,6 +49,11 @@ test.describe('plan de estudio @critical', () => {
     await expect(page.getByTestId('plan-create-wizard')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText(/Institución:/i)).toBeVisible()
     await expect(page.getByText(/Maestro:/i)).toBeVisible()
+    const cursoSelect = page.getByTestId('plan-create-curso')
+    await expect(cursoSelect).toBeVisible()
+    await expect.poll(async () => cursoSelect.locator('option').count()).toBeGreaterThan(1)
+    await cursoSelect.selectOption({ index: 1 })
+    await expect(page.getByTestId('plan-create-meta')).toBeVisible({ timeout: 5_000 })
   })
 
   test('consejeria puede auditar', async ({ page }) => {

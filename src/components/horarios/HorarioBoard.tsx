@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
+import { SearchInput } from '#/components/ui/SearchInput'
 import { DIA_SHORT, nextSlotAfter, sortSlots, type TimeInterval } from '#/lib/horarioGrid'
 import type { HorarioSlot } from '#/services/horarios'
 
@@ -526,9 +527,7 @@ export function HorarioBoard({
       />
 
       <aside className="horario-board__sidebar">
-        <input
-          className="field__input"
-          placeholder="Buscar materia…"
+        <SearchInput
           value={pillSearch}
           onChange={(e) => onPillSearchChange(e.target.value)}
           data-testid="horario-pill-search"

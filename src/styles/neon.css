@@ -1,0 +1,224 @@
+/* =============================================================================
+   Neon UI — reutilizable
+   Uso tipico:
+     <article class="neon-surface neon-surface--iniciado">…</article>
+     <button class="neon-check neon-check--pendiente|iniciado|finalizado">
+       <span class="neon-check__box">
+         <span class="neon-check__dot"></span>   <!-- iniciado -->
+         <svg class="neon-check__mark">…</svg>   <!-- finalizado -->
+       </span>
+       <span class="neon-check__label">…</span>
+     </button>
+   Solo caja neon:
+     <span class="neon-box neon-box--gris|amarillo|amarillo-bright"></span>
+   ============================================================================= */
+
+:root {
+  --neon-gray: #9aa3ad;
+  --neon-gray-soft: rgba(154, 163, 173, 0.6);
+  --neon-yellow: #ffe066;
+  --neon-yellow-bright: #fff6b0;
+  --neon-yellow-hot: #fff2a0;
+}
+
+/* --- Superficie / card con borde neon --- */
+.neon-surface {
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+  background: var(--sasha-bg-raised);
+  transition: border-color 0.2s ease, box-shadow 0.25s ease;
+}
+
+.neon-surface--pendiente {
+  border-color: var(--sasha-border-suave);
+  box-shadow: none;
+}
+
+.neon-surface--iniciado {
+  border-color: rgba(255, 210, 58, 0.4);
+  box-shadow: 0 0 16px rgba(255, 200, 40, 0.12);
+}
+
+.neon-surface--finalizado {
+  border-color: rgba(255, 236, 120, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(255, 236, 120, 0.2),
+    0 0 20px rgba(255, 220, 60, 0.16);
+}
+
+/* --- Caja neon suelta (sin boton) --- */
+.neon-box {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.45rem;
+  border: 2px solid var(--neon-gray-soft);
+  background: rgba(20, 24, 30, 0.85);
+  box-shadow:
+    0 0 6px rgba(154, 163, 173, 0.2),
+    inset 0 0 8px rgba(154, 163, 173, 0.06);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.neon-box--gris {
+  border-color: var(--neon-gray-soft);
+  box-shadow:
+    0 0 8px rgba(154, 163, 173, 0.28),
+    inset 0 0 10px rgba(154, 163, 173, 0.08);
+}
+
+.neon-box--amarillo {
+  border-color: var(--neon-yellow);
+  background: rgba(255, 224, 102, 0.14);
+  box-shadow:
+    0 0 10px rgba(255, 224, 102, 0.65),
+    0 0 26px rgba(255, 210, 58, 0.35),
+    inset 0 0 12px rgba(255, 224, 102, 0.2);
+}
+
+.neon-box--amarillo-bright {
+  border-color: var(--neon-yellow-hot);
+  background: rgba(255, 246, 176, 0.2);
+  box-shadow:
+    0 0 12px var(--neon-yellow-hot),
+    0 0 28px rgba(255, 230, 100, 0.75),
+    0 0 48px rgba(255, 210, 58, 0.35),
+    inset 0 0 14px rgba(255, 246, 176, 0.28);
+}
+
+/* --- Control check neon (3 estados) --- */
+.neon-check {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.15rem;
+  border: none;
+  background: transparent;
+  color: var(--neon-gray);
+  cursor: pointer;
+  font: inherit;
+  width: 4.75rem; /* fijo ≈ etiqueta mas larga ("Finalizado") */
+}
+
+.neon-check:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.neon-check__box {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.45rem;
+  border: 2px solid var(--neon-gray-soft);
+  background: rgba(20, 24, 30, 0.85);
+  box-shadow:
+    0 0 6px rgba(154, 163, 173, 0.2),
+    inset 0 0 8px rgba(154, 163, 173, 0.06);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.neon-check:hover:not(:disabled) .neon-check__box {
+  transform: scale(1.04);
+}
+
+.neon-check__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--neon-yellow-bright);
+  box-shadow:
+    0 0 6px var(--neon-yellow),
+    0 0 12px rgba(255, 210, 58, 0.7);
+}
+
+.neon-check__mark {
+  width: 1.15rem;
+  height: 1.15rem;
+  filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 10px rgba(255, 210, 58, 0.7));
+}
+
+.neon-check__label {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(154, 163, 173, 0.9);
+  text-shadow: 0 0 8px rgba(154, 163, 173, 0.25);
+}
+
+/* Estados del check */
+.neon-check--pendiente {
+  color: var(--neon-gray);
+}
+
+.neon-check--pendiente .neon-check__box {
+  border-color: var(--neon-gray-soft);
+  box-shadow:
+    0 0 8px rgba(154, 163, 173, 0.28),
+    inset 0 0 10px rgba(154, 163, 173, 0.08);
+}
+
+.neon-check--pendiente:hover:not(:disabled) .neon-check__box {
+  border-color: #b0b8c2;
+  box-shadow:
+    0 0 12px rgba(176, 184, 194, 0.4),
+    inset 0 0 12px rgba(176, 184, 194, 0.1);
+}
+
+.neon-check--iniciado {
+  color: var(--neon-yellow);
+}
+
+.neon-check--iniciado .neon-check__box {
+  border-color: var(--neon-yellow);
+  background: rgba(255, 224, 102, 0.14);
+  box-shadow:
+    0 0 10px rgba(255, 224, 102, 0.65),
+    0 0 26px rgba(255, 210, 58, 0.35),
+    inset 0 0 12px rgba(255, 224, 102, 0.2);
+}
+
+.neon-check--iniciado .neon-check__label {
+  color: var(--neon-yellow);
+  text-shadow: 0 0 10px rgba(255, 224, 102, 0.55);
+}
+
+.neon-check--finalizado {
+  color: var(--neon-yellow-bright);
+}
+
+.neon-check--finalizado .neon-check__box {
+  border-color: var(--neon-yellow-hot);
+  background: rgba(255, 246, 176, 0.2);
+  box-shadow:
+    0 0 12px var(--neon-yellow-hot),
+    0 0 28px rgba(255, 230, 100, 0.75),
+    0 0 48px rgba(255, 210, 58, 0.35),
+    inset 0 0 14px rgba(255, 246, 176, 0.28);
+}
+
+.neon-check--finalizado .neon-check__label {
+  color: var(--neon-yellow-bright);
+  text-shadow: 0 0 12px rgba(255, 246, 176, 0.7);
+}
+
+/* Layout opcional: card con cuerpo + control a la derecha */
+.neon-card-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.85rem 1rem;
+}
+
+.neon-card-row__body {
+  min-width: 0;
+}

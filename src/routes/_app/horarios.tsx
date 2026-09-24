@@ -12,6 +12,7 @@ import {
   type PlacedBlock,
 } from '#/components/horarios/HorarioBoard'
 import { HorarioViewModal } from '#/components/horarios/HorarioViewModal'
+import { MaestroHorarioView } from '#/components/horarios/MaestroHorarioView'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
@@ -59,6 +60,21 @@ const WIZARD_STEPS = [
 ]
 
 function HorariosPage() {
+  const { can, roles } = useCan()
+  const isMaestroView = roles.includes('maestro') && !can('horarios:post')
+
+  if (isMaestroView) {
+    return (
+      <RequirePermission permission="horarios:get">
+        <MaestroHorarioView />
+      </RequirePermission>
+    )
+  }
+
+  return <HorariosAdminView />
+}
+
+function HorariosAdminView() {
   const { can } = useCan()
   const qc = useQueryClient()
 

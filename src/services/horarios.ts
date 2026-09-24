@@ -176,3 +176,58 @@ export async function reaplicarHorario(versionId: string, activar: boolean) {
     body: { version_id: versionId, activar },
   })
 }
+
+export interface HorarioMioSemana {
+  fecha_ref: string
+  semana_inicio: string
+  semana_fin: string
+  slots: HorarioSlotDetail[]
+}
+
+export interface HorarioMioPlanItem {
+  id: string
+  titulo: string
+  descripcion?: string | null
+  tipo_item: string
+  fecha_inicio: string
+  fecha_fin: string
+  estado_cumplimiento: string
+  porcentaje_avance: number
+}
+
+export interface HorarioMioTarea {
+  id: string
+  titulo: string
+  descripcion?: string | null
+  fecha_asignacion: string
+  fecha_entrega: string
+}
+
+export interface HorarioMioDetalle {
+  asignacion_docente_id: string
+  fecha: string
+  dia_semana: string
+  semana_inicio: string
+  semana_fin: string
+  curso_nombre: string
+  grado_nombre: string
+  seccion_nombre: string
+  modalidad_nombre: string
+  plan_items: HorarioMioPlanItem[]
+  tareas: HorarioMioTarea[]
+}
+
+export async function getHorarioMio(fecha?: string) {
+  const qs = new URLSearchParams()
+  if (fecha) qs.set('fecha', fecha)
+  const suffix = qs.toString() ? `?${qs}` : ''
+  return apiRequest<HorarioMioSemana>(`/horarios/mio${suffix}`)
+}
+
+export async function getHorarioMioDetalle(asignacionDocenteId: string, fecha: string) {
+  const qs = new URLSearchParams({
+    asignacion_docente_id: asignacionDocenteId,
+    fecha,
+  })
+  return apiRequest<HorarioMioDetalle>(`/horarios/mio/detalle?${qs}`)
+}

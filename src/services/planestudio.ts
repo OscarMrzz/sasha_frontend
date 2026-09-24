@@ -219,6 +219,35 @@ export async function updatePlanItem(itemId: string, body: CumplimientoUpdate) {
   return apiRequest<PlanItem>(`/planestudio/cumplimiento/${itemId}`, { method: 'PUT', body })
 }
 
+export interface MisParcial {
+  id: string
+  numero: number
+  nombre: string
+}
+
+export interface MisCurso {
+  asignacion_docente_id: string
+  curso_id: string
+  curso_nombre: string
+  grado_nombre: string
+  modalidad_nombre: string
+  seccion_nombre: string
+  periodo_academico_id: string
+  periodo_nombre: string
+  objetivo_general?: string
+  parciales: MisParcial[]
+}
+
+export interface MisCursosResponse {
+  institucion_nombre: string
+  cursos: MisCurso[]
+}
+
+/** Cursos asignados al maestro autenticado (para crear plan). */
+export async function listMisCursos() {
+  return apiRequest<MisCursosResponse>('/planestudio/mis-cursos')
+}
+
 /** Base URL helper for tests / debugging */
 export function planestudioBase() {
   return getApiBaseUrl()

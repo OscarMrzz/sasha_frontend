@@ -26,13 +26,20 @@ import { createAlumno, createMaestro, createResponsable } from '#/services/perso
 export const Route = createFileRoute('/_app/usuarios')({ component: UsuariosPage })
 
 const col = createColumnHelper<ResponseUser>()
-const ASSIGNABLE = ROLES.filter((r) => r !== 'developer')
+/** Roles asignables en create/edit. Alumno va por matrículas; Admin solo por seed. */
+const ASSIGNABLE = ROLES.filter((r) => r !== 'developer' && r !== 'admin' && r !== 'alumno')
+/** Filtro de tabla: incluye admin/alumno para listar existentes. */
+const FILTERABLE_ROLES = ROLES.filter((r) => r !== 'developer')
 
 const defaultForm: CreateUserRequest = {
-  roles: ['alumno'],
+  roles: ['maestro'],
   statususer: 'ACTIVE',
   primer_nombre: '',
   primer_apellido: '',
+}
+
+function hasAdminRole(roles: string[]) {
+  return roles.some((r) => r.toLowerCase() === 'admin')
 }
 
 type EditForm = {
@@ -200,7 +207,7 @@ function UsuariosPage() {
         getOptionValues: (r: ResponseUser) => r.roles,
         getLabel: (r: ResponseUser) => roleLabel(r.roles[0] ?? ''),
         matches: (r: ResponseUser, selected: string) => r.roles.includes(selected),
-        options: ASSIGNABLE.map((r) => ({ value: r, label: roleLabel(r) })),
+        options: FILTERABLE_ROLES.map((r) => ({ value: r, label: roleLabel(r) })),
       },
       { id: 'status', label: 'Estado', getValue: (r: ResponseUser) => r.statususer },
     ],
@@ -258,31 +265,35 @@ function UsuariosPage() {
           >
             Ver
           </button>
-          <Can permission="users:put">
-            <button
-              type="button"
-              className="ctx-menu__item"
-              onClick={(e) => {
-                e.stopPropagation()
-                openEdit(ctx.row)
-              }}
-            >
-              Editar
-            </button>
-          </Can>
-          <Can permission="users:delete">
-            <button
-              type="button"
-              className="ctx-menu__item ctx-menu__item--danger"
-              onClick={(e) => {
-                e.stopPropagation()
-                setConfirmDelete(ctx.row)
-                closeCtx()
-              }}
-            >
-              Eliminar
-            </button>
-          </Can>
+          {!hasAdminRole(ctx.row.roles) ? (
+            <>
+              <Can permission="users:put">
+                <button
+                  type="button"
+                  className="ctx-menu__item"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openEdit(ctx.row)
+                  }}
+                >
+                  Editar
+                </button>
+              </Can>
+              <Can permission="users:delete">
+                <button
+                  type="button"
+                  className="ctx-menu__item ctx-menu__item--danger"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setConfirmDelete(ctx.row)
+                    closeCtx()
+                  }}
+                >
+                  Eliminar
+                </button>
+              </Can>
+            </>
+          ) : null}
         </div>
       ) : null}
 
@@ -440,7 +451,7 @@ function UsuariosPage() {
         title={isCreate ? 'Crear usuario' : 'Guardar usuario'}
         message={
           isCreate
-            ? '¿Confirmas la creación? Se descargará el PDF y, si el rol es alumno/maestro/responsable, se creará también el perfil de persona.'
+            ? '¿Confirmas la creación? Se descargará el PDF y, si el rol es maestro/responsable, se creará también el perfil de persona.'
             : '¿Guardar roles y estado del usuario?'
         }
         onConfirm={() => (isCreate ? createMut.mutate() : saveEditMut.mutate())}

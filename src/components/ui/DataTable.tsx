@@ -11,6 +11,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { downloadCsv } from '#/helpers/export-csv'
 import { downloadTablePdf } from '#/helpers/export-pdf'
+import { SearchInput } from '#/components/ui/SearchInput'
 
 export type DataTableFilter<T> = {
   id: string
@@ -36,6 +37,7 @@ type DataTableProps<T extends RowData> = {
   filters?: DataTableFilter<T>[]
   onRowContextMenu?: (row: T, event: React.MouseEvent) => void
   onRowClick?: (row: T, event: React.MouseEvent) => void
+  onRowDoubleClick?: (row: T, event: React.MouseEvent) => void
   toolbarExtra?: ReactNode
   addLabel?: string
   onAdd?: () => void
@@ -60,6 +62,7 @@ export function DataTable<T extends RowData>({
   filters = [],
   onRowContextMenu,
   onRowClick,
+  onRowDoubleClick,
   toolbarExtra,
   addLabel = 'Agregar',
   onAdd,
@@ -193,13 +196,10 @@ export function DataTable<T extends RowData>({
 
       <div className="panel-toolbar">
         <div className="panel-toolbar__search">
-          <input
-            className="field__input"
-            style={{ width: '100%' }}
+          <SearchInput
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder={searchPlaceholder}
-            aria-label="Buscar"
             data-testid="data-table-search"
           />
         </div>
@@ -310,10 +310,14 @@ export function DataTable<T extends RowData>({
               rows.map((row) => (
                 <tr
                   key={row.id}
-                  style={onRowClick ? { cursor: 'pointer' } : undefined}
+                  style={onRowClick || onRowDoubleClick ? { cursor: 'pointer' } : undefined}
                   onClick={(e) => {
                     if (!onRowClick) return
                     onRowClick(row.original as T, e)
+                  }}
+                  onDoubleClick={(e) => {
+                    if (!onRowDoubleClick) return
+                    onRowDoubleClick(row.original as T, e)
                   }}
                   onContextMenu={(e) => {
                     if (!onRowContextMenu) return
