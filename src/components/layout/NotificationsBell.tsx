@@ -1,84 +1,140 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell } from 'lucide-react'
-import { useState } from 'react'
-import { listNotificaciones, markNotificacionLeida } from '#/services/notificaciones'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { Modal } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
+import { listNotificaciones, markNotificacionLeida  } from '#/services/notificaciones'
+import type {Notificacion} from '#/services/notificaciones';
+
+function formatFecha(fecha?: string) {
+  if (!fecha) return ''
+  const d = new Date(fecha)
+  if (Number.isNaN(d.getTime())) return fecha
+  return d.toLocaleString('es-HN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 export function NotificationsBell() {
-  const [open, setOpen] = useState(false)
+  const [listOpen, setListOpen] = useState(false)
+  const [detalle, setDetalle] = useState<Notificacion | null>(null)
+  const [shown, setShown] = useState<Notificacion | null>(null)
   const qc = useQueryClient()
-  const { data = [] } = useQuery({
+  const { data = [], isLoading } = useQuery({
     queryKey: ['notificaciones'],
     queryFn: () => listNotificaciones(),
-    enabled: open,
+    refetchInterval: 60_000,
   })
 
   const unread = data.filter((n) => !n.leida).length
+
+  useEffect(() => {
+    if (detalle) setShown(detalle)
+  }, [detalle])
+
+  const openDetalle = async (n: Notificacion) => {
+    setDetalle(n)
+    if (n.leida) return
+    try {
+      await markNotificacionLeida(n.id)
+      qc.setQueryData<Notificacion[]>(['notificaciones'], (prev) =>
+        prev?.map((it) => (it.id === n.id ? { ...it, leida: true } : it)),
+      )
+      void qc.invalidateQueries({ queryKey: ['notificaciones'] })
+    } catch (err) {
+      toast.error(userMessageFromError(err))
+    }
+  }
 
   return (
     <>
       <button
         type="button"
-        className="btn btn--ghost btn--sm"
-        aria-label="Notificaciones"
+        className="notif-bell"
+        aria-label={unread > 0 ? `Notificaciones (${unread} sin leer)` : 'Notificaciones'}
+        title="Notificaciones"
         data-testid="notifications-bell"
-        onClick={() => setOpen(true)}
+        onClick={() => setListOpen(true)}
       >
-        <Bell size={16} />
-        {unread > 0 ? <span className="badge badge--warn">{unread}</span> : null}
+        <Bell size={18} />
+        {unread > 0 ? (
+          <span className="notif-bell__count" data-testid="notifications-unread">
+            {unread > 99 ? '99+' : unread}
+          </span>
+        ) : null}
       </button>
 
-      {open ? (
-        <>
-          <div
-            className="modal-backdrop"
-            style={{ background: 'transparent' }}
-            onClick={() => setOpen(false)}
-            role="presentation"
-          />
-          <aside className="notif-drawer" aria-label="Panel de notificaciones">
-            <div className="notif-drawer__header">
-              <h2 className="modal__title">Notificaciones</h2>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOpen(false)}>
-                Cerrar
-              </button>
+      <Modal
+        open={listOpen}
+        title={unread > 0 ? `Notificaciones · ${unread} sin leer` : 'Notificaciones'}
+        onClose={() => {
+          if (!detalle) setListOpen(false)
+        }}
+        footer={
+          <button type="button" className="btn btn--ghost" onClick={() => setListOpen(false)}>
+            Cerrar
+          </button>
+        }
+      >
+        {isLoading ? (
+          <p className="empty-state">Cargando…</p>
+        ) : data.length === 0 ? (
+          <p className="empty-state">No tienes notificaciones</p>
+        ) : (
+          <ul className="notif-list" data-testid="notifications-list">
+            {data.map((n) => (
+              <li key={n.id}>
+                <button
+                  type="button"
+                  className={`notif-row${n.leida ? '' : ' notif-row--unread'}`}
+                  data-testid="notification-row"
+                  onClick={() => void openDetalle(n)}
+                >
+                  <span
+                    className={`notif-dot${n.leida ? ' notif-dot--read' : ''}`}
+                    aria-label={n.leida ? 'Leída' : 'No leída'}
+                  />
+                  <span className="notif-row__body">
+                    <span className="notif-row__top">
+                      <span className="notif-row__title">{n.titulo}</span>
+                      {n.es_banner ? <span className="badge badge--warn">Importante</span> : null}
+                    </span>
+                    <span className="notif-row__excerpt">{n.mensaje}</span>
+                    {n.fecha ? <span className="notif-row__date">{formatFecha(n.fecha)}</span> : null}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Modal>
+
+      <Modal
+        open={detalle != null}
+        title={shown?.titulo ?? 'Notificación'}
+        onClose={() => setDetalle(null)}
+        footer={
+          <button type="button" className="btn btn--primary" onClick={() => setDetalle(null)}>
+            Cerrar
+          </button>
+        }
+      >
+        {shown ? (
+          <div className="notif-detail" data-testid="notification-detail">
+            <div className="notif-detail__meta">
+              {shown.fecha ? <span>{formatFecha(shown.fecha)}</span> : null}
+              {shown.tipo_nombre ? <span className="badge">{shown.tipo_nombre}</span> : null}
+              {shown.es_banner ? <span className="badge badge--warn">Importante</span> : null}
             </div>
-            <div className="notif-drawer__list">
-              {data.length === 0 ? (
-                <p className="empty-state">No hay notificaciones</p>
-              ) : (
-                data.map((n) => (
-                  <article key={n.id} className="notif-item">
-                    <strong className="texto-emphasis">{n.titulo}</strong>
-                    <p className="texto-muted" style={{ fontSize: '0.8rem', margin: '0.35rem 0' }}>
-                      {n.mensaje}
-                    </p>
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      onClick={async () => {
-                        try {
-                          await markNotificacionLeida(n.id)
-                          await qc.invalidateQueries({ queryKey: ['notificaciones'] })
-                          toast.success('Marcada como leída')
-                        } catch (err) {
-                          toast.error(userMessageFromError(err))
-                        }
-                      }}
-                    >
-                      Marcar leída
-                    </button>
-                  </article>
-                ))
-              )}
-            </div>
-            <p className="texto-muted" style={{ fontSize: '0.7rem', padding: '0.75rem 1rem' }}>
-              Actualización bajo demanda (sin push en tiempo real — ver EVOLUCION.md).
-            </p>
-          </aside>
-        </>
-      ) : null}
+            <p className="notif-detail__msg">{shown.mensaje}</p>
+          </div>
+        ) : null}
+      </Modal>
     </>
   )
 }

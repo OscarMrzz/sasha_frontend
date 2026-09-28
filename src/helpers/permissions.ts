@@ -50,6 +50,10 @@ const adminPerms: Permission[] = [
   'tareas:get',
   'tareas:post',
   'tareas:put',
+  'notas:get',
+  'notas:post',
+  'notas:put',
+  'notas:delete',
   'calificaciones:get',
   'calificaciones:post',
   'calificaciones:put',
@@ -90,6 +94,8 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
   ],
   director: [
     'catalogos:get',
+    'catalogos:post',
+    'catalogos:put',
     'personas:get',
     'matricula:get',
     'horarios:get',
@@ -110,6 +116,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'calificaciones:get',
     'personas:get',
     'estadisticas:get',
+    'notificaciones:get',
     'sace:get',
   ],
   contabilidad: [
@@ -119,6 +126,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'personas:get',
     'matricula:get',
     'estadisticas:get',
+    'notificaciones:get',
     'boveda:post',
     'boveda:get',
   ],
@@ -134,6 +142,11 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'calificaciones:get',
     'horarios:get',
     'personas:get',
+    'notificaciones:get',
+    'notas:get',
+    'notas:post',
+    'notas:put',
+    'notas:delete',
   ],
   responsable: [
     'tareas:get',
@@ -153,7 +166,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'planestudio:get',
     'notificaciones:get',
   ],
-  developer: ['auditoria:get'],
+  developer: ['auditoria:get', 'notificaciones:get'],
 }
 
 export const SECRETARIA_ASSIGNABLE_ROLES: RoleName[] = [

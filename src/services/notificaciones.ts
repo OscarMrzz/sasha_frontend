@@ -6,6 +6,8 @@ export interface Notificacion {
   mensaje: string
   status: string
   tipo_codigo?: string
+  tipo_nombre?: string
+  fecha?: string
   es_banner?: boolean
   leida: boolean
 }
