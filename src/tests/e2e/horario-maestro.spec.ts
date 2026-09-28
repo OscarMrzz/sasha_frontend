@@ -3,7 +3,7 @@ import { test, expect, loginAs } from './fixtures/auth'
 test.describe('horario maestro @smoke', () => {
   test('maestro ve grilla en página con buscador y filtro sección', async ({ page }) => {
     await loginAs(page, { code: '1002026501', password: 'Admin123!' })
-    await page.getByRole('link', { name: 'Horarios' }).click()
+    await page.goto('/horarios')
     await expect(page.getByTestId('horario-maestro-view')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByRole('heading', { name: /Mi horario/i })).toBeVisible()
     await expect(page.getByTestId('data-table-add-button')).toHaveCount(0)

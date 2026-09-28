@@ -1,0 +1,45 @@
+import { test, expect, loginAs } from './fixtures/auth'
+
+test.describe('maestro hub @smoke', () => {
+  test('login maestro llega al hub; Ir abre dashboard; Inicio vuelve', async ({ page }) => {
+    await loginAs(page, { code: '1002026501', password: 'Admin123!' })
+    await expect(page).toHaveURL(/\/maestro\/?$/)
+    await expect(page.getByTestId('maestro-hub')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('sidebar-collapse')).toHaveCount(0)
+
+    const ir = page.locator('[data-testid^="maestro-hub-ir-"]').first()
+    await expect(ir).toBeVisible({ timeout: 15_000 })
+    await ir.click()
+    await expect(page).toHaveURL(/\/maestro\/clases\//, { timeout: 10_000 })
+    await expect(page.getByTestId('maestro-clase')).toBeVisible()
+    await expect(page.getByTestId('mdash-ahora')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('mdash-plan')).toContainText(/Plan de esta semana/i)
+    await expect(page.getByTestId('mdash-plan')).toContainText(/Lectura dialogada/i)
+    await expect(page.getByTestId('mdash-plan')).toContainText(/Vocabulario nuevo/i)
+    await expect(page.getByTestId('mdash-plan')).not.toContainText(/Ortografía: uso de la b y v/i)
+    await expect(page.getByTestId('mdash-asistencia-pill')).toBeVisible()
+    await expect(page.getByTestId('mdash-asistencia-ratio')).toHaveText(/\d+\/\d+/)
+    await expect(page.getByTestId('mdash-tareas')).toContainText(/hoy/i)
+    await expect(page.getByTestId('mdash-tareas')).not.toContainText(/manana/i)
+    await expect(page.getByTestId('mdash-alumnos')).toBeVisible()
+    await expect(page.getByTestId('mdash-notas')).toBeVisible()
+    await expect(page.getByTestId('mdash-pasar-lista')).toBeVisible()
+    await expect(page.getByTestId('sidebar-collapse')).toBeVisible()
+
+    await page.getByTestId('top-inicio').click()
+    await expect(page).toHaveURL(/\/maestro\/?$/, { timeout: 10_000 })
+    await expect(page.getByTestId('maestro-hub')).toBeVisible()
+  })
+
+  test('nueva nota abre drawer a la derecha', async ({ page }) => {
+    await loginAs(page, { code: '1002026501', password: 'Admin123!' })
+    const ir = page.locator('[data-testid^="maestro-hub-ir-"]').first()
+    await ir.click()
+    await expect(page.getByTestId('mdash-nueva-nota')).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId('mdash-nueva-nota').click()
+    await expect(page.getByTestId('notas-drawer')).toBeVisible()
+    await expect(page.getByTestId('notas-titulo')).toHaveAttribute('placeholder', 'Titulo')
+    await expect(page.getByTestId('notas-contenido')).toBeVisible()
+    await expect(page.getByText('Vista MD')).toHaveCount(0)
+  })
+})

@@ -18,9 +18,10 @@ test.describe('catalogos @critical', () => {
     await page.getByTestId('grado-nombre-input').fill(nombre)
     await page.getByTestId('grado-save-button').click()
     const confirm = page.getByRole('button', { name: /Confirmar/i })
-    if (await confirm.isVisible().catch(() => false)) {
-      await confirm.click()
-    }
-    await expect(page.getByText(nombre).first()).toBeVisible({ timeout: 15_000 })
+    await expect(confirm).toBeVisible({ timeout: 5_000 })
+    await confirm.click()
+    await expect(page.locator('table.data-table tbody td', { hasText: nombre }).first()).toBeVisible({
+      timeout: 15_000,
+    })
   })
 })

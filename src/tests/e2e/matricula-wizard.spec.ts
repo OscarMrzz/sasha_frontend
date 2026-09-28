@@ -28,6 +28,9 @@ test.describe('matricula wizard @critical', () => {
     await page.getByTestId('matricula-identidad').fill('0000000000000999')
     await expect(page.getByTestId('matricula-identidad')).toHaveValue('0000000000000')
 
+    // el toast de error queda sobre el footer y se pausa si el mouse está encima
+    await page.mouse.move(0, 0)
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0, { timeout: 10_000 })
     await page.getByTestId('matricula-wizard-next').click()
     await expect(page.getByText('¿De dónde proviene el alumno?')).toBeVisible({ timeout: 8_000 })
 

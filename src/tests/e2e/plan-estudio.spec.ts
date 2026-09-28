@@ -33,7 +33,7 @@ test.describe('plan de estudio @critical', () => {
 
   test('maestro ve sus planes y puede crear', async ({ page }) => {
     await loginAs(page, { code: '1002026501', password: 'Admin123!' })
-    await page.getByRole('link', { name: 'Plan de estudio' }).click()
+    await page.goto('/plan-estudio')
     await expect(page.getByRole('heading', { name: /Mis planes/i })).toBeVisible({
       timeout: 15_000,
     })

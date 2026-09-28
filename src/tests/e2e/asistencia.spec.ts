@@ -10,7 +10,7 @@ function todayLocalISO() {
 
 async function openAsistenciaMaestro(page: import('@playwright/test').Page) {
   await loginAs(page, { code: '1002026501', password: 'Admin123!' })
-  await page.getByRole('link', { name: 'Asistencia' }).click()
+  await page.goto('/asistencia')
   await expect(page.getByRole('heading', { name: /Asistencia/i })).toBeVisible({
     timeout: 15_000,
   })

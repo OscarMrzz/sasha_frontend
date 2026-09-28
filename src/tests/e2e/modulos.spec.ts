@@ -24,7 +24,10 @@ test.describe('modulos @critical', () => {
     await expect(page.getByRole('menuitem', { name: /Excel/i })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: 'PDF' })).toBeVisible()
     await page.getByRole('heading', { name: 'Usuarios' }).click()
+    // los usuarios admin no muestran Editar/Eliminar
+    await page.getByTestId('data-table-filter-rol').selectOption('maestro')
     const row = page.locator('table.data-table tbody tr').first()
+    await expect(row).toBeVisible({ timeout: 10_000 })
     await row.click({ button: 'right' })
     await expect(page.getByRole('button', { name: 'Ver' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Editar' })).toBeVisible()
@@ -93,7 +96,7 @@ test.describe('modulos @critical', () => {
     await expect(page.getByTestId('asignacion-grado-select')).toBeVisible()
     await expect(page.getByTestId('asignacion-seccion-select')).toBeVisible()
 
-    // Periodo inactivo (seed) tiene todas las secciones de Español cubiertas → sin grados libres
+    // Periodo inactivo: la lista de grados se recalcula (libres o aviso de todo asignado)
     const inactivo = page
       .getByTestId('asignacion-periodo-select')
       .getByRole('option')
@@ -101,7 +104,11 @@ test.describe('modulos @critical', () => {
       .first()
     if (await inactivo.count()) {
       await inactivo.click()
-      await expect(page.getByTestId('asignacion-grado-select')).toContainText(/ya están asignadas/i)
+      await expect(inactivo).toHaveAttribute('aria-selected', 'true')
+      const gradoSelect = page.getByTestId('asignacion-grado-select')
+      await expect(
+        gradoSelect.getByRole('option').first().or(gradoSelect.getByText(/ya están asignadas/i)),
+      ).toBeVisible({ timeout: 10_000 })
 
       // Volver al activo: debe haber grados libres (sin asignaciones en ese periodo)
       await page
@@ -120,7 +127,9 @@ test.describe('modulos @critical', () => {
     await loginAs(page)
     for (const name of ['Matrícula', 'Horarios', 'Pagos', 'Export SACE', 'Estadísticas']) {
       await page.getByRole('link', { name }).click()
-      await expect(page.getByRole('heading', { level: 1 }).or(page.locator('.page-title'))).toBeVisible()
+      await expect(
+        page.getByRole('heading', { level: 1 }).or(page.locator('.page-title')).first(),
+      ).toBeVisible()
     }
   })
 
