@@ -1,4 +1,4 @@
-import { Link, useRouterState } from '@tanstack/react-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   Award,
   Bell,
@@ -6,7 +6,7 @@ import {
   Calendar,
   CalendarDays,
   CheckSquare,
-  ChevronUp,
+  ChevronDown,
   ClipboardList,
   Clock,
   Download,
@@ -14,14 +14,17 @@ import {
   Home,
   Layers,
   LayoutGrid,
+  LayoutDashboard,
   Link2,
   ListTodo,
   LogOut,
+  Moon,
   PanelLeftClose,
   PanelLeft,
   Search,
   Settings,
   Shield,
+  Sun,
   User,
   Users,
   Wallet,
@@ -34,12 +37,15 @@ import { NotificationsBell } from '#/components/layout/NotificationsBell'
 import { NAV_ITEMS } from '#/helpers/nav'
 import { useSession } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
+import { isMaestroRole } from '#/lib/home-path'
+import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { logout } from '#/services/auth'
 import { toast } from 'sonner'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
 
 const ICONS: Record<string, ReactNode> = {
   home: <Home className="sidebar-nav__icon" />,
+  dashboard: <LayoutDashboard className="sidebar-nav__icon" />,
   settings: <Settings className="sidebar-nav__icon" />,
   layers: <Layers className="sidebar-nav__icon" />,
   clock: <Clock className="sidebar-nav__icon" />,
@@ -65,8 +71,11 @@ const ICONS: Record<string, ReactNode> = {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, clearSession } = useSession()
-  const { can } = useCan()
+  const { can, roles } = useCan()
+  const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const isHubLauncher = pathname === '/maestro' || pathname === '/maestro/'
+  const maestro = isMaestroRole(roles)
   const [collapsed, setCollapsed] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
@@ -83,13 +92,31 @@ export function AppShell({ children }: { children: ReactNode }) {
       label: string
       permission: (typeof NAV_ITEMS)[number]['permission'] | null
       icon: string
+      onClick?: () => void
     }
-    const base: Item[] = [
-      { to: '/dashboard', label: 'Inicio', permission: null, icon: 'home' },
-      ...NAV_ITEMS.filter((i) => i.to !== '/dashboard'),
-    ]
+    const home: Item = maestro
+      ? {
+          to: '/maestro/clases/$asignacionId',
+          label: 'Dashboard',
+          permission: null,
+          icon: 'dashboard',
+          onClick: () => {
+            const id = readLastAsignacionId()
+            if (!id) {
+              toast.message('Elige una clase desde Inicio')
+              void navigate({ to: '/maestro' })
+              return
+            }
+            void navigate({
+              to: '/maestro/clases/$asignacionId',
+              params: { asignacionId: id },
+            })
+          },
+        }
+      : { to: '/dashboard', label: 'Inicio', permission: null, icon: 'home' }
+    const base: Item[] = [home, ...NAV_ITEMS.filter((i) => i.to !== '/dashboard')]
     return base.filter((i) => (i.permission ? can(i.permission) : true))
-  }, [can])
+  }, [can, maestro, navigate])
 
   useEffect(() => {
     if (!userMenuOpen) return
@@ -113,53 +140,59 @@ export function AppShell({ children }: { children: ReactNode }) {
     ? `${session.username} · ${session.code}`
     : session?.code || 'Usuario'
 
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    document.documentElement.setAttribute('data-theme', next)
+  }
+
+  const goInicio = () => {
+    void navigate({ to: maestro ? '/maestro' : '/dashboard' })
+  }
+
   return (
-    <div className="app-shell" data-theme={theme}>
-      <aside
-        className={`app-shell__sidebar${collapsed ? ' app-shell__sidebar--collapsed' : ''}`}
-        aria-label="Navegación principal"
-      >
-        <div className="sidebar-brand">
-          <div className="sidebar-brand__text">
-            {!collapsed ? (
-              <>
-                <p className="sidebar-brand__name">Sasha</p>
-                <p className="sidebar-brand__sub">Gestión escolar</p>
-              </>
-            ) : (
-              <p className="sidebar-brand__name sidebar-brand__name--mark">S</p>
-            )}
-          </div>
+    <div
+      className={`app-shell${isHubLauncher ? ' app-shell--hub' : ''}${collapsed && !isHubLauncher ? ' app-shell--sidebar-collapsed' : ''}`}
+      data-theme={theme}
+    >
+      <header className="app-shell__top">
+        <div className="app-shell__top-brand" data-testid="maestro-hub-brand">
           <button
             type="button"
-            className="sidebar-brand__collapse"
-            onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
-            title={collapsed ? 'Expandir' : 'Colapsar'}
-            data-testid="sidebar-collapse"
+            className="app-shell__top-brand-name"
+            data-testid="top-brand-sasha"
+            onClick={goInicio}
+            title="Inicio"
           >
-            {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+            Sasha
           </button>
+          <span className="badge" data-testid="session-code">
+            {session?.code}
+          </span>
         </div>
 
-        <nav className="sidebar-nav">
-          {items.map((item) => {
-            const active = pathname === item.to || pathname.startsWith(item.to + '/')
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`sidebar-nav__item${active ? ' sidebar-nav__item--active' : ''}`}
-                title={item.label}
-              >
-                {ICONS[item.icon] ?? ICONS.home}
-                {!collapsed ? <span>{item.label}</span> : null}
-              </Link>
-            )
-          })}
-        </nav>
+        <Can permission="notificaciones:get">
+          <NotificationsBell />
+        </Can>
 
-        <div className="sidebar-footer" ref={userMenuRef}>
+        {maestro ? (
+          <button
+            type="button"
+            className="user-panel user-panel--top"
+            data-testid="top-inicio"
+            onClick={goInicio}
+            title="Inicio"
+          >
+            <span className="user-panel__avatar" aria-hidden>
+              <Home size={16} />
+            </span>
+            <span className="user-panel__meta">
+              <span className="user-panel__name">Inicio</span>
+            </span>
+          </button>
+        ) : null}
+
+        <div className="app-shell__top-user" ref={userMenuRef}>
           {userMenuOpen ? (
             <div className="user-menu" role="menu" data-testid="user-menu">
               <Link
@@ -172,6 +205,19 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <User size={15} />
                 <span>Mi perfil</span>
               </Link>
+              <button
+                type="button"
+                className="user-menu__item"
+                role="menuitem"
+                data-testid="theme-toggle"
+                onClick={() => {
+                  toggleTheme()
+                  setUserMenuOpen(false)
+                }}
+              >
+                {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                <span>{theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}</span>
+              </button>
               <button
                 type="button"
                 className="user-menu__item user-menu__item--danger"
@@ -190,7 +236,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <button
             type="button"
-            className={`user-panel${userMenuOpen ? ' user-panel--open' : ''}`}
+            className={`user-panel user-panel--top${userMenuOpen ? ' user-panel--open' : ''}`}
             onClick={() => setUserMenuOpen((o) => !o)}
             aria-expanded={userMenuOpen}
             aria-haspopup="menu"
@@ -204,46 +250,74 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <User size={16} />
               )}
             </span>
-            {!collapsed ? (
-              <span className="user-panel__meta">
-                <span className="user-panel__name">{session?.username || 'Usuario'}</span>
-                <span className="user-panel__code">{session?.code}</span>
-              </span>
-            ) : null}
-            {!collapsed ? (
-              <ChevronUp
-                size={14}
-                className={`user-panel__chevron${userMenuOpen ? ' user-panel__chevron--open' : ''}`}
-              />
-            ) : null}
+            <span className="user-panel__meta">
+              <span className="user-panel__name">{session?.username || 'Usuario'}</span>
+              <span className="user-panel__code">{session?.code}</span>
+            </span>
+            <ChevronDown
+              size={14}
+              className={`user-panel__chevron${userMenuOpen ? ' user-panel__chevron--open' : ''}`}
+            />
           </button>
         </div>
-      </aside>
+      </header>
 
-      <div className="app-shell__main">
-        <header className="app-shell__top">
-          <div style={{ marginRight: 'auto', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <span className="badge" data-testid="session-code">
-              {session?.code}
-            </span>
-          </div>
-
-          <Can permission="notificaciones:get">
-            <NotificationsBell />
-          </Can>
-
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              const next = theme === 'dark' ? 'light' : 'dark'
-              setTheme(next)
-              document.documentElement.setAttribute('data-theme', next)
-            }}
+      <div className="app-shell__body">
+        {!isHubLauncher ? (
+          <aside
+            className={`app-shell__sidebar${collapsed ? ' app-shell__sidebar--collapsed' : ''}`}
+            aria-label="Navegación principal"
           >
-            {theme === 'dark' ? 'Claro' : 'Oscuro'}
-          </button>
-        </header>
+            <div className="sidebar-toolbar">
+              <button
+                type="button"
+                className="sidebar-toolbar__collapse"
+                onClick={() => setCollapsed((c) => !c)}
+                aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+                title={collapsed ? 'Expandir' : 'Colapsar'}
+                data-testid="sidebar-collapse"
+              >
+                {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+              </button>
+            </div>
+
+            <nav className="sidebar-nav">
+              {items.map((item) => {
+                const isDashboard = item.label === 'Dashboard'
+                const active = isDashboard
+                  ? pathname.startsWith('/maestro/clases/')
+                  : pathname === item.to || pathname.startsWith(item.to + '/')
+                if (item.onClick) {
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      className={`sidebar-nav__item${active ? ' sidebar-nav__item--active' : ''}`}
+                      title={item.label}
+                      data-testid="nav-dashboard"
+                      onClick={item.onClick}
+                    >
+                      {ICONS[item.icon] ?? ICONS.home}
+                      {!collapsed ? <span>{item.label}</span> : null}
+                    </button>
+                  )
+                }
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`sidebar-nav__item${active ? ' sidebar-nav__item--active' : ''}`}
+                    title={item.label}
+                  >
+                    {ICONS[item.icon] ?? ICONS.home}
+                    {!collapsed ? <span>{item.label}</span> : null}
+                  </Link>
+                )
+              })}
+            </nav>
+          </aside>
+        ) : null}
+
         <main className="app-shell__content">{children}</main>
       </div>
 

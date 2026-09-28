@@ -62,7 +62,14 @@ function labelTipo(v: string) {
   return map[v] ?? v
 }
 
-export function MaestroHorarioView() {
+export function MaestroHorarioView({
+  asignacionId,
+  title = 'Mi horario',
+}: {
+  /** Si se indica, solo muestra bloques de esa asignación. */
+  asignacionId?: string
+  title?: string
+} = {}) {
   const [fechaRef, setFechaRef] = useState(todayISO)
   const [search, setSearch] = useState('')
   const [filterSeccion, setFilterSeccion] = useState('')
@@ -88,8 +95,13 @@ export function MaestroHorarioView() {
     return () => window.removeEventListener('click', h)
   }, [ctx, closeCtx])
 
-  const slots = data?.slots ?? []
+  const slots = useMemo(() => {
+    const all = data?.slots ?? []
+    if (!asignacionId) return all
+    return all.filter((s) => s.asignacion_docente_id === asignacionId)
+  }, [data?.slots, asignacionId])
   const semanaInicio = data?.semana_inicio ?? fechaRef
+  const lockedToAsignacion = Boolean(asignacionId)
 
   const seccionOptions = useMemo(() => {
     const m = new Map<string, string>()
@@ -118,7 +130,6 @@ export function MaestroHorarioView() {
       return haystack.includes(q)
     })
   }, [slots, filterSeccion, search])
-
   const intervals = useMemo(() => {
     const map = new Map<string, { start: string; end: string }>()
     for (const s of filtered) {
@@ -187,7 +198,7 @@ export function MaestroHorarioView() {
         }}
       >
         <h1 className="page-title" style={{ margin: 0, flex: '1 1 auto' }}>
-          Mi horario
+          {title}
         </h1>
         <Field label="Semana de">
           <input
@@ -204,29 +215,33 @@ export function MaestroHorarioView() {
         <div className="empty-state">Cargando horario…</div>
       ) : slots.length === 0 ? (
         <div className="empty-state" data-testid="horario-maestro-empty">
-          Sin horario publicado para tus asignaciones.
+          {lockedToAsignacion
+            ? 'Sin bloques de horario para esta clase en la semana.'
+            : 'Sin horario publicado para tus asignaciones.'}
         </div>
       ) : (
         <div className="horario-view" data-testid="horario-maestro-horario-view">
-          <div className="horario-view__filters">
-            <div className="horario-view__filter" style={{ minWidth: 220, flex: '1 1 200px' }}>
-              <SearchInput
-                data-testid="horario-maestro-search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+          {!lockedToAsignacion ? (
+            <div className="horario-view__filters">
+              <div className="horario-view__filter" style={{ minWidth: 220, flex: '1 1 200px' }}>
+                <SearchInput
+                  data-testid="horario-maestro-search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <div className="horario-view__filter">
+                <span className="horario-board__filter-label">Grado · sección</span>
+                <Combobox
+                  data-testid="horario-maestro-filtro-seccion"
+                  value={filterSeccion}
+                  onChange={setFilterSeccion}
+                  options={[{ value: '', label: 'Todas' }, ...seccionOptions]}
+                  placeholder="Sección…"
+                />
+              </div>
             </div>
-            <div className="horario-view__filter">
-              <span className="horario-board__filter-label">Grado · sección</span>
-              <Combobox
-                data-testid="horario-maestro-filtro-seccion"
-                value={filterSeccion}
-                onChange={setFilterSeccion}
-                options={[{ value: '', label: 'Todas' }, ...seccionOptions]}
-                placeholder="Sección…"
-              />
-            </div>
-          </div>
+          ) : null}
 
           <div className="horario-board__grid-wrap">
             <table

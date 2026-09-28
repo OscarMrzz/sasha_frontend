@@ -35,6 +35,8 @@ import { Route as AppCatalogosGradosRouteImport } from './routes/_app/catalogos/
 import { Route as AppCatalogosModalidadesRouteImport } from './routes/_app/catalogos/modalidades'
 import { Route as AppCatalogosPeriodosRouteImport } from './routes/_app/catalogos/periodos'
 import { Route as AppCatalogosSeccionesRouteImport } from './routes/_app/catalogos/secciones'
+import { Route as AppMaestroIndexRouteImport } from './routes/_app/maestro/index'
+import { Route as AppMaestroClasesAsignacionIdRouteImport } from './routes/_app/maestro/clases.$asignacionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -165,6 +167,17 @@ const AppCatalogosSeccionesRoute = AppCatalogosSeccionesRouteImport.update({
   path: '/catalogos/secciones',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMaestroIndexRoute = AppMaestroIndexRouteImport.update({
+  id: '/maestro/',
+  path: '/maestro/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMaestroClasesAsignacionIdRoute =
+  AppMaestroClasesAsignacionIdRouteImport.update({
+    id: '/maestro/clases/$asignacionId',
+    path: '/maestro/clases/$asignacionId',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -192,6 +205,8 @@ export interface FileRoutesByFullPath {
   '/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
   '/catalogos/periodos': typeof AppCatalogosPeriodosRoute
   '/catalogos/secciones': typeof AppCatalogosSeccionesRoute
+  '/maestro/': typeof AppMaestroIndexRoute
+  '/maestro/clases/$asignacionId': typeof AppMaestroClasesAsignacionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -219,6 +234,8 @@ export interface FileRoutesByTo {
   '/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
   '/catalogos/periodos': typeof AppCatalogosPeriodosRoute
   '/catalogos/secciones': typeof AppCatalogosSeccionesRoute
+  '/maestro': typeof AppMaestroIndexRoute
+  '/maestro/clases/$asignacionId': typeof AppMaestroClasesAsignacionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -248,6 +265,8 @@ export interface FileRoutesById {
   '/_app/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
   '/_app/catalogos/periodos': typeof AppCatalogosPeriodosRoute
   '/_app/catalogos/secciones': typeof AppCatalogosSeccionesRoute
+  '/_app/maestro/': typeof AppMaestroIndexRoute
+  '/_app/maestro/clases/$asignacionId': typeof AppMaestroClasesAsignacionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -277,6 +296,8 @@ export interface FileRouteTypes {
     | '/catalogos/modalidades'
     | '/catalogos/periodos'
     | '/catalogos/secciones'
+    | '/maestro/'
+    | '/maestro/clases/$asignacionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -304,6 +325,8 @@ export interface FileRouteTypes {
     | '/catalogos/modalidades'
     | '/catalogos/periodos'
     | '/catalogos/secciones'
+    | '/maestro'
+    | '/maestro/clases/$asignacionId'
   id:
     | '__root__'
     | '/'
@@ -332,6 +355,8 @@ export interface FileRouteTypes {
     | '/_app/catalogos/modalidades'
     | '/_app/catalogos/periodos'
     | '/_app/catalogos/secciones'
+    | '/_app/maestro/'
+    | '/_app/maestro/clases/$asignacionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -524,6 +549,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCatalogosSeccionesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/maestro/': {
+      id: '/_app/maestro/'
+      path: '/maestro'
+      fullPath: '/maestro/'
+      preLoaderRoute: typeof AppMaestroIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/maestro/clases/$asignacionId': {
+      id: '/_app/maestro/clases/$asignacionId'
+      path: '/maestro/clases/$asignacionId'
+      fullPath: '/maestro/clases/$asignacionId'
+      preLoaderRoute: typeof AppMaestroClasesAsignacionIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -551,6 +590,8 @@ interface AppRouteChildren {
   AppCatalogosModalidadesRoute: typeof AppCatalogosModalidadesRoute
   AppCatalogosPeriodosRoute: typeof AppCatalogosPeriodosRoute
   AppCatalogosSeccionesRoute: typeof AppCatalogosSeccionesRoute
+  AppMaestroIndexRoute: typeof AppMaestroIndexRoute
+  AppMaestroClasesAsignacionIdRoute: typeof AppMaestroClasesAsignacionIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -577,6 +618,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppCatalogosModalidadesRoute: AppCatalogosModalidadesRoute,
   AppCatalogosPeriodosRoute: AppCatalogosPeriodosRoute,
   AppCatalogosSeccionesRoute: AppCatalogosSeccionesRoute,
+  AppMaestroIndexRoute: AppMaestroIndexRoute,
+  AppMaestroClasesAsignacionIdRoute: AppMaestroClasesAsignacionIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
