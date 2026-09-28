@@ -8,7 +8,7 @@ import { RequirePermission, useCan } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
-import { Modal } from '#/components/ui/Modal'
+import { Modal, useDismiss } from '#/components/ui/Modal'
 import { SearchInput } from '#/components/ui/SearchInput'
 import { labelPeriodo } from '#/helpers/periodos'
 import { userMessageFromError } from '#/lib/api'
@@ -23,7 +23,7 @@ import {
   listMisCursos,
   listPlanes,
   resolverAuditoria,
-  setAprobacion,
+  setAprobacion as saveAprobacion,
   updatePlan,
   updatePlanItem,
   type MisCurso,
@@ -442,7 +442,6 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
         <CrearPlanModal
           onClose={() => setCreateOpen(false)}
           onCreated={() => {
-            setCreateOpen(false)
             void qc.invalidateQueries({ queryKey: ['planes'] })
           }}
         />
@@ -472,18 +471,17 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
           plan={editPlan}
           onClose={() => setEditPlan(null)}
           onSaved={() => {
-            setEditPlan(null)
             void qc.invalidateQueries({ queryKey: ['planes'] })
           }}
         />
       ) : null}
 
-      {auditPrompt ? (
-        <Modal
-          open
-          title="Auditoría"
-          onClose={() => setAuditPrompt(null)}
-          footer={
+      <Modal
+        open={auditPrompt != null}
+        title="Auditoría"
+        onClose={() => setAuditPrompt(null)}
+        footer={
+          auditPrompt ? (
             <>
               <button type="button" className="btn btn--ghost" onClick={() => setAuditPrompt(null)}>
                 Cerrar
@@ -510,8 +508,10 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
                 Resolver
               </button>
             </>
-          }
-        >
+          ) : null
+        }
+      >
+        {auditPrompt ? (
           <p data-testid="plan-tareas-count">
             Tienes <strong>{auditPrompt.tareas_abiertas ?? auditPrompt.comentarios?.filter((c) => !c.resuelto).length ?? 0}</strong>{' '}
             tarea(s) por resolver
@@ -520,8 +520,8 @@ function MaestroView({ canPost, canPut }: { canPost: boolean; canPut: boolean })
               : ''}
             .
           </p>
-        </Modal>
-      ) : null}
+        ) : null}
+      </Modal>
 
       {resolverPlan ? (
         <ResolverModal
@@ -564,6 +564,7 @@ function VerPlanModal({
   canToggleCumplimiento?: boolean
   onItemUpdated?: (item: PlanItem) => void
 }) {
+  const { open, dismiss } = useDismiss(onClose)
   const [q, setQ] = useState('')
   const [tipo, setTipo] = useState('')
   const [cumplimiento, setCumplimiento] = useState('')
@@ -606,13 +607,13 @@ function VerPlanModal({
 
   return (
     <Modal
-      open
+      open={open}
       title="Ver plan"
       xl
-      onClose={onClose}
+      onClose={dismiss}
       footer={
         <>
-          <button type="button" className="btn btn--ghost" onClick={onClose}>
+          <button type="button" className="btn btn--ghost" onClick={dismiss}>
             Cerrar
           </button>
           <button
@@ -781,6 +782,7 @@ function AuditarModal({
   onClose: () => void
   onRefresh: () => Promise<void>
 }) {
+  const { open, dismiss } = useDismiss(onClose)
   const [comentarioItem, setComentarioItem] = useState<PlanItem | null>(null)
   const [texto, setTexto] = useState('')
   const [aprobacion, setAprobacion] = useState(plan.estado_aprobacion)
@@ -797,7 +799,7 @@ function AuditarModal({
   })
 
   const aprMut = useMutation({
-    mutationFn: () => setAprobacion(plan.id, aprobacion),
+    mutationFn: () => saveAprobacion(plan.id, aprobacion),
     onSuccess: async () => {
       toast.success('Aprobación actualizada')
       await onRefresh()
@@ -807,13 +809,13 @@ function AuditarModal({
 
   return (
     <Modal
-      open
+      open={open}
       title="Auditar plan"
       xl
-      onClose={onClose}
+      onClose={dismiss}
       footer={
         <>
-          <button type="button" className="btn btn--ghost" onClick={onClose}>
+          <button type="button" className="btn btn--ghost" onClick={dismiss}>
             Cerrar
           </button>
           <button
@@ -902,11 +904,10 @@ function AuditarModal({
         )}
       </div>
 
-      {comentarioItem ? (
-        <Modal
-          open
-          title={`Comentario · ${comentarioItem.titulo}`}
-          onClose={() => setComentarioItem(null)}
+      <Modal
+        open={comentarioItem != null}
+        title={comentarioItem ? `Comentario · ${comentarioItem.titulo}` : 'Comentario'}
+        onClose={() => setComentarioItem(null)}
           footer={
             <>
               <button type="button" className="btn btn--ghost" onClick={() => setComentarioItem(null)}>
@@ -933,12 +934,12 @@ function AuditarModal({
             />
           </Field>
         </Modal>
-      ) : null}
     </Modal>
   )
 }
 
 function CrearPlanModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { open, dismiss } = useDismiss(onClose)
   const { session } = useSession()
   const { data: mis, isLoading } = useQuery({
     queryKey: ['planestudio', 'mis-cursos'],
@@ -988,6 +989,7 @@ function CrearPlanModal({ onClose, onCreated }: { onClose: () => void; onCreated
     onSuccess: () => {
       toast.success('Plan creado')
       onCreated()
+      dismiss()
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
@@ -1000,13 +1002,13 @@ function CrearPlanModal({ onClose, onCreated }: { onClose: () => void; onCreated
   return (
     <>
       <Modal
-        open
+        open={open}
         title="Crear plan de estudio"
         xl
-        onClose={onClose}
+        onClose={dismiss}
         footer={
           <>
-            <button type="button" className="btn btn--ghost" onClick={onClose}>
+            <button type="button" className="btn btn--ghost" onClick={dismiss}>
               Cancelar
             </button>
             <button
@@ -1262,6 +1264,7 @@ function EditarPlanModal({
   onClose: () => void
   onSaved: () => void
 }) {
+  const { open, dismiss } = useDismiss(onClose)
   const [items, setItems] = useState(plan.items ?? [])
   const mut = useMutation({
     mutationFn: () =>
@@ -1285,6 +1288,7 @@ function EditarPlanModal({
     onSuccess: () => {
       toast.success('Plan actualizado')
       onSaved()
+      dismiss()
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
@@ -1293,13 +1297,13 @@ function EditarPlanModal({
 
   return (
     <Modal
-      open
+      open={open}
       title="Editar plan"
       xl
-      onClose={onClose}
+      onClose={dismiss}
       footer={
         <>
-          <button type="button" className="btn btn--ghost" onClick={onClose}>
+          <button type="button" className="btn btn--ghost" onClick={dismiss}>
             Cancelar
           </button>
           <button type="button" className="btn btn--primary" onClick={() => mut.mutate()} disabled={mut.isPending}>
@@ -1368,11 +1372,9 @@ function EditarPlanModal({
 }
 
 function ResolverModal({ plan: initial, onClose }: { plan: Plan; onClose: () => void }) {
+  const { open, dismiss } = useDismiss(onClose)
   const [plan, setPlan] = useState(initial)
-  const tareas = useMemo(
-    () => (plan.comentarios ?? []).filter((c) => true),
-    [plan.comentarios],
-  )
+  const tareas = useMemo(() => plan.comentarios ?? [], [plan.comentarios])
   const pendientes = useMemo(() => tareas.filter((c) => !c.resuelto), [tareas])
   const itemIdsConTarea = useMemo(() => {
     const ids: string[] = []
@@ -1468,10 +1470,10 @@ function ResolverModal({ plan: initial, onClose }: { plan: Plan; onClose: () => 
 
   return (
     <Modal
-      open
+      open={open}
       title="Resolver auditoría"
       xl
-      onClose={onClose}
+      onClose={dismiss}
       footer={
         <>
           <button
@@ -1490,7 +1492,7 @@ function ResolverModal({ plan: initial, onClose }: { plan: Plan; onClose: () => 
           >
             Siguiente
           </button>
-          <button type="button" className="btn btn--primary" onClick={onClose}>
+          <button type="button" className="btn btn--primary" onClick={dismiss}>
             Cerrar
           </button>
         </>

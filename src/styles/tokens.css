@@ -39,6 +39,8 @@
   --sasha-bg-glass: rgba(20, 24, 30, 0.85);
   --sasha-shadow-modal: 0 30px 60px rgba(0, 0, 0, 0.5);
   --sasha-radius: 4px;
+  --sasha-control-h: 2.5rem;
+  --sasha-control-h-sm: 2rem;
   --sasha-sidebar-width: 240px;
   --sasha-sidebar-collapsed: 64px;
   --sasha-topbar-height: 52px;
