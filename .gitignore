@@ -13,3 +13,6 @@ __unconfig*
 todos.json
 playwright-report
 test-results
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+.claude/

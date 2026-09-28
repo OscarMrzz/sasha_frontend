@@ -17,8 +17,10 @@ Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API tambié
 
 | Ruta | Qué hace |
 |------|----------|
-| `/login` | Código + contraseña. Sin selector de rol. |
-| `/dashboard` | Inicio autenticado. |
+| `/login` | Código + contraseña. Sin selector de rol. Maestro → `/maestro`; resto → `/dashboard`. |
+| `/dashboard` | Inicio autenticado (roles no-maestro). |
+| `/maestro` | **Hub del maestro** tras login: cards + horario abajo. **Sin sidebar.** Menú ⋮: Ver / Pasar lista / Agregar tarea (modales). **Ir** → dashboard de clase. Top **Inicio** / marca **Sasha** vuelven aquí. |
+| `/maestro/clases/$asignacionId` | **Dashboard asistente** (bento): Ahora (slot), Notas (tarjetas + Nueva), Alumnos (pastilla Pendiente/Incompleta/Lista + ratio marcas/total + Pasar lista), Tareas a revisar hoy (⋮ Revisar), y abajo a todo el ancho **Plan de esta semana**: barra de progreso tipo termómetro (iniciado = mitad del ítem, finalizado = ítem completo) + tarjetas (título, descripción, fechas, pts, materiales) con ⋮ para cambiar cumplimiento (`PUT /planestudio/cumplimiento/{id}`). Drawer de notas a la derecha (Markdown TipTap; guarda al cerrar / Listo; TTL 14 días). Sidebar: ítem Dashboard. |
 | `/mi-perfil` | Contraseña propia y foto de perfil (bóveda). |
 | `/configuracion` | Nombre institución, código SACE, umbrales de nota. |
 | `/catalogos/grados` | CRUD grados. |
@@ -47,12 +49,15 @@ Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API tambié
 - `Combobox` — filtrar lista. Con `allowCustom` también se puede escribir un valor nuevo (Enter, blur o «Usar «texto»»).
 - `SearchInput` — buscador con icono lupa y placeholder «Buscar…» (DataTable, asistencia, horario maestro, etc.).
 - `Field`, `Modal`, `ConfirmDialog`, `DataTable`, `WizardSteps`.
-- `MaestroHorarioView` — horario personal del maestro (página `/horarios`).
+- `Modal` anima al abrir (crece con rebote) y al cerrar (crece un poco y se encoge, 280 ms). Si el padre desmonta el modal, usar `useDismiss(onClose)` para esperar la animación antes de desmontar.
+- `NotificationsBell` — campanita del header para todos los perfiles: contador de no leídas (refresca cada 60 s), modal con la lista (punto de no leída, «Importante» en banners) y modal de detalle que marca leída al abrir.
+- `MaestroHorarioView` — horario personal del maestro (`/horarios`, embebido en `/maestro` y filtrable en `/maestro/clases/$id`).
 - `PhotoCapture` — archivo o cámara; preview con `object URL`.
 - `MatriculaWizard` — alta de matrícula (ver abajo).
 - `UserFichaModal` — ficha de usuario (ver abajo).
 - `CursoVerModal` — Ver curso: nombre + tabla de maestros/grado/sección/periodo + PDF; botón Asignar maestro.
 - `AsignacionFormModal` — crear asignación; opcional `cursoId` fijo (desde Cursos).
+- `NotasDrawer` — panel derecho de nota (título + editor Markdown); guarda con Listo / X / Escape.
 
 ## Ficha de usuario
 
