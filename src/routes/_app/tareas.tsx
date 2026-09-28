@@ -1,59 +1,89 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
-import { RequirePermission, Can } from '#/components/gates/Can'
-import { Combobox } from '#/components/ui/Combobox'
-import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
+import { useEffect, useMemo, useState } from 'react'
+import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
-import { Modal } from '#/components/ui/Modal'
-import { SearchInput } from '#/components/ui/SearchInput'
-import { userMessageFromError } from '#/lib/api'
-import { listAsignaciones } from '#/services/asignacion'
-import { createTarea, listTareasByAlumno, type TareaCreate } from '#/services/tareas'
+import { TareaCreateModal } from '#/components/tareas/TareaCreateModal'
+import { TareaRevisionModal } from '#/components/tareas/TareaRevisionModal'
+import { readLastAsignacionId } from '#/lib/last-asignacion'
+import { listMateriasAsistencia } from '#/services/asistencia'
+import { listTareas, labelCriterioModo, type Tarea } from '#/services/tareas'
 
-export const Route = createFileRoute('/_app/tareas')({ component: TareasPage })
+export const Route = createFileRoute('/_app/tareas')({
+  validateSearch: (s: Record<string, unknown>) => ({
+    revisar: typeof s.revisar === 'string' ? s.revisar : undefined,
+  }),
+  component: TareasPage,
+})
 
-const col = createColumnHelper<{ tarea_id: string; titulo: string; entregado: boolean; puntos?: number; liberado: boolean }>()
+const col = createColumnHelper<Tarea>()
+
+function claseLabel(t: Tarea) {
+  return `${t.curso_nombre ?? '—'} · ${t.grado_nombre ?? ''} sec${t.seccion_nombre ?? ''}`
+}
 
 function TareasPage() {
-  const { data: asignaciones = [] } = useQuery({ queryKey: ['asignaciones'], queryFn: listAsignaciones })
-  const [alumnoId, setAlumnoId] = useState('')
-  const [searchId, setSearchId] = useState('')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [confirmSave, setConfirmSave] = useState(false)
-  const [form, setForm] = useState<TareaCreate>({
-    asignacion_docente_id: '',
-    titulo: '',
-    fecha_asignacion: new Date().toISOString().slice(0, 10),
-    fecha_entrega: '',
+  const { can } = useCan()
+  const { revisar: revisarFromSearch } = Route.useSearch()
+  const navigate = Route.useNavigate()
+
+  const { data: materias = [] } = useQuery({
+    queryKey: ['asistencia-materias'],
+    queryFn: listMateriasAsistencia,
+  })
+  const { data: tareas = [], isLoading } = useQuery({
+    queryKey: ['tareas'],
+    queryFn: listTareas,
   })
 
-  const { data: tareas = [], isFetching, refetch } = useQuery({
-    queryKey: ['tareas-alumno', searchId],
-    queryFn: () => listTareasByAlumno(searchId),
-    enabled: Boolean(searchId),
-  })
+  const [createOpen, setCreateOpen] = useState(false)
+  const [revisarId, setRevisarId] = useState<string | null>(revisarFromSearch ?? null)
+  const [asigId, setAsigId] = useState(() => readLastAsignacionId() ?? '')
 
-  const createMut = useMutation({
-    mutationFn: () => createTarea(form),
-    onSuccess: () => {
-      toast.success('Tarea creada')
-      setModalOpen(false)
-      setConfirmSave(false)
-      if (searchId) refetch()
-    },
-    onError: (e) => toast.error(userMessageFromError(e)),
-  })
+  useEffect(() => {
+    if (revisarFromSearch) setRevisarId(revisarFromSearch)
+  }, [revisarFromSearch])
+
+  const asigEffective =
+    asigId && materias.some((m) => m.asignacion_docente_id === asigId)
+      ? asigId
+      : (materias[0]?.asignacion_docente_id ?? '')
+
+  const materiaRow = materias.find((m) => m.asignacion_docente_id === asigEffective)
+  const createLabel = materiaRow
+    ? `${materiaRow.curso_nombre} · ${materiaRow.grado_nombre} sec${materiaRow.seccion_nombre} · ${materiaRow.modalidad_nombre}`
+    : 'Sin clase'
 
   const columns = useMemo(
     () => [
       col.accessor('titulo', { header: 'Título' }),
-      col.accessor('entregado', { header: 'Entregado', cell: (i) => (i.getValue() ? 'Sí' : 'No') }),
-      col.accessor('puntos', { header: 'Puntos', cell: (i) => i.getValue() ?? '—' }),
-      col.accessor('liberado', { header: 'Liberado', cell: (i) => (i.getValue() ? 'Sí' : 'No') }),
+      col.accessor((r) => claseLabel(r), { id: 'clase', header: 'Clase' }),
+      col.accessor((r) => r.parcial_nombre || '—', { id: 'parcial', header: 'Parcial' }),
+      col.accessor((r) => r.tipo_tarea_nombre || '—', { id: 'tipo_tarea', header: 'Tipo' }),
+      col.accessor('tipo', {
+        header: 'Criterio',
+        cell: (i) => labelCriterioModo(i.getValue()),
+      }),
+      col.accessor('puntos', { header: 'Puntos' }),
+      col.accessor('fecha_entrega', { header: 'Entrega' }),
+      col.display({
+        id: 'acciones',
+        header: '',
+        cell: ({ row }) => (
+          <Can permission="tareas:post">
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              data-testid={`tarea-revisar-${row.original.id}`}
+              onClick={() => setRevisarId(row.original.id)}
+            >
+              Revisar
+            </button>
+          </Can>
+        ),
+      }),
     ],
     [],
   )
@@ -61,147 +91,81 @@ function TareasPage() {
   const tableFilters = useMemo(
     () => [
       {
-        id: 'entregado',
-        label: 'Entregado',
-        getValue: (r: { entregado: boolean }) => (r.entregado ? 'Sí' : 'No'),
+        id: 'parcial',
+        label: 'Parcial',
+        getValue: (r: Tarea) => r.parcial_nombre || 'Sin parcial',
       },
       {
-        id: 'liberado',
-        label: 'Liberado',
-        getValue: (r: { liberado: boolean }) => (r.liberado ? 'Sí' : 'No'),
+        id: 'tipo_tarea',
+        label: 'Tipo',
+        getValue: (r: Tarea) => r.tipo_tarea_nombre || 'Sin tipo',
+      },
+      {
+        id: 'criterio',
+        label: 'Criterio',
+        getValue: (r: Tarea) => labelCriterioModo(r.tipo),
+      },
+      {
+        id: 'clase',
+        label: 'Clase',
+        getValue: (r: Tarea) => claseLabel(r),
       },
     ],
     [],
   )
 
+  const closeRevision = () => {
+    setRevisarId(null)
+    if (revisarFromSearch) {
+      void navigate({ search: { revisar: undefined } })
+    }
+  }
+
   return (
     <RequirePermission permission="tareas:get">
-      <div className="panel-toolbar" style={{ maxWidth: 720 }}>
-        <div className="panel-toolbar__search">
-          <SearchInput
-            data-testid="tareas-alumno-search"
-            value={alumnoId}
-            onChange={(e) => setAlumnoId(e.target.value)}
-            placeholder="Buscar…"
-            aria-label="Buscar por ID de alumno"
-          />
-        </div>
-        <div className="panel-toolbar__actions">
-          <button
-            type="button"
-            className="btn btn--ghost"
-            onClick={() => {
-              if (!alumnoId.trim()) {
-                toast.error('Ingresa un ID de alumno')
-                return
-              }
-              setSearchId(alumnoId)
-            }}
-          >
-            Buscar
-          </button>
-          <Can permission="tareas:post">
-            <button
-              type="button"
-              className="btn btn--primary"
-              data-testid="add-tarea-button"
-              onClick={() => setModalOpen(true)}
-            >
-              Nueva tarea
-            </button>
-          </Can>
-        </div>
-      </div>
-
-      {searchId ? (
-        isFetching ? (
-          <div className="empty-state">Cargando tareas…</div>
-        ) : (
-          <DataTable
-            title="Tareas"
-            data={tareas}
-            columns={columns}
-            filters={tableFilters}
-            searchPlaceholder="Buscar…"
-          />
-        )
+      {isLoading ? (
+        <div className="empty-state">Cargando tareas…</div>
       ) : (
-        <div className="empty-state">Busca tareas por ID de alumno.</div>
+        <DataTable
+          title="Tareas"
+          data={tareas}
+          columns={columns}
+          filters={tableFilters}
+          searchPlaceholder="Buscar…"
+          canAdd={can('tareas:post')}
+          addLabel="Nueva tarea"
+          onAdd={() => setCreateOpen(true)}
+        />
       )}
 
-      <Modal
-        open={modalOpen}
-        title="Nueva tarea"
-        onClose={() => setModalOpen(false)}
-        footer={
-          <>
-            <button type="button" className="btn btn--ghost" onClick={() => setModalOpen(false)}>
-              Cancelar
-            </button>
-            <Can permission="tareas:post">
-              <button type="button" className="btn btn--primary" onClick={() => setConfirmSave(true)}>
-                Guardar
-              </button>
-            </Can>
-          </>
-        }
-      >
-        <Field label="Asignación docente">
-          <Combobox
-            value={form.asignacion_docente_id}
-            onChange={(v) => setForm((f) => ({ ...f, asignacion_docente_id: v }))}
-            options={asignaciones.map((a) => ({
-              value: a.id,
-              label: `${a.id.slice(0, 8)}…`,
-              keywords: a.id,
-            }))}
-            placeholder="Buscar asignación…"
-          />
-        </Field>
-        <Field label="Título" htmlFor="tarea-titulo">
-          <input
-            id="tarea-titulo"
-            className="field__input"
-            data-testid="tarea-titulo-input"
-            value={form.titulo}
-            onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
-          />
-        </Field>
-        <Field label="Descripción">
-          <textarea
-            className="field__textarea"
-            rows={2}
-            value={form.descripcion ?? ''}
-            onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
-          />
-        </Field>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <Field label="Fecha asignación">
-            <input
-              type="date"
-              className="field__input"
-              value={form.fecha_asignacion}
-              onChange={(e) => setForm((f) => ({ ...f, fecha_asignacion: e.target.value }))}
-            />
-          </Field>
-          <Field label="Fecha entrega">
-            <input
-              type="date"
-              className="field__input"
-              value={form.fecha_entrega}
-              onChange={(e) => setForm((f) => ({ ...f, fecha_entrega: e.target.value }))}
-            />
-          </Field>
-        </div>
-      </Modal>
+      {createOpen ? (
+        <TareaCreateModal
+          asignacionDocenteId={asigEffective}
+          periodoAcademicoId={materiaRow?.periodo_academico_id ?? ''}
+          claseLabel={createLabel}
+          claseSelect={
+            materias.length > 1 ? (
+              <Field label="Clase">
+                <select
+                  className="field__select"
+                  data-testid="tarea-asignacion-select"
+                  value={asigEffective}
+                  onChange={(e) => setAsigId(e.target.value)}
+                >
+                  {materias.map((m) => (
+                    <option key={m.asignacion_docente_id} value={m.asignacion_docente_id}>
+                      {m.curso_nombre} · {m.grado_nombre} sec{m.seccion_nombre}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : undefined
+          }
+          onClose={() => setCreateOpen(false)}
+        />
+      ) : null}
 
-      <ConfirmDialog
-        open={confirmSave}
-        title="Crear tarea"
-        message="¿Registrar esta tarea?"
-        onConfirm={() => createMut.mutate()}
-        onCancel={() => setConfirmSave(false)}
-      />
+      {revisarId ? <TareaRevisionModal tareaId={revisarId} onClose={closeRevision} /> : null}
     </RequirePermission>
   )
 }

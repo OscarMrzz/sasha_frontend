@@ -1,298 +1,157 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
-import { RequirePermission, Can } from '#/components/gates/Can'
-import { Combobox } from '#/components/ui/Combobox'
-import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
+import { useMemo } from 'react'
+import { RequirePermission } from '#/components/gates/Can'
 import { DataTable } from '#/components/ui/DataTable'
-import { Field } from '#/components/ui/Field'
-import { useSession } from '#/hooks/use-session'
-import { userMessageFromError } from '#/lib/api'
-import { periodoSelectOptions } from '#/helpers/periodos'
-import { listPeriodos } from '#/services/catalogos'
-import {
-  getNotas,
-  liberarCalificaciones,
-  upsertCalificacion,
-  type CalificacionUpsert,
-  type LiberacionCreate,
-} from '#/services/calificaciones'
+import { readLastAsignacionId } from '#/lib/last-asignacion'
+import { listMateriasAsistencia } from '#/services/asistencia'
+import { listNotasClase } from '#/services/calificaciones'
+import type { NotaClaseRow, ParcialColumna } from '#/services/calificaciones'
 
 export const Route = createFileRoute('/_app/calificaciones')({ component: CalificacionesPage })
 
-const col = createColumnHelper<{
-  alumno_id: string
-  curso_id?: string
-  promedio?: number
-  indicador_nivel?: string
-  liberado: boolean
-  bloqueado_mora?: boolean
-}>()
+const col = createColumnHelper<NotaClaseRow>()
+
+function fmtPuntos(v: number | null | undefined) {
+  return v == null ? '—' : v
+}
+
+function buildColumns(parciales: ParcialColumna[]) {
+  return [
+    col.accessor('codigo', { header: 'Código' }),
+    col.accessor('nombre', { header: 'Nombre' }),
+    ...parciales.map((p, idx) =>
+      col.accessor((r) => r.puntos_parcial[idx] ?? null, {
+        id: `parcial-${p.id}`,
+        header: p.etiqueta,
+        cell: (i) => fmtPuntos(i.getValue()),
+      }),
+    ),
+    col.accessor('total', {
+      header: 'Total',
+      cell: (i) => fmtPuntos(i.getValue()),
+    }),
+    col.accessor('promedio', {
+      header: 'Promedio',
+      cell: (i) => fmtPuntos(i.getValue()),
+    }),
+    col.accessor('etiqueta', { header: 'Estado' }),
+  ]
+}
 
 function CalificacionesPage() {
-  const { session } = useSession()
-  const { data: periodos = [] } = useQuery({ queryKey: ['periodos'], queryFn: listPeriodos })
-
-  const [tab, setTab] = useState<'upsert' | 'liberacion' | 'notas'>('upsert')
-  const [confirmSave, setConfirmSave] = useState(false)
-  const [pendingAction, setPendingAction] = useState<'upsert' | 'liberacion'>('upsert')
-
-  const [upsertForm, setUpsertForm] = useState<CalificacionUpsert>({
-    alumno_id: '',
-    matricula_id: '',
-    curso_id: '',
-    parcial_id: '',
-    puntos: [0, 0, 0],
+  const { data: materias = [], isLoading: loadingMaterias } = useQuery({
+    queryKey: ['asistencia-materias'],
+    queryFn: listMateriasAsistencia,
   })
 
-  const [libForm, setLibForm] = useState<LiberacionCreate>({
-    periodo_academico_id: '',
-    liberado_por_user_id: '',
-    alcance: 'periodo',
+  const lastId = readLastAsignacionId()
+  const asigEffective =
+    lastId && materias.some((m) => m.asignacion_docente_id === lastId)
+      ? lastId
+      : (materias[0]?.asignacion_docente_id ?? '')
+
+  const materiaRow = materias.find((m) => m.asignacion_docente_id === asigEffective)
+
+  const {
+    data: clase,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['calificaciones-clase', asigEffective],
+    queryFn: () => listNotasClase(asigEffective),
+    enabled: Boolean(asigEffective),
   })
 
-  const [notasAlumno, setNotasAlumno] = useState('')
-  const [notasPeriodo, setNotasPeriodo] = useState('')
-  const [notasSearch, setNotasSearch] = useState({ alumno: '', periodo: '' })
+  const parciales = clase?.parciales
+  const filas = clase?.filas ?? []
 
-  const { data: notas = [], refetch: refetchNotas } = useQuery({
-    queryKey: ['notas', notasSearch.alumno, notasSearch.periodo],
-    queryFn: () => getNotas(notasSearch.alumno, notasSearch.periodo),
-    enabled: Boolean(notasSearch.alumno && notasSearch.periodo),
-  })
+  const columns = useMemo(() => buildColumns(parciales ?? []), [parciales])
 
-  const upsertMut = useMutation({
-    mutationFn: () => upsertCalificacion(upsertForm),
-    onSuccess: (r) => {
-      toast.success(r.mensaje ?? `Promedio: ${r.promedio}`)
-      if (r.warning_mora) toast.warning('Advertencia por mora')
-      setConfirmSave(false)
-    },
-    onError: (e) => toast.error(userMessageFromError(e)),
-  })
-
-  const liberarMut = useMutation({
-    mutationFn: () => liberarCalificaciones(libForm),
-    onSuccess: () => {
-      toast.success('Calificaciones liberadas')
-      setConfirmSave(false)
-    },
-    onError: (e) => toast.error(userMessageFromError(e)),
-  })
-
-  const notasColumns = useMemo(
-    () => [
-      col.accessor('curso_id', { header: 'Curso', cell: (i) => i.getValue()?.slice(0, 8) ?? '—' }),
-      col.accessor('promedio', { header: 'Promedio', cell: (i) => i.getValue() ?? '—' }),
-      col.accessor('indicador_nivel', { header: 'Nivel', cell: (i) => i.getValue() ?? '—' }),
-      col.accessor('liberado', { header: 'Liberado', cell: (i) => (i.getValue() ? 'Sí' : 'No') }),
-      col.accessor('bloqueado_mora', {
-        header: 'Mora',
-        cell: (i) => (i.getValue() ? 'Bloqueado' : '—'),
-      }),
-    ],
-    [],
-  )
-
-  const notasFilters = useMemo(
+  const tableFilters = useMemo(
     () => [
       {
-        id: 'liberado',
-        label: 'Liberado',
-        getValue: (r: { liberado: boolean }) => (r.liberado ? 'Sí' : 'No'),
+        id: 'etiqueta',
+        label: 'Estado',
+        getValue: (r: NotaClaseRow) => r.etiqueta,
+        options: [
+          { value: 'Reprobado', label: 'Reprobado' },
+          { value: 'Aprobado', label: 'Aprobado' },
+          { value: 'Honor al mérito', label: 'Honor al mérito' },
+          { value: 'Excelencia académica', label: 'Excelencia académica' },
+          { value: 'Sin nota', label: 'Sin nota' },
+        ],
       },
     ],
     [],
   )
 
+  const title = materiaRow
+    ? `Calificaciones · ${materiaRow.curso_nombre} · ${materiaRow.grado_nombre} sec${materiaRow.seccion_nombre}`
+    : 'Calificaciones'
+
+  const exportRows = useMemo(
+    () =>
+      filas.map((r) => {
+        const row: Record<string, unknown> = { Código: r.codigo, Nombre: r.nombre }
+        ;(parciales ?? []).forEach((p, idx) => {
+          row[p.etiqueta] = fmtPuntos(r.puntos_parcial[idx])
+        })
+        row.Total = fmtPuntos(r.total)
+        row.Promedio = fmtPuntos(r.promedio)
+        row.Estado = r.etiqueta
+        return row
+      }),
+    [filas, parciales],
+  )
+
+  const exportFilename = materiaRow
+    ? `calificaciones-${materiaRow.curso_nombre}-${materiaRow.grado_nombre}-sec${materiaRow.seccion_nombre}`
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9-]+/g, '-')
+        .toLowerCase()
+    : 'calificaciones'
+
+  if (loadingMaterias) {
+    return (
+      <RequirePermission permission="calificaciones:get">
+        <div className="empty-state">Cargando clases…</div>
+      </RequirePermission>
+    )
+  }
+
+  if (materias.length === 0 || !asigEffective) {
+    return (
+      <RequirePermission permission="calificaciones:get">
+        <div className="empty-state" data-testid="calif-sin-clases">
+          Entrá a una clase desde el dashboard para ver calificaciones.
+        </div>
+      </RequirePermission>
+    )
+  }
+
+  if (isError) {
+    return (
+      <RequirePermission permission="calificaciones:get">
+        <div className="empty-state" data-testid="calif-error">
+          Hay problemas de conexión.
+        </div>
+      </RequirePermission>
+    )
+  }
+
   return (
     <RequirePermission permission="calificaciones:get">
-      <h1 className="page-title">Calificaciones</h1>
-
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        {(['upsert', 'liberacion', 'notas'] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={`btn ${tab === t ? 'btn--primary' : 'btn--ghost'}`}
-            onClick={() => setTab(t)}
-          >
-            {t === 'upsert' ? 'Registrar nota' : t === 'liberacion' ? 'Liberación' : 'Consultar notas'}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'upsert' ? (
-        <div
-          style={{
-            maxWidth: 560,
-            background: 'var(--sasha-bg-raised)',
-            border: '1px solid var(--sasha-border-suave)',
-            borderRadius: '8px',
-            padding: '1.25rem',
-          }}
-        >
-          <Field label="Alumno ID">
-            <input
-              className="field__input"
-              data-testid="calif-alumno-input"
-              value={upsertForm.alumno_id}
-              onChange={(e) => setUpsertForm((f) => ({ ...f, alumno_id: e.target.value }))}
-            />
-          </Field>
-          <Field label="Matrícula ID">
-            <input
-              className="field__input"
-              value={upsertForm.matricula_id}
-              onChange={(e) => setUpsertForm((f) => ({ ...f, matricula_id: e.target.value }))}
-            />
-          </Field>
-          <Field label="Curso ID">
-            <input
-              className="field__input"
-              value={upsertForm.curso_id}
-              onChange={(e) => setUpsertForm((f) => ({ ...f, curso_id: e.target.value }))}
-            />
-          </Field>
-          <Field label="Parcial ID">
-            <input
-              className="field__input"
-              value={upsertForm.parcial_id}
-              onChange={(e) => setUpsertForm((f) => ({ ...f, parcial_id: e.target.value }))}
-            />
-          </Field>
-          <Field label="Puntos (separados por coma)">
-            <input
-              className="field__input"
-              placeholder="80, 85, 90"
-              onChange={(e) =>
-                setUpsertForm((f) => ({
-                  ...f,
-                  puntos: e.target.value.split(',').map((n) => Number(n.trim()) || 0),
-                }))
-              }
-            />
-          </Field>
-          <Can permission="calificaciones:post">
-            <button
-              type="button"
-              className="btn btn--primary"
-              data-testid="calif-upsert-button"
-              onClick={() => {
-                setPendingAction('upsert')
-                setConfirmSave(true)
-              }}
-            >
-              Guardar calificación
-            </button>
-          </Can>
-        </div>
-      ) : null}
-
-      {tab === 'liberacion' ? (
-        <div
-          style={{
-            maxWidth: 560,
-            background: 'var(--sasha-bg-raised)',
-            border: '1px solid var(--sasha-border-suave)',
-            borderRadius: '8px',
-            padding: '1.25rem',
-          }}
-        >
-          <Field label="Periodo académico">
-            <Combobox
-              value={libForm.periodo_academico_id}
-              onChange={(v) => setLibForm((f) => ({ ...f, periodo_academico_id: v }))}
-              options={periodoSelectOptions(periodos)}
-              placeholder="Buscar periodo…"
-            />
-          </Field>
-          <Field label="Alcance">
-            <Combobox
-              value={libForm.alcance ?? 'periodo'}
-              onChange={(v) => setLibForm((f) => ({ ...f, alcance: v }))}
-              options={[
-                { value: 'periodo', label: 'Periodo completo' },
-                { value: 'grado', label: 'Por grado' },
-                { value: 'seccion', label: 'Por sección' },
-              ]}
-              placeholder="Buscar alcance…"
-            />
-          </Field>
-          <Field label="Liberado por (user ID)">
-            <input
-              className="field__input"
-              value={libForm.liberado_por_user_id}
-              onChange={(e) => setLibForm((f) => ({ ...f, liberado_por_user_id: e.target.value }))}
-              placeholder={session?.code ?? 'UUID'}
-            />
-          </Field>
-          <Can permission="calificaciones:put">
-            <button
-              type="button"
-              className="btn btn--primary"
-              data-testid="calif-liberar-button"
-              onClick={() => {
-                setPendingAction('liberacion')
-                setConfirmSave(true)
-              }}
-            >
-              Liberar calificaciones
-            </button>
-          </Can>
-        </div>
-      ) : null}
-
-      {tab === 'notas' ? (
-        <>
-          <div className="panel-toolbar" style={{ maxWidth: 720 }}>
-            <Field label="Alumno ID">
-              <input
-                className="field__input"
-                value={notasAlumno}
-                onChange={(e) => setNotasAlumno(e.target.value)}
-              />
-            </Field>
-            <Field label="Periodo académico">
-              <Combobox
-                value={notasPeriodo}
-                onChange={setNotasPeriodo}
-                options={periodoSelectOptions(periodos)}
-                placeholder="Buscar periodo…"
-              />
-            </Field>
-            <button
-              type="button"
-              className="btn btn--ghost"
-              data-testid="calif-notas-search"
-              onClick={() => {
-                setNotasSearch({ alumno: notasAlumno, periodo: notasPeriodo })
-                refetchNotas()
-              }}
-            >
-              Consultar
-            </button>
-          </div>
-          {notasSearch.alumno && notasSearch.periodo ? (
-            <DataTable data={notas} columns={notasColumns} filters={notasFilters} />
-          ) : (
-            <div className="empty-state">Indica alumno y periodo para consultar notas.</div>
-          )}
-        </>
-      ) : null}
-
-      <ConfirmDialog
-        open={confirmSave}
-        title={pendingAction === 'upsert' ? 'Guardar calificación' : 'Liberar calificaciones'}
-        message={
-          pendingAction === 'upsert'
-            ? '¿Confirmas el registro de esta calificación?'
-            : '¿Liberar calificaciones con los filtros indicados?'
-        }
-        onConfirm={() => (pendingAction === 'upsert' ? upsertMut.mutate() : liberarMut.mutate())}
-        onCancel={() => setConfirmSave(false)}
+      <DataTable
+        title={title}
+        data={isLoading ? [] : filas}
+        columns={columns}
+        filters={tableFilters}
+        searchPlaceholder="Buscar por código o nombre…"
+        exportFilename={exportFilename}
+        exportRows={isLoading ? undefined : exportRows}
       />
     </RequirePermission>
   )

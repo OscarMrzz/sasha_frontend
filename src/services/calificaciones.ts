@@ -42,6 +42,31 @@ export interface NotaView {
   mensaje?: string
 }
 
+export interface ParcialColumna {
+  id: string
+  numero: number
+  nombre: string
+  etiqueta: string
+}
+
+export interface NotaClaseRow {
+  alumno_id: string
+  codigo: string
+  nombre: string
+  /** Puntos por parcial, alineados con `ClaseNotasResponse.parciales`. null = sin nota en ese parcial. */
+  puntos_parcial: (number | null)[]
+  total?: number
+  /** Promedio 0–100 sobre parciales ya evaluados en la clase. */
+  promedio?: number
+  indicador?: string
+  etiqueta: string
+}
+
+export interface ClaseNotasResponse {
+  parciales: ParcialColumna[]
+  filas: NotaClaseRow[]
+}
+
 export async function upsertCalificacion(body: CalificacionUpsert, method: 'POST' | 'PUT' = 'POST') {
   return apiRequest<CalificacionUpsertResponse>(`/calificaciones/upsert`, { method, body })
 }
@@ -56,4 +81,10 @@ export async function getNotas(alumnoId: string, periodoAcademicoId: string) {
     periodo_academico_id: periodoAcademicoId,
   })
   return apiRequest<NotaView[]>(`/calificaciones/notas?${qs}`)
+}
+
+export async function listNotasClase(asignacionDocenteId: string, parcialId?: string) {
+  const qs = new URLSearchParams({ asignacion_docente_id: asignacionDocenteId })
+  if (parcialId) qs.set('parcial_id', parcialId)
+  return apiRequest<ClaseNotasResponse>(`/calificaciones/clase?${qs}`)
 }
