@@ -12,7 +12,7 @@ import {
 export type SessionState = {
   code: string
   username: string
-  /** Roles del usuario según login; esta app envía todos en X-Active-Role. */
+  /** Único rol del usuario (array de un elemento); se envía en X-Active-Role. */
   knownRoles: RoleName[]
   /** Key en bóveda de la foto de perfil (persistida en cliente tras subir). */
   fotoKey?: string

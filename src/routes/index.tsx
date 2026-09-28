@@ -1,11 +1,13 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { homePathFromStoredSession } from '#/lib/home-path'
 import { hasPersistedSession } from '#/lib/session-storage'
 
 export const Route = createFileRoute('/')({
   ssr: false,
   beforeLoad: () => {
     if (hasPersistedSession()) {
-      throw redirect({ to: '/dashboard' })
+      const to = homePathFromStoredSession()
+      throw redirect({ to: to === '/login' ? '/dashboard' : to })
     }
     throw redirect({ to: '/login' })
   },

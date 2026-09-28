@@ -94,28 +94,22 @@ function UsuariosPage() {
   const openEdit = (row: ResponseUser) => {
     setMode('edit')
     setEditing(row)
-    setEditForm({ roles: [...row.roles], statususer: row.statususer })
+    setEditForm({ roles: row.roles.slice(0, 1), statususer: row.statususer })
     setModalOpen(true)
     closeCtx()
   }
 
-  const toggleCreateRole = (role: RoleName) => {
-    setCreateForm((f) => ({
-      ...f,
-      roles: f.roles.includes(role) ? f.roles.filter((r) => r !== role) : [...f.roles, role],
-    }))
+  const setCreateRole = (role: RoleName) => {
+    setCreateForm((f) => ({ ...f, roles: [role] }))
   }
 
-  const toggleEditRole = (role: RoleName) => {
-    setEditForm((f) => ({
-      ...f,
-      roles: f.roles.includes(role) ? f.roles.filter((r) => r !== role) : [...f.roles, role],
-    }))
+  const setEditRole = (role: RoleName) => {
+    setEditForm((f) => ({ ...f, roles: [role] }))
   }
 
   const createMut = useMutation({
     mutationFn: async () => {
-      const result = await createUser(createForm)
+      const result = await createUser({ ...createForm, roles: createForm.roles.slice(0, 1) })
       const names = {
         user_id: result.userId,
         primer_nombre: createForm.primer_nombre,
@@ -124,11 +118,11 @@ function UsuariosPage() {
         segundo_apellido: createForm.segundo_apellido,
         status: 'ACTIVE',
       }
-      const roles = createForm.roles.map((r) => r.toLowerCase())
+      const role = (createForm.roles[0] ?? '').toLowerCase()
       if (result.userId) {
-        if (roles.includes('alumno')) await createAlumno(names)
-        if (roles.includes('maestro')) await createMaestro(names)
-        if (roles.includes('responsable')) await createResponsable(names)
+        if (role === 'alumno') await createAlumno(names)
+        else if (role === 'maestro') await createMaestro(names)
+        else if (role === 'responsable') await createResponsable(names)
       }
       return result
     },
@@ -136,7 +130,7 @@ function UsuariosPage() {
       setCreatedCode(code)
       toast.success(
         userId
-          ? `Usuario creado. Código: ${code}. Perfil(es) de persona creados según roles.`
+          ? `Usuario creado. Código: ${code}. Perfil de persona creado según el rol.`
           : `Usuario creado. Código: ${code}`,
       )
       const url = URL.createObjectURL(pdfBlob)
@@ -159,7 +153,7 @@ function UsuariosPage() {
   const saveEditMut = useMutation({
     mutationFn: async () => {
       if (!editing) return
-      await updateRoles(editing.code, editForm.roles)
+      await updateRoles(editing.code, editForm.roles.slice(0, 1))
       await updateStatus(editing.code, editForm.statususer)
     },
     onSuccess: () => {
@@ -379,23 +373,15 @@ function UsuariosPage() {
                 />
               </Field>
             </div>
-            <Field label="Roles">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {ASSIGNABLE.map((role) => (
-                  <label
-                    key={role}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}
-                  >
-                    <input
-                      type="checkbox"
-                      data-testid={`user-role-${role}`}
-                      checked={createForm.roles.includes(role)}
-                      onChange={() => toggleCreateRole(role)}
-                    />
-                    {roleLabel(role)}
-                  </label>
-                ))}
-              </div>
+            <Field label="Rol">
+              <Combobox
+                data-testid="user-role-select"
+                value={createForm.roles[0] ?? ''}
+                onChange={(v) => setCreateRole(v as RoleName)}
+                options={ASSIGNABLE.map((role) => ({ value: role, label: roleLabel(role) }))}
+                placeholder="Elegir un rol…"
+                emptyLabel="Sin roles asignables."
+              />
             </Field>
             <Field label="Estado">
               <Combobox
@@ -417,22 +403,15 @@ function UsuariosPage() {
                 </>
               ) : null}
             </p>
-            <Field label="Roles">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {ASSIGNABLE.map((role) => (
-                  <label
-                    key={role}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={editForm.roles.includes(role)}
-                      onChange={() => toggleEditRole(role)}
-                    />
-                    {roleLabel(role)}
-                  </label>
-                ))}
-              </div>
+            <Field label="Rol">
+              <Combobox
+                data-testid="user-edit-role-select"
+                value={editForm.roles[0] ?? ''}
+                onChange={(v) => setEditRole(v as RoleName)}
+                options={ASSIGNABLE.map((role) => ({ value: role, label: roleLabel(role) }))}
+                placeholder="Elegir un rol…"
+                emptyLabel="Sin roles asignables."
+              />
             </Field>
             <Field label="Estado">
               <Combobox
@@ -452,7 +431,7 @@ function UsuariosPage() {
         message={
           isCreate
             ? '¿Confirmas la creación? Se descargará el PDF y, si el rol es maestro/responsable, se creará también el perfil de persona.'
-            : '¿Guardar roles y estado del usuario?'
+            : '¿Guardar el rol y estado del usuario?'
         }
         onConfirm={() => (isCreate ? createMut.mutate() : saveEditMut.mutate())}
         onCancel={() => setConfirmSave(false)}

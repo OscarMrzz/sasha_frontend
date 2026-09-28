@@ -52,7 +52,7 @@ export function downloadFichaPdf(ficha: UserFicha) {
   y = kvTable(doc, y, 'Cuenta', [
     ['Código', u.code],
     ['Username', u.username],
-    ['Roles', u.roles.map((r) => roleLabel(r)).join(', ') || '—'],
+    ['Rol', u.roles[0] ? roleLabel(u.roles[0]) : '—'],
     ['Estado', u.statususer],
     ...(alumnoMatricula
       ? ([['Grado / sección', `${alumnoMatricula.grado} · sec ${alumnoMatricula.seccion}`]] as [string, string][])

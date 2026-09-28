@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { type RoleName } from '#/helpers/permissions'
 import { useSession, isRoleName } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
+import { homePathForRoles, homePathFromStoredSession } from '#/lib/home-path'
 import { hasPersistedSession } from '#/lib/session-storage'
 import { login } from '#/services/auth'
 
@@ -11,7 +12,8 @@ export const Route = createFileRoute('/login')({
   ssr: false,
   beforeLoad: () => {
     if (hasPersistedSession()) {
-      throw redirect({ to: '/dashboard' })
+      const to = homePathFromStoredSession()
+      throw redirect({ to: to === '/login' ? '/dashboard' : to })
     }
   },
   component: LoginPage,
@@ -44,7 +46,7 @@ function LoginCardLeft() {
 
 function LoginPage() {
   const navigate = useNavigate()
-  const { setSession, isAuthenticated, sessionReady } = useSession()
+  const { setSession, isAuthenticated, sessionReady, session } = useSession()
   const [user, setUser] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ user?: string; password?: string }>({})
@@ -53,9 +55,9 @@ function LoginPage() {
 
   useEffect(() => {
     if (sessionReady && isAuthenticated) {
-      void navigate({ to: '/dashboard' })
+      void navigate({ to: homePathForRoles(session?.knownRoles) })
     }
-  }, [sessionReady, isAuthenticated, navigate])
+  }, [sessionReady, isAuthenticated, session?.knownRoles, navigate])
 
   async function doLogin() {
     const nextErrors: { user?: string; password?: string } = {}
@@ -68,9 +70,9 @@ function LoginPage() {
     setSubmitting(true)
     try {
       const res = await login({ user: user.trim(), password })
-      const knownRoles = res.roles.filter(isRoleName) as RoleName[]
+      const knownRoles = res.roles.filter(isRoleName).slice(0, 1) as RoleName[]
       if (knownRoles.length === 0) {
-        const msg = 'El usuario no tiene roles válidos'
+        const msg = 'El usuario no tiene un rol válido'
         setFormError(msg)
         toast.error(msg)
         return
@@ -81,7 +83,7 @@ function LoginPage() {
         knownRoles,
       })
       toast.success('Sesión iniciada')
-      await navigate({ to: '/dashboard' })
+      await navigate({ to: homePathForRoles(knownRoles) })
     } catch (err) {
       const msg = userMessageFromError(err)
       setFormError(msg)

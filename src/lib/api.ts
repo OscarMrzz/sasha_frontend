@@ -28,7 +28,7 @@ export function getApiBaseUrl() {
 type RequestOptions = {
   method?: string
   body?: unknown
-  /** Roles a enviar en X-Active-Role (coma-separados). null = no header (login/health). */
+  /** Roles a enviar en X-Active-Role. null = no header (login/health). Un usuario = un rol. */
   activeRoles?: string[] | null
   headers?: Record<string, string>
   raw?: boolean
@@ -68,7 +68,7 @@ export async function apiRequest<T = unknown>(
   const finalHeaders: Record<string, string> = { ...headers }
 
   if (roles.length > 0) {
-    finalHeaders['X-Active-Role'] = roles.join(',')
+    finalHeaders['X-Active-Role'] = roles[0]
   }
 
   let payload: BodyInit | undefined

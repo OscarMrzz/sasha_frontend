@@ -315,11 +315,9 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
             {alumnoGradoSeccion ? ` · ${alumnoGradoSeccion}` : ''}
           </p>
           <span className="ficha__chips">
-            {user.roles.map((r) => (
-              <span key={r} className="badge">
-                {roleLabel(r)}
-              </span>
-            ))}
+            {user.roles[0] ? (
+              <span className="badge">{roleLabel(user.roles[0])}</span>
+            ) : null}
             <span className="badge">{user.statususer}</span>
           </span>
         </div>

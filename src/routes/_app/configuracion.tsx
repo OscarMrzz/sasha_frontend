@@ -19,7 +19,7 @@ const emptyForm: ConfiguracionUpdate = {
   nombre_institucion: '',
   codigo_sace: '',
   modalidad_sace: '',
-  calificacion_minima_aprobacion: 60,
+  calificacion_minima_aprobacion: 70,
   calificacion_honor_merito: 90,
   calificacion_excelencia: 95,
   calificacion_rango_bajo: 50,
