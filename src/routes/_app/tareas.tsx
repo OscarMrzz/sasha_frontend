@@ -7,6 +7,9 @@ import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { TareaCreateModal } from '#/components/tareas/TareaCreateModal'
 import { TareaRevisionModal } from '#/components/tareas/TareaRevisionModal'
+import { PortalTareasView } from '#/components/portal/PortalTareasView'
+import { RequirePortalClase } from '#/components/portal/RequirePortalClase'
+import { isPortalRole } from '#/lib/home-path'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
 import { listTareas, labelCriterioModo, type Tarea } from '#/services/tareas'
@@ -25,6 +28,26 @@ function claseLabel(t: Tarea) {
 }
 
 function TareasPage() {
+  const { roles } = useCan()
+  if (isPortalRole(roles)) {
+    return (
+      <RequirePermission permission="tareas:get">
+        <RequirePortalClase>
+          {({ clase, alumnoId }) => (
+            <PortalTareasView
+              asignacionId={clase.asignacionId}
+              cursoNombre={clase.cursoNombre}
+              alumnoId={alumnoId}
+            />
+          )}
+        </RequirePortalClase>
+      </RequirePermission>
+    )
+  }
+  return <TareasStaffPage />
+}
+
+function TareasStaffPage() {
   const { can } = useCan()
   const { revisar: revisarFromSearch } = Route.useSearch()
   const navigate = Route.useNavigate()

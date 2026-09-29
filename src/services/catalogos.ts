@@ -244,6 +244,25 @@ export async function listParciales(periodoAcademicoId: string) {
   )
 }
 
+export interface ParcialInput {
+  periodo_academico_id: string
+  numero: number
+  nombre: string
+  fecha_inicio: string
+  fecha_fin: string
+}
+
+export async function createParcial(body: ParcialInput) {
+  return apiRequest<Parcial>(`/catalogos/periodos/${body.periodo_academico_id}/parciales`, {
+    method: 'POST',
+    body,
+  })
+}
+
+export async function updateParcial(id: string, body: ParcialInput) {
+  return apiRequest<Parcial>(`/catalogos/parciales/${id}`, { method: 'PUT', body })
+}
+
 export async function createPeriodo(body: PeriodoCreate) {
   return apiRequest<Periodo>('/catalogos/periodos', { method: 'POST', body })
 }

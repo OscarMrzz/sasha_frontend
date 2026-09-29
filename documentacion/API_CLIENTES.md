@@ -340,9 +340,10 @@ Permiso: `pagos:get|post|put`.
 
 ## 10. Notificaciones
 
-- `POST /notificaciones/` — crear (banner / periódica / etc.; `tipo_codigo`, roles, segmentos)
+- `POST /notificaciones/` — crear (banner / periódica / etc.; `tipo_codigo`, roles, segmentos). Un `banner` reemplaza al banner activo y se muestra a todos (ignora roles y segmentos)
 - `GET /notificaciones/` — listar para el usuario/rol (query opcional `grado_id`, `seccion_id`)
 - `POST /notificaciones/{id}/leer` — marcar leída (permiso `notificaciones:get`)
+- `POST /notificaciones/{id}/desactivar` — quitar/desactivar (ej. el banner activo; permiso `notificaciones:post`)
 
 ---
 

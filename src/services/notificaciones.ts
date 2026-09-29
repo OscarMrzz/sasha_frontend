@@ -49,6 +49,10 @@ export async function createNotificacion(body: NotificacionCreate) {
   return apiRequest<Notificacion>('/notificaciones/', { method: 'POST', body })
 }
 
+export async function desactivarNotificacion(id: string) {
+  return apiRequest<{ status: string; id: string }>(`/notificaciones/${id}/desactivar`, { method: 'POST' })
+}
+
 export async function markNotificacionLeida(id: string) {
   return apiRequest<{ status: string; id: string }>(`/notificaciones/${id}/leer`, { method: 'POST' })
 }

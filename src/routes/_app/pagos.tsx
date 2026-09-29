@@ -9,14 +9,15 @@ import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { userMessageFromError } from '#/lib/api'
 import {
+  cobrarMeses,
   cobro,
   evidencia,
+  generarMensualidades,
+  getMensualidadesAlumno,
   listMora,
   verificarPago,
-  type CobroRequest,
-  type EvidenciaRequest,
-  type Obligacion,
 } from '#/services/pagos'
+import type { CobroRequest, EvidenciaRequest, MensualidadesAlumno, Obligacion } from '#/services/pagos'
 
 export const Route = createFileRoute('/_app/pagos')({ component: PagosPage })
 
@@ -28,8 +29,53 @@ function PagosPage() {
 
   const [tab, setTab] = useState<'cobro' | 'evidencia' | 'mora'>('cobro')
   const [confirmSave, setConfirmSave] = useState(false)
-  const [action, setAction] = useState<'cobro' | 'evidencia' | 'verificar'>('cobro')
+  const [action, setAction] = useState<'cobro' | 'evidencia' | 'verificar' | 'meses' | 'generar'>('cobro')
   const [verificarId, setVerificarId] = useState('')
+  const [mesesCode, setMesesCode] = useState('')
+  const [mesesAlumno, setMesesAlumno] = useState<MensualidadesAlumno | null>(null)
+  const [mesesSel, setMesesSel] = useState<string[]>([])
+
+  const pendientes = mesesAlumno?.meses.filter((m) => m.estado !== 'pagado') ?? []
+  const totalSel = pendientes.filter((m) => mesesSel.includes(m.obligacion_id)).reduce((s, m) => s + m.monto, 0)
+  const etiquetasSel = pendientes.filter((m) => mesesSel.includes(m.obligacion_id)).map((m) => m.etiqueta)
+
+  const cargarMesesMut = useMutation({
+    mutationFn: (code: string) => getMensualidadesAlumno(code),
+    onSuccess: (r) => {
+      setMesesAlumno(r)
+      setMesesSel([])
+    },
+    onError: (e) => {
+      setMesesAlumno(null)
+      toast.error(userMessageFromError(e))
+    },
+  })
+
+  const cobrarMesesMut = useMutation({
+    mutationFn: () => cobrarMeses(mesesAlumno?.codigo ?? mesesCode.trim(), mesesSel),
+    onSuccess: (r) => {
+      toast.success(`Se registraron ${r.pagos.length} mensualidad(es) por L ${r.total.toFixed(2)}`)
+      setConfirmSave(false)
+      qc.invalidateQueries({ queryKey: ['mora'] })
+      qc.invalidateQueries({ queryKey: ['liberacion-bloqueados'] })
+      if (mesesAlumno) cargarMesesMut.mutate(mesesAlumno.codigo)
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
+
+  const generarMut = useMutation({
+    mutationFn: () => generarMensualidades(),
+    onSuccess: (r) => {
+      toast.success(r.creadas ? `Se generaron ${r.creadas} mensualidad(es)` : 'Las mensualidades ya estaban generadas')
+      setConfirmSave(false)
+      qc.invalidateQueries({ queryKey: ['mora'] })
+      if (mesesAlumno) cargarMesesMut.mutate(mesesAlumno.codigo)
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
+
+  const toggleMes = (id: string) =>
+    setMesesSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
 
   const [cobroForm, setCobroForm] = useState<CobroRequest>({
     alumno_code: '',
@@ -112,6 +158,102 @@ function PagosPage() {
       </div>
 
       {tab === 'cobro' ? (
+        <div className="pagos-cobro-grid">
+        <div className="pagos-card" data-testid="pago-meses-card">
+          <h2 className="mdash__tile-title">Mensualidades por mes</h2>
+          <form
+            style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (mesesCode.trim()) cargarMesesMut.mutate(mesesCode.trim())
+            }}
+          >
+            <Field label="Código alumno" htmlFor="pago-meses-code">
+              <input
+                id="pago-meses-code"
+                className="field__input"
+                data-testid="pago-meses-code-input"
+                value={mesesCode}
+                onChange={(e) => setMesesCode(e.target.value)}
+              />
+            </Field>
+            <button
+              type="submit"
+              className="btn btn--ghost"
+              data-testid="pago-meses-buscar"
+              disabled={!mesesCode.trim() || cargarMesesMut.isPending}
+              style={{ marginBottom: '0.75rem' }}
+            >
+              Buscar
+            </button>
+          </form>
+
+          {mesesAlumno ? (
+            <>
+              <p style={{ margin: 0 }}>
+                <strong>{mesesAlumno.nombre}</strong> · {mesesAlumno.codigo}
+              </p>
+              {mesesAlumno.meses.length === 0 ? (
+                <p className="texto-muted">Este alumno no tiene mensualidades generadas en el periodo activo.</p>
+              ) : (
+                <div className="cobro-meses">
+                  {mesesAlumno.meses.map((m) => {
+                    const pagado = m.estado === 'pagado'
+                    return (
+                      <label
+                        key={m.obligacion_id}
+                        className={`cobro-meses__item${pagado ? ' cobro-meses__item--pagado' : ''}`}
+                        data-testid={`pago-mes-${m.anio}-${m.mes}`}
+                      >
+                        <input
+                          type="checkbox"
+                          disabled={pagado}
+                          checked={pagado || mesesSel.includes(m.obligacion_id)}
+                          onChange={() => toggleMes(m.obligacion_id)}
+                        />
+                        <span style={{ textTransform: 'capitalize' }}>{m.etiqueta}</span>
+                        {pagado ? <span className="badge badge--ok">Pagado</span> : null}
+                        <span className="cobro-meses__monto">L {m.monto.toFixed(2)}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+              <Can permission="pagos:post">
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  data-testid="pago-meses-cobrar"
+                  disabled={!mesesSel.length}
+                  onClick={() => {
+                    setAction('meses')
+                    setConfirmSave(true)
+                  }}
+                >
+                  Cobrar {mesesSel.length ? `${mesesSel.length} mes(es) · L ${totalSel.toFixed(2)}` : 'meses'}
+                </button>
+              </Can>
+            </>
+          ) : null}
+
+          <Can permission="pagos:post">
+            <hr style={{ margin: '1.25rem 0', borderColor: 'var(--sasha-border-suave)' }} />
+            <p className="texto-muted" style={{ margin: '0 0 0.5rem', fontSize: '0.85rem' }}>
+              Crea las mensualidades que falten para todos los matriculados del periodo activo (una por mes).
+            </p>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              data-testid="pago-generar-mensualidades"
+              onClick={() => {
+                setAction('generar')
+                setConfirmSave(true)
+              }}
+            >
+              Generar mensualidades del periodo
+            </button>
+          </Can>
+        </div>
         <div
           style={{
             maxWidth: 480,
@@ -168,6 +310,7 @@ function PagosPage() {
               Registrar cobro
             </button>
           </Can>
+        </div>
         </div>
       ) : null}
 
@@ -259,17 +402,31 @@ function PagosPage() {
       <ConfirmDialog
         open={confirmSave}
         title={
-          action === 'cobro' ? 'Registrar cobro' : action === 'evidencia' ? 'Adjuntar evidencia' : 'Verificar pago'
+          action === 'cobro'
+            ? 'Registrar cobro'
+            : action === 'meses'
+              ? 'Cobrar mensualidades'
+              : action === 'generar'
+                ? 'Generar mensualidades'
+                : action === 'evidencia'
+                  ? 'Adjuntar evidencia'
+                  : 'Verificar pago'
         }
         message={
           action === 'cobro'
             ? `¿Registrar cobro de L ${cobroForm.monto} para ${cobroForm.alumno_code}?`
-            : action === 'evidencia'
-              ? '¿Adjuntar evidencia al pago?'
-              : `¿Verificar el pago ${verificarId}?`
+            : action === 'meses'
+              ? `¿Registrar el pago de ${etiquetasSel.join(', ')} (L ${totalSel.toFixed(2)}) para ${mesesAlumno?.nombre ?? ''}? Las calificaciones de los parciales de esos meses se habilitarán automáticamente.`
+              : action === 'generar'
+                ? '¿Generar las mensualidades que falten para todos los matriculados del periodo activo?'
+                : action === 'evidencia'
+                  ? '¿Adjuntar evidencia al pago?'
+                  : `¿Verificar el pago ${verificarId}?`
         }
         onConfirm={() => {
           if (action === 'cobro') cobroMut.mutate()
+          else if (action === 'meses') cobrarMesesMut.mutate()
+          else if (action === 'generar') generarMut.mutate()
           else if (action === 'evidencia') evidenciaMut.mutate()
           else verificarMut.mutate(verificarId)
         }}

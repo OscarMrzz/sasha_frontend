@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { ParcialesPeriodoModal } from '#/components/catalogos/ParcialesPeriodoModal'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
@@ -48,6 +49,7 @@ function PeriodosPage() {
   const [confirmDelete, setConfirmDelete] = useState<Periodo | null>(null)
   const [confirmSave, setConfirmSave] = useState(false)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Periodo } | null>(null)
+  const [parcialesDe, setParcialesDe] = useState<Periodo | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -171,6 +173,17 @@ function PeriodosPage() {
           <button type="button" className="ctx-menu__item" onClick={() => openEdit(ctx.row, true)}>
             Ver
           </button>
+          <button
+            type="button"
+            className="ctx-menu__item"
+            data-testid="periodo-ctx-parciales"
+            onClick={() => {
+              setParcialesDe(ctx.row)
+              closeCtx()
+            }}
+          >
+            Parciales
+          </button>
           <Can permission="catalogos:put">
             <button type="button" className="ctx-menu__item" onClick={() => openEdit(ctx.row)}>
               Editar
@@ -284,6 +297,7 @@ function PeriodosPage() {
         onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.id)}
         onCancel={() => setConfirmDelete(null)}
       />
+      <ParcialesPeriodoModal periodo={parcialesDe} onClose={() => setParcialesDe(null)} />
     </RequirePermission>
   )
 }

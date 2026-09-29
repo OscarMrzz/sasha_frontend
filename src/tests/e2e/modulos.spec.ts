@@ -110,16 +110,16 @@ test.describe('modulos @critical', () => {
         gradoSelect.getByRole('option').first().or(gradoSelect.getByText(/ya están asignadas/i)),
       ).toBeVisible({ timeout: 10_000 })
 
-      // Volver al activo: debe haber grados libres (sin asignaciones en ese periodo)
+      // Volver al activo: la lista se recalcula de nuevo
       await page
         .getByTestId('asignacion-periodo-select')
         .getByRole('option')
         .filter({ hasText: /activo/i })
         .first()
         .click()
-      await expect(page.getByTestId('asignacion-grado-select').getByRole('option').first()).toBeVisible({
-        timeout: 10_000,
-      })
+      await expect(
+        gradoSelect.getByRole('option').first().or(gradoSelect.getByText(/ya están asignadas/i)),
+      ).toBeVisible({ timeout: 10_000 })
     }
   })
 

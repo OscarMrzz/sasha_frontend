@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { AsistenciaGridModal } from '#/components/asistencia/AsistenciaGridModal'
 import { MaestroHorarioView } from '#/components/horarios/MaestroHorarioView'
 import { RequirePermission, useCan } from '#/components/gates/Can'
+import { AvisoBanner } from '#/components/layout/AvisoBanner'
 import { Modal } from '#/components/ui/Modal'
 import { TareaCreateModal } from '#/components/tareas/TareaCreateModal'
 import { listMateriasAsistencia, type AsistenciaMateria } from '#/services/asistencia'
@@ -52,6 +53,7 @@ function MaestroHubPage() {
 
   return (
     <div className="maestro-hub" data-testid="maestro-hub">
+      <AvisoBanner />
       <header className="maestro-hub__header">
         <h1 className="page-title" style={{ margin: 0 }}>
           Mis clases

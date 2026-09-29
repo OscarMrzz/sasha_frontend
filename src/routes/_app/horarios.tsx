@@ -13,6 +13,10 @@ import {
 } from '#/components/horarios/HorarioBoard'
 import { HorarioViewModal } from '#/components/horarios/HorarioViewModal'
 import { MaestroHorarioView } from '#/components/horarios/MaestroHorarioView'
+import { AlumnoHorarioView } from '#/components/horarios/AlumnoHorarioView'
+import { RequirePortalClase } from '#/components/portal/RequirePortalClase'
+import { usePortalInicio } from '#/hooks/use-portal'
+import { isPortalRole } from '#/lib/home-path'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
@@ -71,7 +75,30 @@ function HorariosPage() {
     )
   }
 
+  if (isPortalRole(roles)) {
+    return (
+      <RequirePermission permission="horarios:get">
+        <RequirePortalClase>
+          {({ clase }) => <PortalHorarioClase asignacionId={clase.asignacionId} cursoNombre={clase.cursoNombre} />}
+        </RequirePortalClase>
+      </RequirePermission>
+    )
+  }
+
   return <HorariosAdminView />
+}
+
+function PortalHorarioClase({ asignacionId, cursoNombre }: { asignacionId: string; cursoNombre: string }) {
+  const { data, isLoading } = usePortalInicio()
+  if (isLoading) return <div className="empty-state">Cargando horario…</div>
+  return (
+    <AlumnoHorarioView
+      slots={data?.horario_semana ?? []}
+      recreo={data?.recreo}
+      asignacionId={asignacionId}
+      title={`Horario · ${cursoNombre}`}
+    />
+  )
 }
 
 function HorariosAdminView() {

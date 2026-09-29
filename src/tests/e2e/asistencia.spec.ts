@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test'
 import { test, expect, loginAs } from './fixtures/auth'
 
 function todayLocalISO() {
@@ -8,7 +9,7 @@ function todayLocalISO() {
   return `${y}-${m}-${day}`
 }
 
-async function openAsistenciaMaestro(page: import('@playwright/test').Page) {
+async function openAsistenciaMaestro(page: Page) {
   await loginAs(page, { code: '1002026501', password: 'Admin123!' })
   await page.goto('/asistencia')
   await expect(page.getByRole('heading', { name: /Asistencia/i })).toBeVisible({

@@ -5,6 +5,9 @@ import { MessageSquare } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, useCan } from '#/components/gates/Can'
+import { PortalPlanView } from '#/components/portal/PortalPlanView'
+import { RequirePortalClase } from '#/components/portal/RequirePortalClase'
+import { isPortalRole } from '#/lib/home-path'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -81,6 +84,21 @@ function PlanEstudioPage() {
 
   if (isReviewer) return <ReviewerView canPut={can('planestudio:put')} />
   if (isMaestro) return <MaestroView canPost={can('planestudio:post')} canPut={can('planestudio:put')} />
+  if (isPortalRole(roles)) {
+    return (
+      <RequirePermission permission="planestudio:get">
+        <RequirePortalClase>
+          {({ clase, alumnoId }) => (
+            <PortalPlanView
+              asignacionId={clase.asignacionId}
+              cursoNombre={clase.cursoNombre}
+              alumnoId={alumnoId}
+            />
+          )}
+        </RequirePortalClase>
+      </RequirePermission>
+    )
+  }
   return (
     <RequirePermission permission="planestudio:get">
       <ReviewerView canPut={false} />
@@ -90,7 +108,10 @@ function PlanEstudioPage() {
 
 function ReviewerView({ canPut }: { canPut: boolean }) {
   const qc = useQueryClient()
-  const { data = [], isLoading } = useQuery({ queryKey: ['planes'], queryFn: () => listPlanes() })
+  const { data = [], isLoading } = useQuery({
+    queryKey: ['planes'],
+    queryFn: () => listPlanes(),
+  })
   const { data: periodos = [] } = useQuery({ queryKey: ['periodos'], queryFn: listPeriodos })
 
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Plan } | null>(null)

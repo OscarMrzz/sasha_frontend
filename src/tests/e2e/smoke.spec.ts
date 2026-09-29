@@ -1,6 +1,7 @@
+import type { Page } from '@playwright/test'
 import { test, expect } from './fixtures/auth'
 
-async function waitLoginReady(page: import('@playwright/test').Page) {
+async function waitLoginReady(page: Page) {
   await page.goto('/login')
   await expect(page.getByTestId('login-form')).toHaveAttribute('data-ready', '1', {
     timeout: 15_000,

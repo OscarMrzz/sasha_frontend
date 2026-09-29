@@ -2,8 +2,11 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useMemo } from 'react'
-import { RequirePermission } from '#/components/gates/Can'
+import { RequirePermission, useCan } from '#/components/gates/Can'
+import { PortalCalificacionesView } from '#/components/portal/PortalCalificacionesView'
+import { RequirePortalClase } from '#/components/portal/RequirePortalClase'
 import { DataTable } from '#/components/ui/DataTable'
+import { isPortalRole } from '#/lib/home-path'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
 import { listNotasClase } from '#/services/calificaciones'
@@ -41,6 +44,26 @@ function buildColumns(parciales: ParcialColumna[]) {
 }
 
 function CalificacionesPage() {
+  const { roles } = useCan()
+  if (isPortalRole(roles)) {
+    return (
+      <RequirePermission permission="calificaciones:get">
+        <RequirePortalClase>
+          {({ clase, alumnoId }) => (
+            <PortalCalificacionesView
+              asignacionId={clase.asignacionId}
+              cursoNombre={clase.cursoNombre}
+              alumnoId={alumnoId}
+            />
+          )}
+        </RequirePortalClase>
+      </RequirePermission>
+    )
+  }
+  return <CalificacionesStaffPage />
+}
+
+function CalificacionesStaffPage() {
   const { data: materias = [], isLoading: loadingMaterias } = useQuery({
     queryKey: ['asistencia-materias'],
     queryFn: listMateriasAsistencia,

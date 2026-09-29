@@ -25,6 +25,7 @@ import {
   Settings,
   Shield,
   Sun,
+  Unlock,
   User,
   Users,
   Wallet,
@@ -37,8 +38,9 @@ import { NotificationsBell } from '#/components/layout/NotificationsBell'
 import { NAV_ITEMS } from '#/helpers/nav'
 import { useSession } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
-import { isMaestroRole } from '#/lib/home-path'
+import { homePathForRoles, isMaestroRole, isPortalRole, isResponsableRole } from '#/lib/home-path'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
+import { clearPortalContext, readPortalAlumnoId, usePortalClase } from '#/lib/portal-context'
 import { logout } from '#/services/auth'
 import { toast } from 'sonner'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
@@ -62,6 +64,7 @@ const ICONS: Record<string, ReactNode> = {
   check: <CheckSquare className="sidebar-nav__icon" />,
   list: <ListTodo className="sidebar-nav__icon" />,
   award: <Award className="sidebar-nav__icon" />,
+  unlock: <Unlock className="sidebar-nav__icon" />,
   wallet: <Wallet className="sidebar-nav__icon" />,
   bell: <Bell className="sidebar-nav__icon" />,
   chart: <BarChart3 className="sidebar-nav__icon" />,
@@ -74,8 +77,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { can, roles } = useCan()
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const isHubLauncher = pathname === '/maestro' || pathname === '/maestro/'
+  const isHubLauncher = ['/maestro', '/alumno', '/alumno/resultados', '/responsable'].includes(
+    pathname.replace(/\/$/, ''),
+  )
   const maestro = isMaestroRole(roles)
+  const portal = isPortalRole(roles)
+  const portalClase = usePortalClase()
   const [collapsed, setCollapsed] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
@@ -114,9 +121,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           },
         }
       : { to: '/dashboard', label: 'Inicio', permission: null, icon: 'home' }
-    const base: Item[] = [home, ...NAV_ITEMS.filter((i) => i.to !== '/dashboard')]
+    const rest = NAV_ITEMS.filter((i) => i.to !== '/dashboard')
+    const base: Item[] = portal ? rest : [home, ...rest]
     return base.filter((i) => (i.permission ? can(i.permission) : true))
-  }, [can, maestro, navigate])
+  }, [can, maestro, portal, navigate])
 
   useEffect(() => {
     if (!userMenuOpen) return
@@ -147,7 +155,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   const goInicio = () => {
-    void navigate({ to: maestro ? '/maestro' : '/dashboard' })
+    if (isResponsableRole(roles)) {
+      void navigate({ to: readPortalAlumnoId() ? '/alumno' : '/responsable' })
+      return
+    }
+    void navigate({ to: maestro ? '/maestro' : portal ? homePathForRoles(roles) : '/dashboard' })
   }
 
   return (
@@ -175,7 +187,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NotificationsBell />
         </Can>
 
-        {maestro ? (
+        {maestro || portal ? (
           <button
             type="button"
             className="user-panel user-panel--top"
@@ -281,6 +293,17 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             </div>
 
+            {portal && portalClase ? (
+              <div
+                className="sidebar-clase"
+                title={portalClase.cursoNombre}
+                data-testid="sidebar-clase"
+              >
+                <BookOpen size={14} />
+                {!collapsed ? <span>{portalClase.cursoNombre}</span> : null}
+              </div>
+            ) : null}
+
             <nav className="sidebar-nav">
               {items.map((item) => {
                 const isDashboard = item.label === 'Dashboard'
@@ -334,6 +357,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             toast.error(userMessageFromError(err))
           } finally {
             clearSession()
+            clearPortalContext()
             setConfirmLogout(false)
             window.location.href = '/login'
           }

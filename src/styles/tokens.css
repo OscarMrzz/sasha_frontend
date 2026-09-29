@@ -26,6 +26,10 @@
   --sasha-accent-hover: #e04218;
   --sasha-accent-muted: rgba(255, 80, 35, 0.14);
 
+  /* Banner de avisos: mismo contraste en ambos temas */
+  --sasha-banner-bg: #ff5023;
+  --sasha-banner-texto: #13171c;
+
   --sasha-success: #3d9a6a;
   --sasha-warning: #c9a227;
   --sasha-danger: #d64545;

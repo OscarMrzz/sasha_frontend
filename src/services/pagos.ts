@@ -9,6 +9,30 @@ export interface CobroRequest {
   observaciones?: string
   cobrador_user_id?: string
   obligacion_pago_id?: string
+  /** Cobra varias mensualidades a la vez; el monto sale de cada obligación. */
+  obligacion_pago_ids?: string[]
+}
+
+export interface Mensualidad {
+  obligacion_id: string
+  anio: number
+  mes: number
+  etiqueta: string
+  monto: number
+  fecha_vencimiento: string
+  estado: string
+}
+
+export interface MensualidadesAlumno {
+  alumno_id: string
+  codigo: string
+  nombre: string
+  meses: Mensualidad[]
+}
+
+export interface CobroMesesResponse {
+  pagos: Pago[]
+  total: number
 }
 
 export interface EvidenciaRequest {
@@ -56,6 +80,24 @@ export async function verificarPago(pagoId: string) {
 
 export async function generarObligaciones(body: GenerarObligacionesRequest) {
   return apiRequest<Obligacion[]>('/pagos/obligaciones/generar', { method: 'POST', body })
+}
+
+export async function cobrarMeses(alumnoCode: string, obligacionIds: string[], observaciones?: string) {
+  return apiRequest<CobroMesesResponse>('/pagos/cobro', {
+    method: 'POST',
+    body: { alumno_code: alumnoCode, monto: 0, obligacion_pago_ids: obligacionIds, observaciones },
+  })
+}
+
+export async function getMensualidadesAlumno(code: string) {
+  return apiRequest<MensualidadesAlumno>(`/pagos/alumnos/${encodeURIComponent(code)}/mensualidades`)
+}
+
+export async function generarMensualidades(periodoAcademicoId?: string) {
+  return apiRequest<{ creadas: number }>('/pagos/mensualidades/generar', {
+    method: 'POST',
+    body: periodoAcademicoId ? { periodo_academico_id: periodoAcademicoId } : {},
+  })
 }
 
 export async function listMora() {

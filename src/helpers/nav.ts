@@ -25,6 +25,12 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/asistencia', label: 'Asistencia', permission: 'asistencia:get', icon: 'check' },
   { to: '/tareas', label: 'Tareas', permission: 'tareas:get', icon: 'list' },
   { to: '/calificaciones', label: 'Calificaciones', permission: 'calificaciones:get', icon: 'award' },
+  {
+    to: '/liberacion-notas',
+    label: 'Liberación de notas',
+    permission: 'calificaciones:post',
+    icon: 'unlock',
+  },
   { to: '/pagos', label: 'Pagos', permission: 'pagos:get', icon: 'wallet' },
   {
     to: '/notificaciones-admin',

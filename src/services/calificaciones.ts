@@ -75,6 +75,80 @@ export async function liberarCalificaciones(body: LiberacionCreate) {
   return apiRequest<{ id: string }>('/calificaciones/liberacion', { method: 'POST', body })
 }
 
+export interface MesRef {
+  anio: number
+  mes: number
+  etiqueta: string
+}
+
+export type EstadoLiberacionParcial = 'liberado' | 'terminado' | 'en_curso'
+
+export interface ParcialLiberacion {
+  id: string
+  numero: number
+  nombre: string
+  etiqueta: string
+  fecha_inicio: string
+  fecha_fin: string
+  meses: MesRef[]
+  estado: EstadoLiberacionParcial
+  fecha_liberacion?: string
+}
+
+export interface LiberacionEstado {
+  periodo_id: string
+  periodo_nombre: string
+  parciales: ParcialLiberacion[]
+  /** Parciales terminados que se liberarán al presionar «Liberar calificaciones». */
+  por_liberar: number
+}
+
+export interface LiberacionResultado {
+  parciales_liberados: string[]
+  alumnos_bloqueados: number
+  avisos_enviados: number
+}
+
+export interface MesPendiente {
+  obligacion_id: string
+  anio: number
+  mes: number
+  etiqueta: string
+  monto: number
+  fecha_vencimiento: string
+  estado: string
+}
+
+export interface AlumnoBloqueado {
+  alumno_id: string
+  codigo: string
+  nombre: string
+  grado: string
+  seccion: string
+  parciales: Array<{ parcial_id: string; numero: number; nombre: string }>
+  meses: MesPendiente[]
+  monto_total: number
+}
+
+export async function getLiberacionEstado() {
+  return apiRequest<LiberacionEstado>('/calificaciones/liberacion/estado')
+}
+
+export async function liberarParciales() {
+  return apiRequest<LiberacionResultado>('/calificaciones/liberacion/parciales', { method: 'POST' })
+}
+
+export async function listAlumnosBloqueados() {
+  return apiRequest<AlumnoBloqueado[]>('/calificaciones/liberacion/bloqueados')
+}
+
+export async function forzarLiberacion(alumnoId: string, codigoConfirmacion: string) {
+  return apiRequest<{ alumno_id: string }>('/calificaciones/liberacion/forzar', {
+    method: 'POST',
+    body: { alumno_id: alumnoId, codigo_confirmacion: codigoConfirmacion },
+  })
+}
+
 export async function getNotas(alumnoId: string, periodoAcademicoId: string) {
   const qs = new URLSearchParams({
     alumno_id: alumnoId,

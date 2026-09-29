@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
+import { HorarioSemanaGrid } from '#/components/horarios/HorarioSemanaGrid'
+import type { SemanaSlot } from '#/components/horarios/HorarioSemanaGrid'
 import { Modal } from '#/components/ui/Modal'
-import { DIA_SHORT } from '#/lib/horarioGrid'
 import { downloadHorarioActualPdf } from '#/lib/horarioPdf'
 import type { FichaSlot } from '#/services/personas'
 import type { HorarioSlotDetail } from '#/services/horarios'
-
-const DAYS = [1, 2, 3, 4, 5, 6, 7]
 
 function toDetail(s: FichaSlot): HorarioSlotDetail {
   return {
@@ -39,31 +38,25 @@ type Props = {
 export function FichaHorarioSemanaModal({ open, title, slots, mode, onClose }: Props) {
   const details = useMemo(() => slots.map(toDetail), [slots])
 
-  const intervals = useMemo(() => {
-    const map = new Map<string, { start: string; end: string }>()
-    for (const s of details) {
-      const start = s.hora_inicio.slice(0, 5)
-      const end = s.hora_fin.slice(0, 5)
-      if (start && end) map.set(start, { start, end })
-    }
-    return [...map.values()].sort((a, b) => a.start.localeCompare(b.start))
-  }, [details])
-
-  const byCell = useMemo(() => {
-    const map = new Map<string, HorarioSlotDetail[]>()
-    for (const s of details) {
-      const k = `${s.dia_semana}|${s.hora_inicio.slice(0, 5)}`
-      const list = map.get(k) ?? []
-      list.push(s)
-      map.set(k, list)
-    }
-    return map
-  }, [details])
-
   const cellText = (s: HorarioSlotDetail) =>
     mode === 'maestro'
       ? `${s.curso_nombre}\n${s.grado_nombre} sec${s.seccion_nombre}`
       : `${s.curso_nombre}\n${s.maestro_nombre}`
+
+  const gridSlots = useMemo<SemanaSlot[]>(
+    () =>
+      details.map((s) => ({
+        key: `${s.asignacion_docente_id}-${s.dia_semana}-${s.hora_inicio}`,
+        dia_semana: s.dia_semana,
+        hora_inicio: s.hora_inicio,
+        hora_fin: s.hora_fin,
+        lines:
+          mode === 'maestro'
+            ? [s.curso_nombre, `${s.grado_nombre} sec${s.seccion_nombre}`]
+            : [s.curso_nombre, s.maestro_nombre],
+      })),
+    [details, mode],
+  )
 
   return (
     <Modal
@@ -96,45 +89,7 @@ export function FichaHorarioSemanaModal({ open, title, slots, mode, onClose }: P
         </>
       }
     >
-      {details.length === 0 ? (
-        <p className="texto-muted">Sin horario publicado.</p>
-      ) : (
-        <div className="data-table-wrap" style={{ overflowX: 'auto' }} data-testid="ficha-horario-semana">
-          <table className="data-table ficha-semana-table">
-            <thead>
-              <tr>
-                <th>Hora</th>
-                {DAYS.map((d) => (
-                  <th key={d}>{DIA_SHORT[d]}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {intervals.map((iv) => (
-                <tr key={iv.start}>
-                  <td className="texto-muted" style={{ whiteSpace: 'nowrap' }}>
-                    {iv.start}–{iv.end}
-                  </td>
-                  {DAYS.map((d) => {
-                    const cell = byCell.get(`${d}|${iv.start}`) ?? []
-                    return (
-                      <td key={d}>
-                        {cell.map((s) => (
-                          <div key={`${s.asignacion_docente_id}-${s.hora_inicio}`} style={{ fontSize: '0.75rem' }}>
-                            {cellText(s).split('\n').map((line) => (
-                              <div key={line}>{line}</div>
-                            ))}
-                          </div>
-                        ))}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <HorarioSemanaGrid slots={gridSlots} testId="ficha-horario-semana" />
     </Modal>
   )
 }

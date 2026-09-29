@@ -3,6 +3,7 @@ import { test, expect, loginAs } from './fixtures/auth'
 const PEDRO = '1002026501'
 const ALUMNO = '1002026701'
 const ADMIN = '1002026100'
+const RESPONSABLE = '1002026901'
 
 test.describe('notificaciones @smoke', () => {
   test('maestro ve la campana y la lista filtrada por rol', async ({ page }) => {
@@ -85,6 +86,43 @@ test.describe('notificaciones @smoke', () => {
     await expect(page.getByTestId('notifications-list')).toContainText('Revisión de matrícula', {
       timeout: 10_000,
     })
+  })
+
+  test('el banner activo aparece en grande en el hub del maestro', async ({ page }) => {
+    await loginAs(page, { code: PEDRO })
+    const banner = page.getByTestId('aviso-banner')
+    await expect(banner).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('aviso-banner-titulo')).toHaveText('Aviso importante')
+    await expect(banner).toContainText('Las clases del lunes se suspenden')
+  })
+
+  for (const [rol, code] of [
+    ['alumno', ALUMNO],
+    ['responsable', RESPONSABLE],
+    ['admin', ADMIN],
+  ] as const) {
+    test(`el banner llega al inicio del ${rol}`, async ({ page }) => {
+      await loginAs(page, { code })
+      await expect(page.getByTestId('aviso-banner')).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByTestId('aviso-banner')).toHaveCount(1)
+      await expect(page.getByTestId('aviso-banner-titulo')).toHaveText('Aviso importante')
+    })
+  }
+
+  test('admin puede iniciar quitar banner y cancelar sin afectarlo', async ({ page }) => {
+    await loginAs(page, { code: ADMIN })
+    await page.goto('/notificaciones-admin')
+    const row = page.getByRole('row').filter({ hasText: 'Aviso importante' })
+    await expect(row).toBeVisible({ timeout: 15_000 })
+    await row.click({ button: 'right' })
+    await page.getByTestId('notif-quitar-banner').click()
+    const dialog = page.getByRole('dialog', { name: 'Quitar banner' })
+    await expect(dialog).toContainText('Aviso importante')
+    await dialog.getByRole('button', { name: /cancelar/i }).click()
+    await expect(dialog).toHaveCount(0)
+
+    await page.getByRole('row').filter({ hasText: 'Revisión de matrícula' }).click({ button: 'right' })
+    await expect(page.getByTestId('notif-quitar-banner')).toHaveCount(0)
   })
 
   test('el modal se encoge antes de desaparecer al cerrar', async ({ page }) => {
