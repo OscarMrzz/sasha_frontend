@@ -103,3 +103,50 @@ export async function generarMensualidades(periodoAcademicoId?: string) {
 export async function listMora() {
   return apiRequest<Obligacion[]>('/pagos/mora')
 }
+
+export type EstadoRecibo = 'sin_revisar' | 'aprobado' | 'denegado'
+
+export const ESTADO_RECIBO_LABEL: Record<EstadoRecibo, string> = {
+  sin_revisar: 'Sin revisar',
+  aprobado: 'Aprobado',
+  denegado: 'Denegado',
+}
+
+/** Recibo de pago que sube el responsable y revisa caja. */
+export interface Recibo {
+  id: string
+  alumno_id: string
+  alumno_nombre: string
+  alumno_codigo: string
+  responsable_nombre: string
+  obligacion_pago_id?: string
+  anio: number
+  mes: number
+  etiqueta: string
+  monto: number
+  fecha_pago?: string
+  object_key: string
+  content_type: string
+  estado: EstadoRecibo
+  observaciones?: string
+  revisado_at?: string
+  /** Fecha de envío. */
+  created_at: string
+}
+
+export interface ValidarReciboRequest {
+  estado: EstadoRecibo
+  anio: number
+  mes: number
+  monto: number
+  fecha_pago?: string | null
+  observaciones?: string | null
+}
+
+export async function listRecibos(estado?: EstadoRecibo) {
+  return apiRequest<Recibo[]>(`/pagos/recibos${estado ? `?estado=${estado}` : ''}`)
+}
+
+export async function validarRecibo(id: string, body: ValidarReciboRequest) {
+  return apiRequest<Recibo>(`/pagos/recibos/${encodeURIComponent(id)}/validar`, { method: 'PUT', body })
+}

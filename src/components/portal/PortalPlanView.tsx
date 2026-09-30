@@ -129,10 +129,13 @@ export function PortalPlanView({
   asignacionId,
   cursoNombre,
   alumnoId,
+  sinTitulo = false,
 }: {
   asignacionId: string
   cursoNombre: string
   alumnoId: string | null
+  /** Oculta el título cuando la pantalla ya lo muestra (portal del padre). */
+  sinTitulo?: boolean
 }) {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['portal-plan', asignacionId, alumnoId ?? 'self'],
@@ -159,9 +162,11 @@ export function PortalPlanView({
     <div data-testid="portal-plan">
       <header className="portal-home__header">
         <div>
-          <h1 className="page-title" style={{ margin: 0 }}>
-            Plan de estudio · {cursoNombre}
-          </h1>
+          {!sinTitulo ? (
+            <h1 className="page-title" style={{ margin: 0 }}>
+              Plan de estudio · {cursoNombre}
+            </h1>
+          ) : null}
           {plan?.maestro_nombre ? (
             <p className="texto-muted" style={{ margin: '0.35rem 0 0' }}>
               {plan.maestro_nombre}

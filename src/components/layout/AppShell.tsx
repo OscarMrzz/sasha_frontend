@@ -21,6 +21,7 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeft,
+  Receipt,
   Search,
   Settings,
   Shield,
@@ -40,7 +41,7 @@ import { useSession } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
 import { homePathForRoles, isMaestroRole, isPortalRole, isResponsableRole } from '#/lib/home-path'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
-import { clearPortalContext, readPortalAlumnoId, usePortalClase } from '#/lib/portal-context'
+import { clearPortalContext, usePortalClase } from '#/lib/portal-context'
 import { logout } from '#/services/auth'
 import { toast } from 'sonner'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
@@ -66,6 +67,7 @@ const ICONS: Record<string, ReactNode> = {
   award: <Award className="sidebar-nav__icon" />,
   unlock: <Unlock className="sidebar-nav__icon" />,
   wallet: <Wallet className="sidebar-nav__icon" />,
+  receipt: <Receipt className="sidebar-nav__icon" />,
   bell: <Bell className="sidebar-nav__icon" />,
   chart: <BarChart3 className="sidebar-nav__icon" />,
   download: <Download className="sidebar-nav__icon" />,
@@ -77,9 +79,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { can, roles } = useCan()
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const isHubLauncher = ['/maestro', '/alumno', '/alumno/resultados', '/responsable'].includes(
-    pathname.replace(/\/$/, ''),
-  )
+  const isHubLauncher =
+    ['/maestro', '/alumno', '/alumno/resultados', '/responsable', '/mi-perfil'].includes(
+      pathname.replace(/\/$/, ''),
+    ) ||
+    pathname.startsWith('/hijo/')
   const maestro = isMaestroRole(roles)
   const portal = isPortalRole(roles)
   const portalClase = usePortalClase()
@@ -156,7 +160,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const goInicio = () => {
     if (isResponsableRole(roles)) {
-      void navigate({ to: readPortalAlumnoId() ? '/alumno' : '/responsable' })
+      void navigate({ to: '/responsable' })
       return
     }
     void navigate({ to: maestro ? '/maestro' : portal ? homePathForRoles(roles) : '/dashboard' })

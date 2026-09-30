@@ -11,12 +11,6 @@ function labelEstado(e: PortalTarea['estado']) {
   return e === 'revisada' ? 'Revisada' : 'Pendiente'
 }
 
-function puntosLabel(t: PortalTarea) {
-  if (t.puntos != null) return `${t.puntos} / ${t.puntos_max}`
-  if (t.estado === 'revisada' && !t.liberado) return 'No liberado'
-  return `— / ${t.puntos_max}`
-}
-
 export function PortalTareasView({
   asignacionId,
   cursoNombre,
@@ -47,7 +41,6 @@ export function PortalTareasView({
           </span>
         ),
       }),
-      col.accessor((r) => puntosLabel(r), { id: 'puntos', header: 'Puntos' }),
     ],
     [],
   )

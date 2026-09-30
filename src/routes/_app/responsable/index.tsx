@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { UserRound } from 'lucide-react'
-import { useEffect } from 'react'
 import { useCan } from '#/components/gates/Can'
 import { AvisoBanner } from '#/components/layout/AvisoBanner'
+import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { isResponsableRole } from '#/lib/home-path'
 import { writePortalAlumnoId } from '#/lib/portal-context'
 import { listHijos } from '#/services/portal'
@@ -23,14 +22,10 @@ function ResponsableHomePage() {
     enabled: responsable,
   })
 
-  const elegir = (h: PortalHijo, replace = false) => {
+  const elegir = (h: PortalHijo) => {
     writePortalAlumnoId(h.alumno_id)
-    void navigate({ to: '/alumno', replace })
+    void navigate({ to: '/alumno' })
   }
-
-  useEffect(() => {
-    if (data.length === 1) elegir(data[0], true)
-  }, [data])
 
   if (!responsable) {
     return (
@@ -43,14 +38,6 @@ function ResponsableHomePage() {
   return (
     <div className="maestro-hub" data-testid="responsable-home">
       <AvisoBanner />
-      <header className="maestro-hub__header">
-        <h1 className="page-title" style={{ margin: 0 }}>
-          Mis alumnos
-        </h1>
-        <p className="texto-muted" style={{ margin: '0.35rem 0 0' }}>
-          Elige al alumno para ver su horario, clases y tareas.
-        </p>
-      </header>
 
       {isLoading ? (
         <div className="empty-state">Cargando alumnos…</div>
@@ -65,27 +52,39 @@ function ResponsableHomePage() {
       ) : (
         <div className="maestro-hub__cards" data-testid="responsable-hijos">
           {data.map((h) => (
-            <button
-              key={h.alumno_id}
-              type="button"
-              className="maestro-hub__card clase-card"
-              data-testid={`responsable-hijo-${h.user_code}`}
-              onClick={() => elegir(h)}
-            >
-              <div className="maestro-hub__card-top">
-                <h2 className="maestro-hub__card-title">{h.nombre}</h2>
-                <UserRound size={18} className="texto-muted" />
-              </div>
-              <p className="maestro-hub__card-meta">
-                {h.grado ? `${h.grado} · sec${h.seccion}` : 'Sin matrícula activa'}
-              </p>
-              <p className="maestro-hub__card-meta texto-muted">
-                {[h.parentesco, h.user_code].filter(Boolean).join(' · ')}
-              </p>
-            </button>
+            <HijoCard key={h.alumno_id} hijo={h} onClick={() => elegir(h)} />
           ))}
         </div>
       )}
     </div>
+  )
+}
+
+function HijoCard({ hijo, onClick }: { hijo: PortalHijo; onClick: () => void }) {
+  const foto = useBovedaImage(hijo.path_imagen)
+  return (
+    <button
+      type="button"
+      className="maestro-hub__card hijo-card"
+      data-testid={`responsable-hijo-${hijo.user_code}`}
+      onClick={onClick}
+    >
+      {foto ? (
+        <img className="hijo-card__foto" src={foto} alt={`Foto de ${hijo.nombre}`} />
+      ) : (
+        <div className="hijo-card__foto hijo-card__foto--placeholder" aria-hidden="true">
+          {hijo.nombre.slice(0, 1)}
+        </div>
+      )}
+      <div className="hijo-card__datos">
+        <h2 className="maestro-hub__card-title">{hijo.nombre}</h2>
+        <p className="maestro-hub__card-meta">
+          N.º de cuenta <strong>{hijo.user_code}</strong>
+        </p>
+        <p className="maestro-hub__card-meta texto-muted">
+          {hijo.grado ? `${hijo.grado} · sec${hijo.seccion}` : 'Sin matrícula activa'}
+        </p>
+      </div>
+    </button>
   )
 }

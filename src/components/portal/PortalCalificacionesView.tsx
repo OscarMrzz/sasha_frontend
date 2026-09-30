@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Clock, Lock } from 'lucide-react'
 import type { PortalCalificaciones, PortalParcialNota } from '#/services/portal'
 import { getCalificacionesClase } from '#/services/portal'
-import { Anillo } from '#/components/portal/notas-ui'
+import { Anillo, claseNivelNota } from '#/components/portal/notas-ui'
 
 function TilePromedio({ data }: { data: PortalCalificaciones }) {
   return (
@@ -12,7 +12,7 @@ function TilePromedio({ data }: { data: PortalCalificaciones }) {
         <p className="notas-bento__vacio">Aún no hay notas visibles.</p>
       ) : (
         <div className="notas-bento__promedio-body">
-          <div className="notas-bento__anillo-wrap">
+          <div className={`notas-bento__anillo-wrap ${claseNivelNota(data.indicador)}`}>
             <Anillo valor={data.promedio} />
             <span className="notas-bento__promedio-n">{data.promedio}</span>
           </div>

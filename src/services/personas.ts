@@ -269,3 +269,8 @@ export async function getFicha(code: string, consulta?: { fecha?: string; hora?:
   const suffix = qs.toString() ? `?${qs}` : ''
   return apiRequest<UserFicha>(`/personas/ficha/${encodeURIComponent(code)}${suffix}`)
 }
+
+/** Ficha del usuario en sesión (sin la parte operativa del día). */
+export async function getMiFicha() {
+  return apiRequest<UserFicha>('/personas/mi-ficha')
+}

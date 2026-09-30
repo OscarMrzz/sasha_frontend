@@ -32,6 +32,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'unlock',
   },
   { to: '/pagos', label: 'Pagos', permission: 'pagos:get', icon: 'wallet' },
+  { to: '/recibos', label: 'Recibos', permission: 'pagos:put', icon: 'receipt' },
   {
     to: '/notificaciones-admin',
     label: 'Notificaciones',

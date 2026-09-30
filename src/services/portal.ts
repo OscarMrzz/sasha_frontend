@@ -1,5 +1,6 @@
 import { apiRequest } from '#/lib/api'
 import type { Curso } from '#/services/catalogos'
+import type { EstadoRecibo, Recibo } from '#/services/pagos'
 import type { Plan } from '#/services/planestudio'
 
 export interface PortalHijo {
@@ -9,6 +10,7 @@ export interface PortalHijo {
   grado: string
   seccion: string
   parentesco: string
+  path_imagen?: string
 }
 
 export interface PortalHorarioSlot {
@@ -52,6 +54,9 @@ export interface PortalInicio {
 }
 
 export interface PortalTarea {
+  /** Solo en la lista de todas las tareas (`listTareasHijo`). */
+  asignacion_docente_id?: string
+  curso_nombre?: string
   id: string
   titulo: string
   descripcion?: string
@@ -61,7 +66,6 @@ export interface PortalTarea {
   puntos_max: number
   estado: 'pendiente' | 'revisada'
   entregado: boolean
-  puntos?: number
   liberado: boolean
 }
 
@@ -101,8 +105,68 @@ export interface PortalMateriaResumen {
   aprobada: boolean
 }
 
+/** Cambio frente a la nota anterior con nota. Sin valor si no hay con qué comparar. */
+export type Tendencia = 'sube' | 'baja' | 'igual'
+
+export interface PortalMateriaParcial {
+  asignacion_docente_id: string
+  curso: string
+  /** Escala 0–100. */
+  nota?: number
+  puntos?: number
+  puntos_max: number
+  aprobada: boolean
+  tendencia?: Tendencia
+  diferencia?: number
+}
+
+export interface PortalParcialResumen {
+  parcial_id: string
+  numero: number
+  etiqueta: string
+  estado: EstadoParcialNota
+  meses_pendientes: string[]
+  mensaje?: string
+  promedio?: number
+  aprobadas: number
+  reprobadas: number
+  tendencia?: Tendencia
+  diferencia?: number
+  materias: PortalMateriaParcial[]
+  /** Solo en parciales visibles. */
+  analisis?: PortalAnalisisParcial
+}
+
+export type NivelAnalisis = 'urgente' | 'mejorar' | 'felicitar'
+
+export interface PortalMensajeAnalisis {
+  categoria: 'casa' | 'clase' | 'evaluaciones' | 'labor_social' | 'asistencia'
+  nivel: NivelAnalisis
+  texto: string
+}
+
+export interface PortalAnalisisParcial {
+  mejorar: PortalMensajeAnalisis[]
+  destaca: PortalMensajeAnalisis[]
+}
+
+/** Último parcial con nota frente al anterior con nota. */
+export interface PortalTendencia {
+  estado: 'mejoro' | 'empeoro' | 'igual'
+  desde: string
+  hasta: string
+  anterior: number
+  actual: number
+  diferencia: number
+  suben: number
+  bajan: number
+}
+
 /** Resultado general: el cuadro sale del promedio de todas las materias con nota visible. */
 export interface PortalResumen {
+  /** Del más reciente al primero. */
+  parciales: PortalParcialResumen[]
+  tendencia?: PortalTendencia
   liberado: boolean
   promedio_parcial: boolean
   promedio?: number
@@ -170,4 +234,43 @@ export function getCalificacionesClase(asignacionId: string, alumnoId?: string |
 
 export function getResumenCalificaciones(alumnoId?: string | null) {
   return apiRequest<PortalResumen>(`/portal/resumen${alumnoQs(alumnoId)}`)
+}
+
+export function listTareasHijo(alumnoId?: string | null) {
+  return apiRequest<PortalTarea[]>(`/portal/tareas${alumnoQs(alumnoId)}`)
+}
+
+export interface PortalMesPago {
+  anio: number
+  mes: number
+  etiqueta: string
+  monto: number
+  fecha_vencimiento: string
+  estado: 'pendiente' | 'pagado' | 'mora'
+  /** No pagado y ya pasó la fecha límite. */
+  vencido: boolean
+  /** Estado del recibo más reciente de ese mes. */
+  recibo_estado?: EstadoRecibo
+}
+
+export interface PortalPagos {
+  meses: PortalMesPago[]
+  /** Primer mes sin pagar que aún no vence. */
+  proximo?: PortalMesPago
+  vencidos: number
+  monto_vencido: number
+  recibos: Recibo[]
+}
+
+export function getPagosHijo(alumnoId: string) {
+  return apiRequest<PortalPagos>(`/portal/pagos${alumnoQs(alumnoId)}`)
+}
+
+export function subirRecibo(alumnoId: string, anio: number, mes: number, file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('alumno_id', alumnoId)
+  form.append('anio', String(anio))
+  form.append('mes', String(mes))
+  return apiRequest<Recibo>('/portal/recibos', { method: 'POST', body: form })
 }

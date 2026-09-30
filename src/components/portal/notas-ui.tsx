@@ -7,6 +7,22 @@ export const CUADRO: Record<string, { titulo: string; detalle: string; Icon: typ
   reprobado: { titulo: 'Reprobado', detalle: 'Necesita reforzar', Icon: TrendingDown },
 }
 
+/** Clase de color del promedio según el indicador que calcula el backend con los umbrales de configuración:
+ * rojo reprobado, amarillo aprobado, verde cuadro de honor o excelencia. */
+export function claseNivelNota(indicador?: string) {
+  switch (indicador) {
+    case 'reprobado':
+      return 'nota-nivel--reprobado'
+    case 'aprobado':
+      return 'nota-nivel--aprobado'
+    case 'honor_merito':
+    case 'excelencia':
+      return 'nota-nivel--destacado'
+    default:
+      return ''
+  }
+}
+
 export function Anillo({ valor }: { valor: number }) {
   const r = 42
   const c = 2 * Math.PI * r

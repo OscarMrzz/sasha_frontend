@@ -3,11 +3,12 @@ import { createFileRoute, Link, Navigate, useNavigate } from '@tanstack/react-ro
 import { useEffect } from 'react'
 import { AlumnoHorarioView } from '#/components/horarios/AlumnoHorarioView'
 import { AvisoBanner } from '#/components/layout/AvisoBanner'
-import { Anillo, CUADRO } from '#/components/portal/notas-ui'
+import { Anillo, CUADRO, claseNivelNota } from '#/components/portal/notas-ui'
 import { usePortal, usePortalInicio } from '#/hooks/use-portal'
 import { userMessageFromError } from '#/lib/api'
 import { writePortalClase } from '#/lib/portal-context'
-import { getResumenCalificaciones, listHijos } from '#/services/portal'
+import { HijoHub } from '#/components/portal/padre/HijoHub'
+import { getResumenCalificaciones } from '#/services/portal'
 import type { PortalClase } from '#/services/portal'
 
 export const Route = createFileRoute('/_app/alumno/')({
@@ -21,10 +22,10 @@ function resumenTareas(c: PortalClase) {
   return partes.join(' · ')
 }
 
-function ResultadoGeneral({ alumnoId, responsable }: { alumnoId: string | null; responsable: boolean }) {
+function ResultadoGeneral() {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['portal-resumen', alumnoId ?? 'self'],
-    queryFn: () => getResumenCalificaciones(alumnoId),
+    queryKey: ['portal-resumen', 'self'],
+    queryFn: () => getResumenCalificaciones(null),
   })
   const cuadro = data?.indicador ? CUADRO[data.indicador] : undefined
 
@@ -41,7 +42,7 @@ function ResultadoGeneral({ alumnoId, responsable }: { alumnoId: string | null; 
         </div>
       ) : (
         <div className="portal-home__resultado">
-          <div className="notas-bento__anillo-wrap">
+          <div className={`notas-bento__anillo-wrap ${claseNivelNota(data.indicador)}`}>
             <Anillo valor={data.promedio} />
             <span className="notas-bento__promedio-n" data-testid="alumno-resultado-promedio">
               {data.promedio}
@@ -52,7 +53,7 @@ function ResultadoGeneral({ alumnoId, responsable }: { alumnoId: string | null; 
               {cuadro?.titulo ?? data.etiqueta}
             </p>
             <p className="notas-bento__nota">
-              {responsable ? 'Promedio' : 'Tu promedio'} de {data.aprobadas + data.reprobadas} materia
+              Tu promedio de {data.aprobadas + data.reprobadas} materia
               {data.aprobadas + data.reprobadas === 1 ? '' : 's'} con parciales liberados
               {data.promedio_parcial ? '. Hay parciales pendientes de habilitar.' : '.'}
             </p>
@@ -74,11 +75,6 @@ function AlumnoHomePage() {
   const navigate = useNavigate()
   const { portal, responsable, alumnoId } = usePortal()
   const { data, isLoading, isError, error } = usePortalInicio()
-  const { data: hijos = [] } = useQuery({
-    queryKey: ['portal-hijos'],
-    queryFn: listHijos,
-    enabled: responsable,
-  })
 
   useEffect(() => {
     writePortalClase(null)
@@ -92,6 +88,13 @@ function AlumnoHomePage() {
     )
   }
   if (responsable && !alumnoId) return <Navigate to="/responsable" replace />
+  if (responsable && alumnoId) {
+    return (
+      <div className="maestro-hub" data-testid="alumno-home">
+        <HijoHub alumnoId={alumnoId} />
+      </div>
+    )
+  }
 
   const abrirClase = (c: PortalClase) => {
     writePortalClase({ asignacionId: c.asignacion_docente_id, cursoNombre: c.curso_nombre })
@@ -99,15 +102,14 @@ function AlumnoHomePage() {
   }
 
   const alumno = data?.alumno
-  const titulo = responsable ? alumno?.nombre || 'Alumno' : 'Mi inicio'
 
   return (
     <div className="maestro-hub" data-testid="alumno-home">
-      {!responsable || hijos.length === 1 ? <AvisoBanner /> : null}
+      <AvisoBanner />
       <header className="portal-home__header">
         <div>
           <h1 className="page-title" style={{ margin: 0 }} data-testid="alumno-home-title">
-            {titulo}
+            Mi inicio
           </h1>
           {alumno ? (
             <p className="texto-muted" style={{ margin: '0.35rem 0 0' }}>
@@ -115,11 +117,6 @@ function AlumnoHomePage() {
             </p>
           ) : null}
         </div>
-        {responsable && hijos.length > 1 ? (
-          <Link to="/responsable" className="btn btn--ghost btn--sm" data-testid="alumno-cambiar">
-            Cambiar alumno
-          </Link>
-        ) : null}
       </header>
 
       {isLoading ? (
@@ -143,16 +140,13 @@ function AlumnoHomePage() {
             <AlumnoHorarioView
               slots={data.horario_semana}
               recreo={data.recreo}
-              title={responsable ? 'Horario' : 'Mi horario'}
             />
           </div>
 
-          <ResultadoGeneral alumnoId={alumnoId} responsable={responsable} />
+          <ResultadoGeneral />
 
           <section className="portal-home__section" data-testid="alumno-clases">
-            <h2 className="portal-home__section-title">
-              {responsable ? 'Clases' : 'Mis clases'}
-            </h2>
+            <h2 className="portal-home__section-title">Mis clases</h2>
             {data.clases.length === 0 ? (
               <div className="empty-state">No hay clases asignadas en el periodo activo.</div>
             ) : (
