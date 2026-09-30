@@ -4,14 +4,20 @@ import type { Page } from '@playwright/test'
 /** Códigos de fixture con rol maestro (home = /maestro). */
 const MAESTRO_HOME_CODES = new Set(['1002026501'])
 
-/** Alumnos 1002026701–712 y responsables 1002026901–912 (un hijo cada uno) aterrizan en /alumno. */
-function isPortalCode(code: string) {
-  return /^10020267(0[1-9]|1[0-2])$/.test(code) || /^10020269(0[1-9]|1[0-2])$/.test(code)
+/** Alumnos 1002026701–712 aterrizan en /alumno. */
+function isAlumnoCode(code: string) {
+  return /^10020267(0[1-9]|1[0-2])$/.test(code)
+}
+
+/** Responsables 1002026901–912 (un hijo cada uno) aterrizan en /responsable (tarjetas de hijos). */
+function isResponsableCode(code: string) {
+  return /^10020269(0[1-9]|1[0-2])$/.test(code)
 }
 
 function defaultHome(code: string) {
   if (MAESTRO_HOME_CODES.has(code)) return /\/maestro\/?$/
-  if (isPortalCode(code)) return /\/alumno\/?$/
+  if (isAlumnoCode(code)) return /\/alumno\/?$/
+  if (isResponsableCode(code)) return /\/responsable\/?$/
   return /\/dashboard/
 }
 
@@ -31,6 +37,15 @@ export async function loginAs(
   await page.getByTestId('login-password').fill(password)
   await page.getByTestId('login-submit').click()
   await expect(page).toHaveURL(home, { timeout: 15_000 })
+}
+
+/** Entra como responsable y abre el inicio (botones grandes) de su primer hijo. */
+export async function entrarComoPadre(page: Page, code: string) {
+  await loginAs(page, { code })
+  const card = page.getByTestId('responsable-hijos').locator('.hijo-card').first()
+  await expect(card).toBeVisible({ timeout: 15_000 })
+  await card.click()
+  await expect(page.getByTestId('padre-tiles')).toBeVisible({ timeout: 15_000 })
 }
 
 export const test = base
