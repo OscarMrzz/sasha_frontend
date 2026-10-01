@@ -1,11 +1,22 @@
 import { createContext, forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import * as echarts from 'echarts/core'
-import { BarChart, BoxplotChart, ScatterChart } from 'echarts/charts'
-import { GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/components'
+import { BarChart, BoxplotChart, GaugeChart, PieChart, ScatterChart } from 'echarts/charts'
+import { GridComponent, LegendComponent, MarkLineComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import type { EChartsCoreOption, EChartsType } from 'echarts/core'
 
-echarts.use([BarChart, BoxplotChart, ScatterChart, GridComponent, TooltipComponent, MarkLineComponent, CanvasRenderer])
+echarts.use([
+  BarChart,
+  BoxplotChart,
+  GaugeChart,
+  PieChart,
+  ScatterChart,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  MarkLineComponent,
+  CanvasRenderer,
+])
 
 export interface ChartTokens {
   texto: string

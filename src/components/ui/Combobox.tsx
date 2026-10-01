@@ -19,6 +19,8 @@ type ComboboxProps = {
   emptyLabel?: string
   /** Permite confirmar texto que no está en la lista (Enter, blur o «Usar»). */
   allowCustom?: boolean
+  /** Texto escrito, para buscar opciones en el servidor. */
+  onQueryChange?: (query: string) => void
   'data-testid'?: string
 }
 
@@ -38,6 +40,7 @@ export function Combobox({
   disabled,
   emptyLabel = 'Sin resultados',
   allowCustom = false,
+  onQueryChange,
   'data-testid': testId,
 }: ComboboxProps) {
   const autoId = useId()
@@ -94,6 +97,10 @@ export function Combobox({
   useEffect(() => {
     setHighlight(0)
   }, [query, open])
+
+  useEffect(() => {
+    onQueryChange?.(query)
+  }, [query, onQueryChange])
 
   const onKeyDown = (e: KeyboardEvent) => {
     if (disabled) return

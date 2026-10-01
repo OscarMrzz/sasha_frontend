@@ -8,7 +8,6 @@ export interface MatriculaCreate {
   modalidad_id?: string
   asignar_seccion_automatica?: boolean
   es_reingreso?: boolean
-  generar_mensualidad?: boolean
   tiene_cursos_retrasados?: boolean
   cursos_retrasados?: { curso_id: string; anio_previo: number; anio_actual: number }[]
 }
@@ -47,7 +46,6 @@ export interface ReingresoRequest {
   user_code: string
   periodo_academico_id: string
   seccion_id: string
-  generar_mensualidad?: boolean
 }
 
 export interface LinkResponsableRequest {

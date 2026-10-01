@@ -31,8 +31,11 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'calificaciones:post',
     icon: 'unlock',
   },
+  { to: '/alumnos', label: 'Alumnos', permission: 'cartera:get', icon: 'users' },
+  { to: '/padres', label: 'Padres', permission: 'cartera:get', icon: 'user' },
   { to: '/pagos', label: 'Pagos', permission: 'pagos:get', icon: 'wallet' },
   { to: '/recibos', label: 'Recibos', permission: 'pagos:put', icon: 'receipt' },
+  { to: '/analitica-pagos', label: 'Analítica de pagos', permission: 'analitica_pagos:get', icon: 'chart' },
   {
     to: '/notificaciones-admin',
     label: 'Notificaciones',

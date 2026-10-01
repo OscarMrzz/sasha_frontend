@@ -65,7 +65,6 @@ type AcademicoForm = {
   modalidad_id: string
   seccion_id: string
   asignar_seccion_automatica: boolean
-  generar_mensualidad: boolean
   tiene_cursos_retrasados: BoolChoice
   cursos_retrasados: { curso_id: string; anio_previo: string }[]
 }
@@ -118,7 +117,6 @@ const emptyAcademico: AcademicoForm = {
   modalidad_id: '',
   seccion_id: '',
   asignar_seccion_automatica: true,
-  generar_mensualidad: true,
   tiene_cursos_retrasados: null,
   cursos_retrasados: [{ curso_id: '', anio_previo: '' }],
 }
@@ -518,7 +516,6 @@ export function MatriculaWizard({
       const mat = await createMatricula({
         alumno_id: alumnoPerfil.id,
         periodo_academico_id: academico.periodo_academico_id,
-        generar_mensualidad: academico.generar_mensualidad,
         tiene_cursos_retrasados: Boolean(academico.tiene_cursos_retrasados),
         ...(cursosRetrasados.length ? { cursos_retrasados: cursosRetrasados } : {}),
         ...(academico.asignar_seccion_automatica
@@ -1147,16 +1144,9 @@ export function MatriculaWizard({
                 />
               </Field>
             )}
-            <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '1rem' }}>
-              <input
-                type="checkbox"
-                checked={academico.generar_mensualidad}
-                onChange={(e) =>
-                  setAcademico((f) => ({ ...f, generar_mensualidad: e.target.checked }))
-                }
-              />{' '}
-              Generar obligaciones de mensualidad
-            </label>
+            <p className="texto-muted" style={{ fontSize: '0.85rem', margin: '0 0 1rem' }}>
+              Al matricular se crean solas la cuota de matrícula y una mensualidad pendiente por cada mes del periodo.
+            </p>
 
             <p className="wizard-choice__question">¿Lleva cursos retrasados?</p>
             <div className="wizard-choice" role="group" aria-label="¿Lleva cursos retrasados?">
@@ -1629,10 +1619,8 @@ export function MatriculaWizard({
                 </span>
               </div>
               <div className="wizard-summary__row">
-                <span className="wizard-summary__label">Mensualidad</span>
-                <span className="wizard-summary__value">
-                  {academico.generar_mensualidad ? 'Sí' : 'No'}
-                </span>
+                <span className="wizard-summary__label">Mensualidades</span>
+                <span className="wizard-summary__value">Se generan al matricular</span>
               </div>
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Cursos retrasados</span>

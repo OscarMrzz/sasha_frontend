@@ -223,6 +223,8 @@ function ValidarReciboModal({ recibo, onClose }: { recibo: Recibo; onClose: () =
       toast.success(`Recibo ${ESTADO_RECIBO_LABEL[r.estado].toLowerCase()}`)
       void qc.invalidateQueries({ queryKey: ['recibos'] })
       void qc.invalidateQueries({ queryKey: ['mora'] })
+      void qc.invalidateQueries({ queryKey: ['mensualidades'] })
+      void qc.invalidateQueries({ queryKey: ['mensualidades-alumno'] })
       void qc.invalidateQueries({ queryKey: ['liberacion-bloqueados'] })
       setConfirmar(false)
       dismiss()

@@ -2220,6 +2220,33 @@ input.field__input,
   color: var(--sasha-texto-muted);
 }
 
+/* Cartera de caja: estado de pago, monto y lista de hijos */
+.estado-pago {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+.estado-pago__recibo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sasha-accent);
+}
+
+.monto-vencido {
+  color: var(--sasha-danger);
+  font-variant-numeric: tabular-nums;
+}
+
+.cartera-hijos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.15rem;
+}
+
 .notif-bell {
   position: relative;
   display: inline-flex;
@@ -4563,13 +4590,6 @@ a.app-list__item:hover {
   padding-left: 1.1rem;
 }
 
-.pagos-cobro-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
 .pagos-card {
   flex: 1 1 360px;
   max-width: 520px;
@@ -4597,6 +4617,10 @@ a.app-list__item:hover {
 
 .cobro-meses__item--pagado {
   opacity: 0.55;
+}
+
+.cobro-meses__item--actual {
+  border-color: var(--sasha-accent);
 }
 
 .cobro-meses__monto {
@@ -6240,5 +6264,187 @@ a.app-list__item:hover {
   .avanzado__nav {
     border-right: 0;
     padding-right: 0;
+  }
+}
+
+/* Analítica de pagos */
+.analitica-pagos__bento {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr 1fr;
+  grid-template-areas:
+    'aldia cols  cols  recaudo'
+    'aldia cols  cols  recaudo'
+    'grado grado dona  meses'
+    'modalidad modalidad modalidad modalidad'
+    'moro  moro  moro  moro';
+  gap: 0.85rem;
+}
+
+.ap-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.ap-tile--aldia { grid-area: aldia; }
+.ap-tile--cols { grid-area: cols; }
+.ap-tile--recaudo { grid-area: recaudo; }
+.ap-tile--dona { grid-area: dona; }
+.ap-tile--grado { grid-area: grado; }
+.ap-tile--meses { grid-area: meses; }
+.ap-tile--modalidad { grid-area: modalidad; }
+.ap-tile--moro { grid-area: moro; }
+
+.ap-tile--aldia {
+  --ap-nivel: var(--sasha-success);
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ap-nivel) 10%, var(--sasha-bg-raised));
+  border-color: color-mix(in srgb, var(--ap-nivel) 35%, var(--sasha-border-suave));
+}
+
+.ap-tile--aldia.ap-tile--warn { --ap-nivel: var(--sasha-warning); }
+.ap-tile--aldia.ap-tile--bad { --ap-nivel: var(--sasha-danger); }
+
+.ap-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.ap-hero__cifra {
+  font-family: var(--sasha-font-display);
+  font-size: clamp(3.5rem, 6vw, 5.5rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ap-nivel);
+}
+
+.ap-hero__sub {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--sasha-texto-title);
+}
+
+.ap-hero__chip {
+  align-self: flex-start;
+}
+
+.ap-barra {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--sasha-bg-muted);
+  overflow: hidden;
+}
+
+.ap-barra__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ap-nivel);
+}
+
+.ap-cifra {
+  font-family: var(--sasha-font-display);
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--sasha-texto-title);
+}
+
+.ap-tile--recaudo {
+  justify-content: center;
+}
+
+.analitica-pagos__leyenda {
+  list-style: none;
+  margin: auto 0 0;
+  padding: 0;
+  display: flex;
+  justify-content: space-around;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--sasha-texto-muted);
+  text-align: center;
+}
+
+.analitica-pagos__leyenda strong {
+  display: block;
+  font-size: 1.1rem;
+  color: var(--sasha-texto-title);
+}
+
+.analitica-pagos__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.analitica-pagos__medidores-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 260px));
+  justify-content: space-around;
+  align-content: center;
+  gap: 0.75rem;
+}
+
+.analitica-pagos__medidor {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.analitica-pagos__medidor figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.analitica-pagos__medidor-nombre {
+  font-size: 0.88rem;
+  color: var(--sasha-texto-title);
+}
+
+.ap-grado__barras {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ap-tile--meses {
+  justify-content: center;
+}
+
+.analitica-pagos__tabla {
+  max-height: 420px;
+  overflow: auto;
+}
+
+@media (max-width: 1100px) {
+  .analitica-pagos__bento {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'aldia recaudo'
+      'aldia recaudo'
+      'cols  cols'
+      'grado grado'
+      'dona  meses'
+      'modalidad modalidad'
+      'moro  moro';
+  }
+}
+
+@media (max-width: 640px) {
+  .analitica-pagos__bento {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'aldia' 'recaudo' 'cols' 'dona' 'meses' 'grado' 'modalidad' 'moro';
   }
 }

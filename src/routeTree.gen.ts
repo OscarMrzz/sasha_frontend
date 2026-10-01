@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppAlumnosRouteImport } from './routes/_app/alumnos'
+import { Route as AppAnaliticaPagosRouteImport } from './routes/_app/analitica-pagos'
 import { Route as AppAsignacionRouteImport } from './routes/_app/asignacion'
 import { Route as AppAsistenciaRouteImport } from './routes/_app/asistencia'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
@@ -25,6 +27,7 @@ import { Route as AppLiberacionNotasRouteImport } from './routes/_app/liberacion
 import { Route as AppMatriculaRouteImport } from './routes/_app/matricula'
 import { Route as AppMiPerfilRouteImport } from './routes/_app/mi-perfil'
 import { Route as AppNotificacionesAdminRouteImport } from './routes/_app/notificaciones-admin'
+import { Route as AppPadresRouteImport } from './routes/_app/padres'
 import { Route as AppPagosRouteImport } from './routes/_app/pagos'
 import { Route as AppPersonasRouteImport } from './routes/_app/personas'
 import { Route as AppPlanEstudioRouteImport } from './routes/_app/plan-estudio'
@@ -61,6 +64,16 @@ const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppAlumnosRoute = AppAlumnosRouteImport.update({
+  id: '/alumnos',
+  path: '/alumnos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnaliticaPagosRoute = AppAnaliticaPagosRouteImport.update({
+  id: '/analitica-pagos',
+  path: '/analitica-pagos',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAsignacionRoute = AppAsignacionRouteImport.update({
   id: '/asignacion',
@@ -125,6 +138,11 @@ const AppMiPerfilRoute = AppMiPerfilRouteImport.update({
 const AppNotificacionesAdminRoute = AppNotificacionesAdminRouteImport.update({
   id: '/notificaciones-admin',
   path: '/notificaciones-admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPadresRoute = AppPadresRouteImport.update({
+  id: '/padres',
+  path: '/padres',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPagosRoute = AppPagosRouteImport.update({
@@ -242,6 +260,8 @@ const AppMaestroClasesAsignacionIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/alumnos': typeof AppAlumnosRoute
+  '/analitica-pagos': typeof AppAnaliticaPagosRoute
   '/asignacion': typeof AppAsignacionRoute
   '/asistencia': typeof AppAsistenciaRoute
   '/auditoria': typeof AppAuditoriaRoute
@@ -255,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
+  '/padres': typeof AppPadresRoute
   '/pagos': typeof AppPagosRoute
   '/personas': typeof AppPersonasRoute
   '/plan-estudio': typeof AppPlanEstudioRoute
@@ -281,6 +302,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/alumnos': typeof AppAlumnosRoute
+  '/analitica-pagos': typeof AppAnaliticaPagosRoute
   '/asignacion': typeof AppAsignacionRoute
   '/asistencia': typeof AppAsistenciaRoute
   '/auditoria': typeof AppAuditoriaRoute
@@ -294,6 +317,7 @@ export interface FileRoutesByTo {
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
+  '/padres': typeof AppPadresRoute
   '/pagos': typeof AppPagosRoute
   '/personas': typeof AppPersonasRoute
   '/plan-estudio': typeof AppPlanEstudioRoute
@@ -322,6 +346,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/alumnos': typeof AppAlumnosRoute
+  '/_app/analitica-pagos': typeof AppAnaliticaPagosRoute
   '/_app/asignacion': typeof AppAsignacionRoute
   '/_app/asistencia': typeof AppAsistenciaRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
@@ -335,6 +361,7 @@ export interface FileRoutesById {
   '/_app/matricula': typeof AppMatriculaRoute
   '/_app/mi-perfil': typeof AppMiPerfilRoute
   '/_app/notificaciones-admin': typeof AppNotificacionesAdminRoute
+  '/_app/padres': typeof AppPadresRoute
   '/_app/pagos': typeof AppPagosRoute
   '/_app/personas': typeof AppPersonasRoute
   '/_app/plan-estudio': typeof AppPlanEstudioRoute
@@ -363,6 +390,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/alumnos'
+    | '/analitica-pagos'
     | '/asignacion'
     | '/asistencia'
     | '/auditoria'
@@ -376,6 +405,7 @@ export interface FileRouteTypes {
     | '/matricula'
     | '/mi-perfil'
     | '/notificaciones-admin'
+    | '/padres'
     | '/pagos'
     | '/personas'
     | '/plan-estudio'
@@ -402,6 +432,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/alumnos'
+    | '/analitica-pagos'
     | '/asignacion'
     | '/asistencia'
     | '/auditoria'
@@ -415,6 +447,7 @@ export interface FileRouteTypes {
     | '/matricula'
     | '/mi-perfil'
     | '/notificaciones-admin'
+    | '/padres'
     | '/pagos'
     | '/personas'
     | '/plan-estudio'
@@ -442,6 +475,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
+    | '/_app/alumnos'
+    | '/_app/analitica-pagos'
     | '/_app/asignacion'
     | '/_app/asistencia'
     | '/_app/auditoria'
@@ -455,6 +490,7 @@ export interface FileRouteTypes {
     | '/_app/matricula'
     | '/_app/mi-perfil'
     | '/_app/notificaciones-admin'
+    | '/_app/padres'
     | '/_app/pagos'
     | '/_app/personas'
     | '/_app/plan-estudio'
@@ -507,6 +543,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/alumnos': {
+      id: '/_app/alumnos'
+      path: '/alumnos'
+      fullPath: '/alumnos'
+      preLoaderRoute: typeof AppAlumnosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/analitica-pagos': {
+      id: '/_app/analitica-pagos'
+      path: '/analitica-pagos'
+      fullPath: '/analitica-pagos'
+      preLoaderRoute: typeof AppAnaliticaPagosRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/asignacion': {
       id: '/_app/asignacion'
@@ -597,6 +647,13 @@ declare module '@tanstack/react-router' {
       path: '/notificaciones-admin'
       fullPath: '/notificaciones-admin'
       preLoaderRoute: typeof AppNotificacionesAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/padres': {
+      id: '/_app/padres'
+      path: '/padres'
+      fullPath: '/padres'
+      preLoaderRoute: typeof AppPadresRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/pagos': {
@@ -757,6 +814,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAlumnosRoute: typeof AppAlumnosRoute
+  AppAnaliticaPagosRoute: typeof AppAnaliticaPagosRoute
   AppAsignacionRoute: typeof AppAsignacionRoute
   AppAsistenciaRoute: typeof AppAsistenciaRoute
   AppAuditoriaRoute: typeof AppAuditoriaRoute
@@ -770,6 +829,7 @@ interface AppRouteChildren {
   AppMatriculaRoute: typeof AppMatriculaRoute
   AppMiPerfilRoute: typeof AppMiPerfilRoute
   AppNotificacionesAdminRoute: typeof AppNotificacionesAdminRoute
+  AppPadresRoute: typeof AppPadresRoute
   AppPagosRoute: typeof AppPagosRoute
   AppPersonasRoute: typeof AppPersonasRoute
   AppPlanEstudioRoute: typeof AppPlanEstudioRoute
@@ -795,6 +855,8 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAlumnosRoute: AppAlumnosRoute,
+  AppAnaliticaPagosRoute: AppAnaliticaPagosRoute,
   AppAsignacionRoute: AppAsignacionRoute,
   AppAsistenciaRoute: AppAsistenciaRoute,
   AppAuditoriaRoute: AppAuditoriaRoute,
@@ -808,6 +870,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMatriculaRoute: AppMatriculaRoute,
   AppMiPerfilRoute: AppMiPerfilRoute,
   AppNotificacionesAdminRoute: AppNotificacionesAdminRoute,
+  AppPadresRoute: AppPadresRoute,
   AppPagosRoute: AppPagosRoute,
   AppPersonasRoute: AppPersonasRoute,
   AppPlanEstudioRoute: AppPlanEstudioRoute,

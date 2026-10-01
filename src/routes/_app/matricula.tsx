@@ -65,7 +65,6 @@ function MatriculaPage() {
         user_code: reingresoCode,
         periodo_academico_id: reingresoPeriodo,
         seccion_id: reingresoSeccion,
-        generar_mensualidad: true,
       }),
     onSuccess: () => {
       toast.success('Reingreso registrado')
