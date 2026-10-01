@@ -76,6 +76,7 @@ test.describe('liberación de notas por parcial', () => {
     await expect(page.getByTestId('liberacion-parcial-3')).toHaveAttribute('data-estado', 'liberado')
     await expect(page.getByTestId('liberacion-liberar-btn')).toBeDisabled()
 
+    await page.getByTestId('data-table-search').fill(ALUMNO_DEBE_MARZO)
     const fila = page.locator('table.data-table tbody tr', { hasText: ALUMNO_DEBE_MARZO })
     await expect(fila).toBeVisible({ timeout: 15_000 })
     await fila.click({ button: 'right' })
@@ -97,8 +98,9 @@ test.describe('liberación de notas por parcial', () => {
   test('caja: cobro por meses con checkboxes', async ({ page }) => {
     await loginAs(page)
     await page.goto('/pagos')
-    await page.getByTestId('pago-meses-code-input').fill(ALUMNO_701)
-    await page.getByTestId('pago-meses-buscar').click()
+    await page.getByTestId('data-table-add-button').click()
+    await page.getByTestId('pago-alumno-combobox').fill(ALUMNO_701)
+    await page.locator('.combobox__option', { hasText: ALUMNO_701 }).first().click()
     const julio = page.getByTestId('pago-mes-2026-7')
     await expect(julio).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('pago-mes-2026-6').locator('input')).toBeDisabled()

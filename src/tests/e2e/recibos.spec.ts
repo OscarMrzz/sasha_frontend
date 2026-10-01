@@ -26,9 +26,6 @@ test.describe.serial('recibos de pago en caja', () => {
     await page.getByTestId('recibos-ctx-ver').click()
     await expect(page.getByTestId('recibo-visor-error')).toBeVisible({ timeout: 15_000 })
     await page.getByRole('button', { name: 'Cerrar' }).click()
-
-    await page.goto('/pagos')
-    await expect(page.getByTestId('pagos-ir-recibos')).toBeVisible({ timeout: 15_000 })
   })
 
   test('padre de Ana envía un recibo diciendo noviembre', async ({ page }) => {

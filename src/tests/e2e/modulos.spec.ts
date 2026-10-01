@@ -126,7 +126,7 @@ test.describe('modulos @critical', () => {
   test('matricula, horarios, pagos, sace navegables', async ({ page }) => {
     await loginAs(page)
     for (const name of ['Matrícula', 'Horarios', 'Pagos', 'Export SACE', 'Estadísticas']) {
-      await page.getByRole('link', { name }).click()
+      await page.getByRole('link', { name, exact: true }).click()
       await expect(
         page.getByRole('heading', { level: 1 }).or(page.locator('.page-title')).first(),
       ).toBeVisible()
