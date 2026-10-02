@@ -102,7 +102,14 @@ test.describe('plan de estudio @critical', () => {
       /^[0-9a-f]{8}-/,
     )
 
-    await row.dblclick()
+    // Solo Español trae objetivo general en el fixture; otras suites crean planes que quedan primero.
+    await page.getByTestId('data-table-search').fill('Español')
+    const espanol = page
+      .locator('table.data-table tbody tr')
+      .filter({ hasText: /Español(?! Test)/ })
+      .first()
+    await expect(espanol).toBeVisible({ timeout: 15_000 })
+    await espanol.dblclick()
     await expect(page.getByRole('heading', { name: 'Ver plan' })).toBeVisible({
       timeout: 10_000,
     })

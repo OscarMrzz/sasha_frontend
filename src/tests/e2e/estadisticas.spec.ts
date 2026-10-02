@@ -19,6 +19,11 @@ test.describe('estadísticas: análisis', () => {
     await expect(page.getByTestId('analisis-agrupar')).toContainText('Maestro')
     await expect(page.getByTestId('analisis-promedio')).toBeVisible()
     await expect(page.getByTestId('analisis-desviacion')).toBeVisible()
+    await expect(page.getByTestId('analisis-cv')).toContainText('CV')
+    await expect(page.getByTestId('analisis-cv')).toHaveAttribute(
+      'data-nivel',
+      /muy_homogeneo|homogeneo|moderado|heterogeneo/,
+    )
     await expect(page.getByTestId('analisis-general-alto')).toHaveAttribute('data-nivel', /normal|inusual|muy_atipico|insuficiente/)
     await page.getByTestId('analisis-general-alto-ampliar').click()
     await expect(page.getByRole('dialog', { name: 'Dato más alto' })).toBeVisible()

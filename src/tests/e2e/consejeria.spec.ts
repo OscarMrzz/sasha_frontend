@@ -1,6 +1,7 @@
 import { test, expect, loginAs } from './fixtures/auth'
 
-// PAN-CON-01 a 03: Inicio, menú, Mi perfil y campana del rol consejería (sin catalogos:get).
+// PAN-CON-01 a 03: Inicio, menú, Mi perfil y campana del rol consejería. Tiene catalogos:get solo para
+// matrícula: los catálogos no salen en su menú.
 const CONSEJERIA = '1002026602'
 
 test.describe('consejería: inicio, menú, perfil y campana', () => {
@@ -11,10 +12,34 @@ test.describe('consejería: inicio, menú, perfil y campana', () => {
     await expect(page.getByText('No tienes permiso')).toHaveCount(0)
 
     const nav = page.locator('nav')
-    for (const visible of ['Plan de estudio', 'Asistencia', 'Tareas', 'Calificaciones', 'Estadísticas', 'Export SACE']) {
-      await expect(nav.getByRole('link', { name: visible })).toBeVisible()
+    for (const visible of [
+      'Plan de estudio',
+      'Asistencia',
+      'Tareas',
+      'Calificaciones',
+      'Estadísticas',
+      'Export SACE',
+      'Matrícula',
+      'Alumnos',
+      'Maestros',
+      'Horarios',
+      'Fichas disciplinarias',
+    ]) {
+      await expect(nav.getByRole('link', { name: visible, exact: true })).toBeVisible()
     }
-    for (const oculto of ['Configuración', 'Usuarios', 'Matrícula', 'Pagos', 'Auditoría']) {
+    for (const oculto of [
+      'Configuración',
+      'Usuarios',
+      'Pagos',
+      'Auditoría',
+      'Grados',
+      'Modalidades',
+      'Secciones',
+      'Cursos',
+      'Periodos',
+      'Padres',
+      'Tipos de ficha',
+    ]) {
       await expect(nav.getByRole('link', { name: oculto })).toHaveCount(0)
     }
   })

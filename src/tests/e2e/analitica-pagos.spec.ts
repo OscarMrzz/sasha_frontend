@@ -42,9 +42,11 @@ test.describe('analítica de pagos', () => {
     }
   })
 
-  test('director ve la página', async ({ page }) => {
-    await abrir(page, DIRECTOR)
-    await expect(page.getByTestId('analitica-pagos-morosos')).toBeVisible()
+  test('director no ve la página (DEC-017)', async ({ page }) => {
+    await loginAs(page, { code: DIRECTOR })
+    await page.goto('/analitica-pagos')
+    await expect(page.getByText('No tienes permiso')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('link', { name: 'Analítica de pagos' })).toHaveCount(0)
   })
 
   test('maestro no ve el menú ni tiene acceso', async ({ page }) => {
