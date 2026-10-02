@@ -68,6 +68,33 @@ test.describe('estadísticas: análisis', () => {
     await expect(page.getByTestId('analisis-calificaciones-aviso')).toBeVisible({ timeout: 15_000 })
   })
 
+  test('ranking por alumno: 10 puestos por página con empates y asistencia de 25 en 25', async ({ page }) => {
+    await abrir(page)
+    await page.getByTestId('analisis-agrupar').click()
+    await page.getByTestId('analisis-agrupar-alumno').click()
+    await expect(page).toHaveURL(/agrupar=alumno/)
+
+    const puestos = page.getByTestId('analisis-general-barras-puesto')
+    await expect(puestos.first()).toHaveText('1', { timeout: 15_000 })
+    const leer = async () => (await puestos.allInnerTexts()).map((t) => Number.parseInt(t, 10))
+    const p1 = await leer()
+    expect(Math.max(...p1)).toBeLessThanOrEqual(10)
+    expect(p1).toContain(10)
+    await expect(page.getByTestId('analisis-general-barras-pagina')).toContainText('Puestos 1–10')
+
+    await page.getByTestId('analisis-general-barras-pagina-sig').click()
+    await expect(page.getByTestId('analisis-general-barras-pagina')).toContainText('Puestos 11–20')
+    const p2 = await leer()
+    expect(Math.min(...p2)).toBe(11)
+    expect(Math.max(...p2)).toBeLessThanOrEqual(20)
+
+    const asistencia = page.getByTestId('analisis-asistencia-barras-fila')
+    await expect(asistencia.first()).toBeVisible()
+    expect(await asistencia.count()).toBeLessThanOrEqual(25)
+    await expect(page.getByTestId('analisis-asistencia-barras-pagina')).toContainText('Filas 1–25')
+    await expect(page.getByTestId('analisis-asistencia').getByRole('heading', { name: 'Ranking' })).toHaveCount(0)
+  })
+
   test('avanzado: filtrar por un maestro y aplicar', async ({ page }) => {
     await abrir(page)
     await page.getByTestId('analisis-avanzado').click()
