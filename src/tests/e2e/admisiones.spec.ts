@@ -29,6 +29,16 @@ test.describe('rol admisiones', () => {
     await expect(page.getByText('No tienes permiso')).toHaveCount(0)
   })
 
+  test('Mi perfil y la campana de notificaciones', async ({ page }) => {
+    await loginAs(page, { code: ADMISIONES })
+    await page.goto('/mi-perfil')
+    await expect(page.getByTestId('mi-perfil-page')).toContainText('Sara Admisiones', { timeout: 15_000 })
+
+    await page.getByTestId('notifications-bell').click()
+    await expect(page.getByTestId('notifications-list')).toBeVisible()
+    await expect(page.getByTestId('notification-row').first()).toBeVisible()
+  })
+
   test('no entra a otras páginas', async ({ page }) => {
     await loginAs(page, { code: ADMISIONES })
     for (const ruta of ['/consejeria/alumnos', '/usuarios', '/tareas', '/estadisticas']) {

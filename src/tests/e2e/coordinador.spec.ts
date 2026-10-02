@@ -28,6 +28,38 @@ test.describe('rol coordinador', () => {
     for (const texto of await filas.allInnerTexts()) expect(texto).toContain('Séptimo')
   })
 
+  test('Mi perfil muestra «Coordinas» y la campana abre sus notificaciones', async ({ page }) => {
+    await loginAs(page, { code: JOSE })
+    await page.goto('/mi-perfil')
+    const perfil = page.getByTestId('mi-perfil-page')
+    await expect(perfil).toContainText('José Coordinador', { timeout: 15_000 })
+    await expect(perfil.getByTestId('coordinas-aviso')).toContainText('Coordinación de Séptimo')
+
+    await page.getByTestId('notifications-bell').click()
+    await expect(page.getByTestId('notifications-list')).toBeVisible()
+    await expect(page.getByTestId('notification-row').first()).toBeVisible()
+  })
+
+  test('cada panel del coordinador de Séptimo solo trae Séptimo', async ({ page }) => {
+    test.setTimeout(120_000)
+    await loginAs(page, { code: JOSE })
+    for (const ruta of ['/plan-estudio', '/asistencia', '/calificaciones', '/consejeria/maestros', '/consejeria/horarios', '/disciplina']) {
+      await page.goto(ruta)
+      const filas = page.locator('table.data-table tbody tr')
+      await expect(filas.first(), ruta).toBeVisible({ timeout: 20_000 })
+      for (const texto of await filas.allInnerTexts()) expect(texto, ruta).toContain('Séptimo')
+    }
+
+    await page.goto('/sace')
+    await expect(page.locator('table.data-table tbody tr').first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText('No tienes permiso')).toHaveCount(0)
+
+    await page.goto('/estadisticas?agrupar=grado')
+    const calificaciones = page.getByTestId('analisis-calificaciones')
+    await expect(calificaciones).toContainText('Séptimo', { timeout: 20_000 })
+    await expect(calificaciones).not.toContainText('Octavo')
+  })
+
   test('la coordinadora de Español solo ve clases de Español e Inglés de 7-1', async ({ page }) => {
     await loginAs(page, { code: ELENA })
     await page.goto('/tareas')
