@@ -4,9 +4,13 @@ import { createPortal } from 'react-dom'
 import { Maximize2 } from 'lucide-react'
 import { Modal } from '#/components/ui/Modal'
 
-/** Tarjeta del bento con botón para verla en grande. `children(true)` se pinta dentro del modal. */
+/**
+ * Tarjeta del bento con botón para verla en grande. `children(true)` se pinta dentro del modal.
+ * Con `sinTitulo` la tarjeta no muestra el título; `titulo` sigue nombrando el botón y el modal.
+ */
 export function TileAmpliable({
   titulo,
+  sinTitulo = false,
   icono,
   className,
   testId,
@@ -14,6 +18,7 @@ export function TileAmpliable({
   children,
 }: {
   titulo: string
+  sinTitulo?: boolean
   icono?: ReactNode
   className: string
   testId?: string
@@ -28,11 +33,15 @@ export function TileAmpliable({
       data-nivel={nivel}
     >
       <header className="analisis-tile__head">
-        <h3 className="mdash__tile-title">
-          {icono}
-          {icono ? ' ' : null}
-          {titulo}
-        </h3>
+        {sinTitulo ? (
+          <span />
+        ) : (
+          <h3 className="mdash__tile-title">
+            {icono}
+            {icono ? ' ' : null}
+            {titulo}
+          </h3>
+        )}
         <button
           type="button"
           className="analisis-tile__ampliar"

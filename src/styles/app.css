@@ -5870,7 +5870,7 @@ a.app-list__item:hover {
 
 .analisis-bento__barra-fila {
   display: grid;
-  grid-template-columns: minmax(6rem, 11rem) 1fr 3.6rem;
+  grid-template-columns: 2.2rem minmax(6rem, 11rem) 1fr 3.6rem;
   align-items: center;
   gap: 0.6rem;
   font-size: 0.84rem;
@@ -5907,9 +5907,43 @@ a.app-list__item:hover {
   font-weight: 650;
 }
 
-.analisis-bento__barra-sep {
-  text-align: center;
+.analisis-bento__barra-puesto {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--sasha-texto-inverse);
   font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme='light'] .analisis-bento__barra-puesto {
+  background: var(--sasha-texto-title);
+}
+
+.analisis-bento__barra-num {
+  text-align: right;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--sasha-texto-muted);
+}
+
+.analisis-bento__pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.analisis-bento__pager-texto {
+  font-size: 0.78rem;
   color: var(--sasha-texto-muted);
 }
 
@@ -6447,4 +6481,355 @@ a.app-list__item:hover {
     grid-template-columns: 1fr;
     grid-template-areas: 'aldia' 'recaudo' 'cols' 'dona' 'meses' 'grado' 'modalidad' 'moro';
   }
+}
+/* Plan de estudio: auditoría en cards */
+.plan-audit__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.plan-audit__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+  background: var(--sasha-bg-raised);
+}
+
+.plan-audit__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.plan-audit__num {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--sasha-accent-muted);
+  color: var(--sasha-accent);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.plan-audit__titulo {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.plan-audit__desc {
+  margin: 0;
+  color: var(--sasha-texto-muted);
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+.plan-audit__datos {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 0.75rem;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.plan-audit__datos > div {
+  display: contents;
+}
+
+.plan-audit__datos dt {
+  color: var(--sasha-texto-muted);
+}
+
+.plan-audit__datos dd {
+  margin: 0;
+}
+
+.plan-audit__coms {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  list-style: none;
+  border-radius: var(--sasha-radius);
+  background: var(--sasha-bg-muted);
+  font-size: 0.86rem;
+}
+
+.plan-audit__coms li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.plan-audit__foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+/* Plan de estudio: modal Ver */
+.plan-ver__curso {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--sasha-texto-title);
+}
+
+.plan-ver__filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  align-items: end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.plan-ver__filtros .field {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.plan-ver__filtros > .field:first-child {
+  grid-column: 1 / -1;
+}
+
+.plan-ver__filtros .field__input {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--sasha-control-h);
+  padding-block: 0;
+}
+/* Tareas (consejería): modal por clase con cards */
+.clase-tareas__meta {
+  margin: 0 0 1rem;
+  color: var(--sasha-texto-muted);
+}
+
+.tarea-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.tarea-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+  background: var(--sasha-bg-raised);
+}
+
+.tarea-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.tarea-card__titulo {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.tarea-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.tarea-card__desc {
+  margin: 0;
+  color: var(--sasha-texto-muted);
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+.tarea-card__datos {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 0.75rem;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.tarea-card__datos > div {
+  display: contents;
+}
+
+.tarea-card__datos dt {
+  color: var(--sasha-texto-muted);
+}
+
+.tarea-card__datos dd {
+  margin: 0;
+}
+
+.tarea-card__entregas {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: auto;
+}
+
+.tarea-card__entregas-txt {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+}
+
+.tarea-card__barra {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--sasha-bg-muted);
+  overflow: hidden;
+}
+
+.tarea-card__barra-fill {
+  height: 100%;
+  background: var(--sasha-accent);
+}
+/* Calificaciones (consejería): franja de promedio total y rango personalizado */
+.calif-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.calif-resumen__dato {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+  background: var(--sasha-bg-raised);
+}
+
+.calif-resumen__dato span {
+  color: var(--sasha-texto-muted);
+  font-size: 0.82rem;
+}
+
+.calif-resumen__dato strong {
+  font-size: 1.35rem;
+  color: var(--sasha-texto-title);
+}
+
+.calif-resumen__dato--principal strong {
+  color: var(--sasha-accent);
+}
+
+/* Export SACE: hoja con el formato de la planilla oficial */
+.sace-filtros > .field:first-child {
+  grid-column: auto;
+}
+
+.sace-filtros__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.sace-filtros__conteo {
+  margin: 0;
+  color: var(--sasha-texto-muted);
+  font-size: 0.85rem;
+}
+
+.sace-hoja {
+  color: var(--sasha-texto-primary);
+  font-size: 0.8rem;
+}
+
+.sace-hoja__encabezado {
+  margin-bottom: 0.75rem;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--sasha-texto-title);
+}
+
+.sace-hoja__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+}
+
+.sace-hoja__tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sace-hoja__tabla th,
+.sace-hoja__tabla td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--sasha-border-suave);
+  white-space: nowrap;
+}
+
+.sace-hoja__tabla th {
+  background: var(--sasha-bg-muted);
+  color: var(--sasha-texto-muted);
+  font-weight: 600;
+  text-align: center;
+  vertical-align: bottom;
+}
+
+.sace-hoja__tabla tbody tr {
+  background: var(--sasha-table-row);
+}
+
+.sace-hoja__tabla tbody tr:nth-child(even) {
+  background: var(--sasha-table-row-alt);
+}
+
+.sace-hoja__tabla tbody tr:hover {
+  background: var(--sasha-table-row-hover);
+}
+
+.sace-hoja__tabla .sace-hoja__parcial {
+  background: var(--sasha-accent-muted);
+  color: var(--sasha-accent);
+  border-left: 1px solid var(--sasha-border-fuerte);
+}
+
+.sace-hoja__nombre {
+  min-width: 220px;
+}
+
+.sace-hoja__num {
+  text-align: right;
+}
+
+.sace-hoja__vacio {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  color: var(--sasha-texto-muted);
+}
+
+.export-menu--arriba .export-menu__list {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.calif-avanzado__rango {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 160px));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }

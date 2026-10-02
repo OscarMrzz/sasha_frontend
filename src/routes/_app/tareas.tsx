@@ -1,18 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { TareaCreateModal } from '#/components/tareas/TareaCreateModal'
 import { TareaRevisionModal } from '#/components/tareas/TareaRevisionModal'
+import { ClaseTareasModal } from '#/components/tareas/ClaseTareasModal'
 import { PortalTareasView } from '#/components/portal/PortalTareasView'
 import { RequirePortalClase } from '#/components/portal/RequirePortalClase'
 import { isPortalRole } from '#/lib/home-path'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
-import { listTareas, labelCriterioModo, type Tarea } from '#/services/tareas'
+import { listClasesTareas, listTareas, labelCriterioModo } from '#/services/tareas'
+import type { ClaseResumen, Tarea } from '#/services/tareas'
 
 export const Route = createFileRoute('/_app/tareas')({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -44,7 +46,99 @@ function TareasPage() {
       </RequirePermission>
     )
   }
+  if (roles.includes('consejeria')) return <TareasConsejeriaView />
   return <TareasStaffPage />
+}
+
+const colClase = createColumnHelper<ClaseResumen>()
+
+function TareasConsejeriaView() {
+  const { data = [], isLoading } = useQuery({
+    queryKey: ['tareas-clases'],
+    queryFn: listClasesTareas,
+  })
+  const [ctx, setCtx] = useState<{ x: number; y: number; row: ClaseResumen } | null>(null)
+  const [verClase, setVerClase] = useState<ClaseResumen | null>(null)
+
+  const closeCtx = useCallback(() => setCtx(null), [])
+  useEffect(() => {
+    if (!ctx) return
+    window.addEventListener('click', closeCtx)
+    return () => window.removeEventListener('click', closeCtx)
+  }, [ctx, closeCtx])
+
+  const columns = useMemo(
+    () => [
+      colClase.accessor('curso_nombre', { header: 'Materia' }),
+      colClase.accessor('grado_nombre', { header: 'Grado' }),
+      colClase.accessor('seccion_nombre', { header: 'Sección' }),
+      colClase.accessor('modalidad_nombre', { header: 'Modalidad' }),
+      colClase.accessor('maestro_nombre', {
+        header: 'Maestro',
+        cell: (i) => i.getValue() || '—',
+      }),
+      colClase.accessor('tareas_total', { header: 'Tareas' }),
+      colClase.accessor('tareas_semana', { header: 'Esta semana' }),
+    ],
+    [],
+  )
+
+  const tableFilters = useMemo(
+    () => [
+      {
+        id: 'maestro',
+        label: 'Maestro',
+        getValue: (r: ClaseResumen) => r.maestro_id,
+        getLabel: (r: ClaseResumen) => r.maestro_nombre,
+      },
+      { id: 'materia', label: 'Materia', getValue: (r: ClaseResumen) => r.curso_nombre },
+      { id: 'grado', label: 'Grado', getValue: (r: ClaseResumen) => r.grado_nombre },
+      { id: 'seccion', label: 'Sección', getValue: (r: ClaseResumen) => r.seccion_nombre },
+      { id: 'modalidad', label: 'Modalidad', getValue: (r: ClaseResumen) => r.modalidad_nombre },
+    ],
+    [],
+  )
+
+  return (
+    <RequirePermission permission="tareas:get">
+      {isLoading ? (
+        <div className="empty-state">Cargando clases…</div>
+      ) : (
+        <DataTable
+          title="Tareas"
+          data={data}
+          columns={columns}
+          filters={tableFilters}
+          searchPlaceholder="Buscar…"
+          canAdd={false}
+          onRowDoubleClick={(row) => setVerClase(row)}
+          onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
+        />
+      )}
+
+      {ctx ? (
+        <div
+          className="ctx-menu"
+          style={{ left: ctx.x, top: ctx.y }}
+          data-testid="tareas-ctx-menu"
+        >
+          <button
+            type="button"
+            className="ctx-menu__item"
+            data-testid="tareas-ctx-ver"
+            onClick={() => {
+              setVerClase(ctx.row)
+              closeCtx()
+            }}
+          >
+            Ver
+          </button>
+        </div>
+      ) : null}
+
+      {verClase ? <ClaseTareasModal clase={verClase} onClose={() => setVerClase(null)} /> : null}
+    </RequirePermission>
+  )
 }
 
 function TareasStaffPage() {

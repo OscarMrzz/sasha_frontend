@@ -39,6 +39,10 @@ type DataTableProps<T extends RowData> = {
   onRowClick?: (row: T, event: React.MouseEvent) => void
   onRowDoubleClick?: (row: T, event: React.MouseEvent) => void
   toolbarExtra?: ReactNode
+  /** Recibe los valores de los selects cada vez que cambian (para filtros que calcula el padre). */
+  onFiltersChange?: (values: Record<string, string>) => void
+  /** Contenido entre la barra de filtros y la tabla. */
+  beforeTable?: ReactNode
   addLabel?: string
   onAdd?: () => void
   canAdd?: boolean
@@ -64,6 +68,8 @@ export function DataTable<T extends RowData>({
   onRowClick,
   onRowDoubleClick,
   toolbarExtra,
+  onFiltersChange,
+  beforeTable,
   addLabel = 'Agregar',
   onAdd,
   canAdd,
@@ -213,12 +219,11 @@ export function DataTable<T extends RowData>({
                   value={filterValues[f.id] ?? ''}
                   aria-label={`Filtrar por ${f.label}`}
                   data-testid={`data-table-filter-${f.id}`}
-                  onChange={(e) =>
-                    setFilterValues((prev) => ({
-                      ...prev,
-                      [f.id]: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => {
+                    const next = { ...filterValues, [f.id]: e.target.value }
+                    setFilterValues(next)
+                    onFiltersChange?.(next)
+                  }}
                 >
                   <option value="">Todos</option>
                   {(filterOptions[f.id] ?? []).map((opt) => (
@@ -261,6 +266,8 @@ export function DataTable<T extends RowData>({
           ) : null}
         </div>
       </div>
+
+      {beforeTable}
 
       <div className="data-table-wrap">
         <table className="data-table">

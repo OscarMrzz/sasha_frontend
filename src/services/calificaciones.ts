@@ -157,6 +157,25 @@ export async function getNotas(alumnoId: string, periodoAcademicoId: string) {
   return apiRequest<NotaView[]>(`/calificaciones/notas?${qs}`)
 }
 
+export interface ResumenOpcion {
+  id: string
+  nombre: string
+}
+
+/** Notas de todo el periodo activo (solo personal). Cada nota = puntos de un alumno en una materia y un parcial. */
+export interface ResumenCalificaciones {
+  umbrales: { minima: number; honor: number; excelencia: number }
+  parciales: { numero: number; etiqueta: string }[]
+  secciones: ResumenOpcion[]
+  cursos: ResumenOpcion[]
+  alumnos: { id: string; codigo: string; nombre: string; seccion_id: string }[]
+  notas: { alumno_id: string; curso_id: string; parcial: number; puntos: number }[]
+}
+
+export async function getResumenCalificaciones() {
+  return apiRequest<ResumenCalificaciones>('/calificaciones/resumen')
+}
+
 export async function listNotasClase(asignacionDocenteId: string, parcialId?: string) {
   const qs = new URLSearchParams({ asignacion_docente_id: asignacionDocenteId })
   if (parcialId) qs.set('parcial_id', parcialId)

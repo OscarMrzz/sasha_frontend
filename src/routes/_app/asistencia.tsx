@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -62,10 +62,10 @@ function AsistenciaPage() {
 
   const columns = useMemo(
     () => [
-      col.accessor('curso_nombre', { header: 'Curso', cell: (i) => i.getValue() || 'â€”' }),
-      col.accessor('grado_nombre', { header: 'Grado', cell: (i) => i.getValue() || 'â€”' }),
-      col.accessor('modalidad_nombre', { header: 'Modalidad', cell: (i) => i.getValue() || 'â€”' }),
-      col.accessor('seccion_nombre', { header: 'SecciÃ³n', cell: (i) => i.getValue() || 'â€”' }),
+      col.accessor('curso_nombre', { header: 'Curso', cell: (i) => i.getValue() || '—' }),
+      col.accessor('grado_nombre', { header: 'Grado', cell: (i) => i.getValue() || '—' }),
+      col.accessor('modalidad_nombre', { header: 'Modalidad', cell: (i) => i.getValue() || '—' }),
+      col.accessor('seccion_nombre', { header: 'Sección', cell: (i) => i.getValue() || '—' }),
     ],
     [],
   )
@@ -92,7 +92,7 @@ function AsistenciaPage() {
     [],
   )
 
-  if (isLoading) return <div className="empty-state">Cargando materiasâ€¦</div>
+  if (isLoading) return <div className="empty-state">Cargando materias…</div>
 
   return (
     <RequirePermission permission="asistencia:get">
@@ -101,7 +101,7 @@ function AsistenciaPage() {
         data={data}
         columns={columns}
         filters={tableFilters}
-        searchPlaceholder="Buscarâ€¦"
+        searchPlaceholder="Buscar…"
         canAdd={false}
         exportFilename="asistencia-materias"
         exportRows={data.map((m) => ({
@@ -226,7 +226,7 @@ function InasistenciasModal({
     <>
       <Modal
         open={open}
-        title={`Inasistencias â€” ${materia.curso_nombre}`}
+        title={`Inasistencias — ${materia.curso_nombre}`}
         onClose={dismiss}
         wide
         footer={
@@ -237,14 +237,14 @@ function InasistenciasModal({
       >
         <div data-testid="asistencia-inasistencias-modal">
           {loading ? (
-            <div className="empty-state">Cargandoâ€¦</div>
+            <div className="empty-state">Cargando…</div>
           ) : list.length === 0 ? (
             <div className="empty-state">Sin inasistencias registradas</div>
           ) : (
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>CÃ³digo</th>
+                  <th>Código</th>
                   <th>Nombre</th>
                   <th style={{ textAlign: 'center' }}>Faltas</th>
                   <th style={{ textAlign: 'center' }}>Excusas</th>
@@ -281,7 +281,7 @@ function InasistenciasModal({
 
       <Modal
         open={detalle != null}
-        title={detalle ? `Detalle â€” ${detalle.nombre}` : 'Detalle'}
+        title={detalle ? `Detalle — ${detalle.nombre}` : 'Detalle'}
         onClose={() => setDetalle(null)}
         footer={
           <button type="button" className="btn btn--ghost" onClick={() => setDetalle(null)}>
@@ -292,7 +292,7 @@ function InasistenciasModal({
         {detalle ? (
           <div data-testid="asistencia-detalle-modal">
             <p className="texto-muted" style={{ marginTop: 0 }}>
-              {detalle.codigo} Â· {detalle.nombre}
+              {detalle.codigo} · {detalle.nombre}
             </p>
             {(detalle.items ?? []).length === 0 ? (
               <div className="empty-state">Sin registros</div>
@@ -301,7 +301,7 @@ function InasistenciasModal({
                 <thead>
                   <tr>
                     <th>Fecha</th>
-                    <th>DÃ­a</th>
+                    <th>Día</th>
                     <th>Tipo</th>
                     <th>Obs.</th>
                   </tr>
@@ -312,9 +312,9 @@ function InasistenciasModal({
                       <td>{it.fecha}</td>
                       <td>{it.dia_semana}</td>
                       <td>
-                        {it.letra} â€” {it.nombre_tipo}
+                        {it.letra} — {it.nombre_tipo}
                       </td>
-                      <td>{it.observaciones || 'â€”'}</td>
+                      <td>{it.observaciones || '—'}</td>
                     </tr>
                   ))}
                 </tbody>

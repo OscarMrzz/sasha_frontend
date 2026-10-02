@@ -97,6 +97,40 @@ export function labelCriterioModo(tipo: TareaCriterioModo) {
   return 'Simple'
 }
 
+/** Una fila por clase (asignación docente) del periodo activo. */
+export interface ClaseResumen {
+  asignacion_docente_id: string
+  curso_nombre: string
+  grado_nombre: string
+  seccion_nombre: string
+  modalidad_nombre: string
+  maestro_id: string
+  maestro_nombre: string
+  tareas_total: number
+  tareas_semana: number
+  alumnos_total: number
+}
+
+/** `revisada`: el maestro calificó al menos a un alumno. */
+export interface TareaDetalle extends Tarea {
+  alumnos_total: number
+  entregados: number
+  revisada: boolean
+}
+
+export interface ClaseTareas {
+  clase: ClaseResumen
+  tareas: TareaDetalle[]
+}
+
+export async function listClasesTareas() {
+  return apiRequest<ClaseResumen[]>('/tareas/clases')
+}
+
+export async function getClaseTareas(asignacionId: string) {
+  return apiRequest<ClaseTareas>(`/tareas/clases/${asignacionId}`)
+}
+
 export async function listTareas() {
   return apiRequest<Tarea[]>('/tareas/')
 }

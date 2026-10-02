@@ -193,7 +193,7 @@ export function BloquePrincipal({
           <BarrasHorizontales
             grupos={bloque.grupos}
             unidad={unidad}
-            limitar={!grande && dim === 'alumno'}
+            paginar={{ modo: 'puestos', porPagina: 10 }}
             testId={grande ? undefined : `${prefijo}-barras`}
           />
         )}
@@ -260,12 +260,10 @@ export function MiniTipoCard({ bt, dim }: { bt: BloqueTipo; dim: Dimension }) {
 /** Sección secundaria (asistencia, cumplimiento): cifras y barras, sin gráficas grandes. */
 export function SeccionSobria({
   bloque,
-  dim,
   prefijo,
   titulo,
 }: {
   bloque: Bloque
-  dim: Dimension
   prefijo: string
   titulo: string
 }) {
@@ -302,12 +300,12 @@ export function SeccionSobria({
         compacto
         testId={`${prefijo}-alto`}
       />
-      <TileAmpliable titulo="Ranking" className="analisis-bento__sobria-barras">
+      <TileAmpliable titulo={titulo} sinTitulo className="analisis-bento__sobria-barras">
         {(grande) => (
           <BarrasHorizontales
             grupos={bloque.grupos}
             unidad="%"
-            limitar={!grande && dim === 'alumno'}
+            paginar={{ modo: 'filas', porPagina: 25 }}
             testId={grande ? undefined : `${prefijo}-barras`}
           />
         )}

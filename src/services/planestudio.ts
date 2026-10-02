@@ -1,4 +1,5 @@
 import { apiRequest, getApiBaseUrl } from '#/lib/api'
+import type { Curso } from '#/services/catalogos'
 
 export interface PlanItemCreate {
   parcial_id: string
@@ -65,6 +66,10 @@ export interface Plan {
   curso_id?: string
   grado_id?: string
   modalidad_id?: string
+  periodo_nombre?: string
+  periodo_status?: string
+  /** Sílabo completo del curso; solo viene en el detalle (`GET /planestudio/{id}`). */
+  curso?: Curso
   tareas_abiertas?: number
   tareas_total?: number
 }
