@@ -41,7 +41,7 @@ export const Route = createFileRoute('/_app/plan-estudio')({
 
 const col = createColumnHelper<Plan>()
 
-const REVIEWER_ROLES = new Set(['admin', 'director', 'consejeria'])
+const REVIEWER_ROLES = new Set(['admin', 'director', 'secretaria', 'consejeria', 'coordinador'])
 
 const emptyItem = {
   parcial_id: '',
@@ -238,7 +238,6 @@ function ReviewerView({ canPut }: { canPut: boolean }) {
         data={data}
         columns={columns}
         filters={tableFilters}
-        searchPlaceholder="Buscar…"
         canAdd={false}
         exportFilename="planes-estudio"
         exportRows={data.map((p) => ({
@@ -468,7 +467,6 @@ function MaestroView({
         data={data}
         columns={columns}
         filters={tableFilters}
-        searchPlaceholder="Buscar…"
         addLabel="Crear plan"
         canAdd={canPost}
         onAdd={() => setCreateOpen(true)}

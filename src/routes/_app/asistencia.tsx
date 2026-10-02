@@ -101,7 +101,6 @@ function AsistenciaPage() {
         data={data}
         columns={columns}
         filters={tableFilters}
-        searchPlaceholder="Buscar…"
         canAdd={false}
         exportFilename="asistencia-materias"
         exportRows={data.map((m) => ({

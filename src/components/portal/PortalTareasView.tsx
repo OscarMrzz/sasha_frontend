@@ -69,7 +69,6 @@ export function PortalTareasView({
         data={data}
         columns={columns}
         filters={filters}
-        searchPlaceholder="Buscar…"
         canAdd={false}
       />
     </div>

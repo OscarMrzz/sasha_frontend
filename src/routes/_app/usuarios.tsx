@@ -22,6 +22,7 @@ import {
   type ResponseUser,
 } from '#/services/users'
 import { createAlumno, createMaestro, createResponsable } from '#/services/personas'
+import { asignarCoordinaciones, coordinacionesDeUsuario, listCoordinaciones } from '#/services/coordinaciones'
 
 export const Route = createFileRoute('/_app/usuarios')({ component: UsuariosPage })
 
@@ -40,6 +41,43 @@ const defaultForm: CreateUserRequest = {
 
 function hasAdminRole(roles: string[]) {
   return roles.some((r) => r.toLowerCase() === 'admin')
+}
+
+const esCoordinador = (roles: string[]) => roles[0] === 'coordinador'
+
+function CoordinacionesSelect({ value, onChange }: { value: string[]; onChange: (ids: string[]) => void }) {
+  const { data = [], isPending } = useQuery({ queryKey: ['coordinaciones'], queryFn: listCoordinaciones })
+  const activas = data.filter((c) => c.status === 'ACTIVE' || value.includes(c.id))
+  return (
+    <Field
+      label="Coordinaciones"
+      error={!isPending && value.length === 0 ? 'Elige al menos una coordinación.' : undefined}
+    >
+      {isPending ? (
+        <p className="texto-muted" style={{ margin: 0 }}>
+          Cargando coordinaciones…
+        </p>
+      ) : activas.length === 0 ? (
+        <p className="texto-muted" style={{ margin: 0 }}>
+          No hay coordinaciones. Créalas primero en Coordinaciones.
+        </p>
+      ) : (
+        <div className="coord-lista" data-testid="user-coordinaciones">
+          {activas.map((c) => (
+            <label key={c.id} className="coord-check" title={c.descripcion || undefined}>
+              <input
+                type="checkbox"
+                data-testid={`user-coordinacion-${c.titulo}`}
+                checked={value.includes(c.id)}
+                onChange={(e) => onChange(e.target.checked ? [...value, c.id] : value.filter((id) => id !== c.id))}
+              />
+              <span>{c.titulo}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </Field>
+  )
 }
 
 type EditForm = {
@@ -70,6 +108,8 @@ function UsuariosPage() {
   const [createdCode, setCreatedCode] = useState<string | null>(null)
   const [viewCode, setViewCode] = useState<string | null>(null)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: ResponseUser } | null>(null)
+  const [coordSel, setCoordSel] = useState<string[]>([])
+  const assignable = ASSIGNABLE.filter((r) => r !== 'coordinador' || can('coordinaciones:put'))
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -88,6 +128,7 @@ function UsuariosPage() {
     setEditing(null)
     setCreateForm(defaultForm)
     setCreatedCode(null)
+    setCoordSel([])
     setModalOpen(true)
   }
 
@@ -95,6 +136,12 @@ function UsuariosPage() {
     setMode('edit')
     setEditing(row)
     setEditForm({ roles: row.roles.slice(0, 1), statususer: row.statususer })
+    setCoordSel([])
+    if (esCoordinador(row.roles) && can('coordinaciones:get')) {
+      coordinacionesDeUsuario(row.code)
+        .then((r) => setCoordSel(r.coordinaciones))
+        .catch((e) => toast.error(userMessageFromError(e)))
+    }
     setModalOpen(true)
     closeCtx()
   }
@@ -124,6 +171,7 @@ function UsuariosPage() {
         else if (role === 'maestro') await createMaestro(names)
         else if (role === 'responsable') await createResponsable(names)
       }
+      if (role === 'coordinador') await asignarCoordinaciones(result.code, coordSel)
       return result
     },
     onSuccess: ({ code, pdfBlob, userId }) => {
@@ -155,6 +203,7 @@ function UsuariosPage() {
       if (!editing) return
       await updateRoles(editing.code, editForm.roles.slice(0, 1))
       await updateStatus(editing.code, editForm.statususer)
+      if (esCoordinador(editForm.roles)) await asignarCoordinaciones(editing.code, coordSel)
     },
     onSuccess: () => {
       toast.success('Usuario actualizado')
@@ -309,8 +358,12 @@ function UsuariosPage() {
                 data-testid={isCreate ? 'create-user-button' : 'save-user-button'}
                 disabled={
                   isCreate
-                    ? createMut.isPending || createForm.roles.length === 0
-                    : saveEditMut.isPending || editForm.roles.length === 0
+                    ? createMut.isPending ||
+                      createForm.roles.length === 0 ||
+                      (esCoordinador(createForm.roles) && coordSel.length === 0)
+                    : saveEditMut.isPending ||
+                      editForm.roles.length === 0 ||
+                      (esCoordinador(editForm.roles) && coordSel.length === 0)
                 }
                 onClick={() => setConfirmSave(true)}
               >
@@ -378,11 +431,12 @@ function UsuariosPage() {
                 data-testid="user-role-select"
                 value={createForm.roles[0] ?? ''}
                 onChange={(v) => setCreateRole(v as RoleName)}
-                options={ASSIGNABLE.map((role) => ({ value: role, label: roleLabel(role) }))}
+                options={assignable.map((role) => ({ value: role, label: roleLabel(role) }))}
                 placeholder="Elegir un rol…"
                 emptyLabel="Sin roles asignables."
               />
             </Field>
+            {esCoordinador(createForm.roles) ? <CoordinacionesSelect value={coordSel} onChange={setCoordSel} /> : null}
             <Field label="Estado">
               <Combobox
                 value={createForm.statususer}
@@ -408,11 +462,12 @@ function UsuariosPage() {
                 data-testid="user-edit-role-select"
                 value={editForm.roles[0] ?? ''}
                 onChange={(v) => setEditRole(v as RoleName)}
-                options={ASSIGNABLE.map((role) => ({ value: role, label: roleLabel(role) }))}
+                options={assignable.map((role) => ({ value: role, label: roleLabel(role) }))}
                 placeholder="Elegir un rol…"
                 emptyLabel="Sin roles asignables."
               />
             </Field>
+            {esCoordinador(editForm.roles) ? <CoordinacionesSelect value={coordSel} onChange={setCoordSel} /> : null}
             <Field label="Estado">
               <Combobox
                 value={editForm.statususer}

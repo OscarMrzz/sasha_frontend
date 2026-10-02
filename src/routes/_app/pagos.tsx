@@ -120,7 +120,6 @@ function PagosPage() {
       <div data-testid="pagos-page">
         <DataTable
           title="Pagos"
-          searchPlaceholder="Buscar alumno, código, mes…"
           data={data}
           columns={columns}
           filters={filters}

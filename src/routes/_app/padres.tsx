@@ -99,7 +99,6 @@ function PadresCajaPage() {
       <div data-testid="caja-padres-page">
         <DataTable
           title="Padres"
-          searchPlaceholder="Buscar por nombre, código, teléfono o hijo…"
           data={data}
           columns={columns}
           filters={filters}

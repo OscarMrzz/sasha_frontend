@@ -4,7 +4,7 @@ import { SearchInput } from '#/components/ui/SearchInput'
 import { FILTROS_VACIOS } from '#/services/estadisticas'
 import type { FiltrosAnalisis, OpcionItem, OpcionesAnalisis } from '#/services/estadisticas'
 
-type Clave =
+export type Clave =
   | 'periodo_ids'
   | 'parcial_ids'
   | 'grado_ids'
@@ -14,6 +14,7 @@ type Clave =
   | 'maestro_ids'
   | 'alumno_ids'
   | 'tipo_tarea_ids'
+  | 'asignacion_ids'
   | 'meses'
 
 /** null = todos marcados. */
@@ -26,6 +27,7 @@ const SECCIONES: { clave: Clave; titulo: string; ayuda?: string }[] = [
   { clave: 'modalidad_ids', titulo: 'Modalidad' },
   { clave: 'seccion_ids', titulo: 'Sección', ayuda: 'Solo las secciones de los grados y modalidades marcados.' },
   { clave: 'curso_ids', titulo: 'Materia' },
+  { clave: 'asignacion_ids', titulo: 'Clase', ayuda: 'Solo las clases de los grados, secciones y materias marcados.' },
   { clave: 'maestro_ids', titulo: 'Maestro' },
   { clave: 'alumno_ids', titulo: 'Alumno', ayuda: 'Solo los alumnos de las secciones marcadas.' },
   { clave: 'tipo_tarea_ids', titulo: 'Tipo de tarea', ayuda: 'Afecta a las tarjetas por tipo, no a la nota general.' },
@@ -60,6 +62,7 @@ function visiblesDe(op: OpcionesAnalisis, b: Borrador): Record<Clave, OpcionItem
     modalidad_ids: op.modalidades,
     seccion_ids: secciones,
     curso_ids: op.cursos,
+    asignacion_ids: op.clases.filter((c) => secSel.has(c.seccion_id) && en(b.curso_ids, c.curso_id)),
     maestro_ids: op.maestros,
     alumno_ids: op.alumnos
       .filter((a) => !filtrarAlumnos || (a.seccion_id !== null && secSel.has(a.seccion_id)))
@@ -89,13 +92,17 @@ export function AvanzadoModal({
   filtros,
   onClose,
   onApply,
+  ocultar = [],
 }: {
   open: boolean
   opciones: OpcionesAnalisis
   filtros: FiltrosAnalisis
   onClose: () => void
   onApply: (f: FiltrosAnalisis) => void
+  /** Secciones que no se muestran (su filtro queda en «todos»). */
+  ocultar?: Clave[]
 }) {
+  const secciones = SECCIONES.filter((s) => !ocultar.includes(s.clave))
   const [borrador, setBorrador] = useState<Borrador>(() => desdeFiltros(filtros))
   const [solo, setSolo] = useState(filtros.solo_liberadas)
   const [activa, setActiva] = useState<Clave>('periodo_ids')
@@ -108,7 +115,7 @@ export function AvanzadoModal({
     const ids = new Set(vis[c].map((o) => o.id))
     return sel.filter((id) => ids.has(id)).length
   }
-  const vacias = SECCIONES.filter((s) => vis[s.clave].length > 0 && marcados(s.clave) === 0)
+  const vacias = secciones.filter((s) => vis[s.clave].length > 0 && marcados(s.clave) === 0)
 
   const toggle = (c: Clave, id: string) => {
     setBorrador((b) => {
@@ -160,7 +167,7 @@ export function AvanzadoModal({
     >
       <div className="avanzado" data-testid="avanzado-modal">
         <nav className="avanzado__nav" aria-label="Secciones del filtro">
-          {SECCIONES.map((s) => {
+          {secciones.map((s) => {
             const n = marcados(s.clave)
             const total = vis[s.clave].length
             return (
@@ -204,7 +211,7 @@ export function AvanzadoModal({
               </button>
             </div>
           </header>
-          {vis[activa].length > 8 ? <SearchInput value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar…" /> : null}
+          {vis[activa].length > 8 ? <SearchInput value={q} onChange={(e) => setQ(e.target.value)} /> : null}
           {vis[activa].length === 0 ? (
             <p className="analisis-bento__vacio">No hay opciones con los filtros actuales.</p>
           ) : (

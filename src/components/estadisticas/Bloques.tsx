@@ -1,13 +1,24 @@
+import { createContext, useContext } from 'react'
 import { Sigma, TrendingDown, TrendingUp } from 'lucide-react'
 import { ExtremoCard } from './ExtremoCard'
 import { BarrasHorizontales, CajaBigotes } from './Graficas'
 import { TileAmpliable } from './TileAmpliable'
 import { Anillo } from '#/components/portal/notas-ui'
-import { NIVEL_ETIQUETA } from '#/helpers/estadisticas-mensajes'
+import {
+  coeficienteVariacion,
+  CORTES_CV,
+  formatoCV,
+  NIVEL_ETIQUETA,
+  nivelHomogeneidad,
+  SIN_CV,
+} from '#/helpers/estadisticas-mensajes'
 import type { Bloque, BloqueTipo, Dimension } from '#/services/estadisticas'
 
-const PLURAL: Record<Dimension, string> = {
-  general: 'la institución',
+/** Cómo se nombra el grupo «general»: la institución, o las clases del maestro en sus analíticas. */
+export const GeneralPluralContext = createContext('la institución')
+
+const PLURAL: Record<Exclude<Dimension, 'general'>, string> = {
+  clase: 'cada clase',
   maestro: 'cada maestro',
   alumno: 'cada alumno',
   curso: 'cada materia',
@@ -17,6 +28,11 @@ const PLURAL: Record<Dimension, string> = {
   periodo: 'cada periodo',
   parcial: 'cada parcial',
   mes: 'cada mes',
+}
+
+function usePlural(dim: Dimension) {
+  const general = useContext(GeneralPluralContext)
+  return dim === 'general' ? general : PLURAL[dim]
 }
 
 function PromedioTile({
@@ -55,17 +71,64 @@ function PromedioTile({
 }
 
 function DesviacionTile({ bloque }: { bloque: Bloque }) {
+  const r = bloque.resumen
+  const cv = coeficienteVariacion(r.desviacion, r.media_general, r.n_grupos)
+  const h = cv === null ? null : nivelHomogeneidad(cv)
   return (
     <TileAmpliable
-      titulo="Desviación estándar"
+      titulo="Desviación y variación"
       icono={<Sigma size={14} aria-hidden />}
       className="analisis-bento__sigma"
       testId="analisis-desviacion"
     >
-      {() => (
-        <p className="analisis-bento__cifra">
-          {bloque.resumen.n_grupos > 1 ? bloque.resumen.desviacion : '—'}
-        </p>
+      {(grande) => (
+        <>
+          <p className="analisis-bento__cifra">
+            σ {r.n_grupos > 1 ? r.desviacion : '—'}
+          </p>
+          <p className="analisis-bento__cv" data-testid={grande ? undefined : 'analisis-cv'} data-nivel={h?.nivel}>
+            <span>
+              CV <b>{cv === null ? '—' : formatoCV(cv)}</b>
+            </span>
+            {h ? (
+              <span className={`analisis-bento__badge analisis-bento__badge--${h.nivel}`}>
+                {h.etiqueta}
+              </span>
+            ) : null}
+          </p>
+          <p className="analisis-bento__nota">{h ? h.comentario : SIN_CV}</p>
+          {grande ? (
+            <div className="analisis-bento__cv-regla">
+              <p className="analisis-bento__nota">
+                Coeficiente de Variación = desviación estándar ÷ promedio × 100. Mide qué tan
+                parejos son los promedios de los grupos respecto al promedio general.
+              </p>
+              <table className="analisis-bento__cv-tabla">
+                <thead>
+                  <tr>
+                    <th>CV</th>
+                    <th>Lectura</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CORTES_CV.map((c, i) => {
+                    const desde = i === 0 ? 0 : CORTES_CV[i - 1].hasta
+                    const rango =
+                      c.hasta === Infinity ? `${desde}% o más` : i === 0 ? `Menos de ${c.hasta}%` : `${desde}% a ${c.hasta}%`
+                    return (
+                      <tr key={c.nivel} aria-current={h?.nivel === c.nivel ? 'true' : undefined}>
+                        <td>{rango}</td>
+                        <td>
+                          <b>{c.etiqueta}.</b> {c.comentario}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </>
       )}
     </TileAmpliable>
   )
@@ -137,7 +200,7 @@ export function BloquePrincipal({
   prefijo: string
   titulo?: string
 }) {
-  const etiqueta = `Promedio de ${PLURAL[dim]}`
+  const etiqueta = `Promedio de ${usePlural(dim)}`
   return (
     <div className="mdash__bento analisis-bento">
       <PromedioTile bloque={bloque} unidad={unidad} titulo={titulo} />
@@ -205,6 +268,7 @@ export function BloquePrincipal({
 /** Mini tarjeta por tipo de tarea. */
 export function MiniTipoCard({ bt, dim }: { bt: BloqueTipo; dim: Dimension }) {
   const b = bt.bloque
+  const plural = usePlural(dim)
   const alerta = [b.mas_alto, b.mas_bajo].find(
     (e) => e && (e.nivel === 'inusual' || e.nivel === 'muy_atipico'),
   )
@@ -218,7 +282,7 @@ export function MiniTipoCard({ bt, dim }: { bt: BloqueTipo; dim: Dimension }) {
         <>
           <CajaBigotes
             dist={b.distribucion}
-            etiqueta={`Promedio de ${PLURAL[dim]}`}
+            etiqueta={`Promedio de ${plural}`}
             height={grande ? 260 : 110}
             compacto={!grande}
           />

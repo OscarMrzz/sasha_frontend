@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  BookMarked,
   BookOpen,
   Building2,
   CalendarDays,
@@ -19,6 +20,7 @@ import type { Dimension } from '#/services/estadisticas'
 
 const ICONOS: Record<Dimension, LucideIcon> = {
   general: Building2,
+  clase: BookMarked,
   maestro: Users,
   alumno: User,
   curso: BookOpen,
@@ -32,6 +34,7 @@ const ICONOS: Record<Dimension, LucideIcon> = {
 
 const AYUDA: Record<Dimension, string> = {
   general: 'Toda la institución en un solo bloque',
+  clase: 'Compara cada materia en cada sección',
   maestro: 'Compara a los maestros entre sí',
   alumno: 'Compara a cada alumno',
   curso: 'Compara las materias',
@@ -43,10 +46,28 @@ const AYUDA: Record<Dimension, string> = {
   mes: 'Solo asistencia, mes a mes',
 }
 
-export function AgruparPorSelect({ value, onChange }: { value: Dimension; onChange: (d: Dimension) => void }) {
+export function AgruparPorSelect({
+  value,
+  onChange,
+  dimensiones,
+  etiquetas,
+  ayuda,
+}: {
+  value: Dimension
+  onChange: (d: Dimension) => void
+  /** Subconjunto a ofrecer; por defecto todas. */
+  dimensiones?: Dimension[]
+  etiquetas?: Partial<Record<Dimension, string>>
+  ayuda?: Partial<Record<Dimension, string>>
+}) {
   const [abierto, setAbierto] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const actual = DIMENSIONES.find((d) => d.id === value) ?? DIMENSIONES[0]
+  const lista = DIMENSIONES.filter((d) => !dimensiones || dimensiones.includes(d.id)).map((d) => ({
+    ...d,
+    label: etiquetas?.[d.id] ?? d.label,
+    ayuda: ayuda?.[d.id] ?? AYUDA[d.id],
+  }))
+  const actual = lista.find((d) => d.id === value) ?? lista[0]
   const Icon = ICONOS[actual.id]
 
   useEffect(() => {
@@ -86,7 +107,7 @@ export function AgruparPorSelect({ value, onChange }: { value: Dimension; onChan
       </button>
       {abierto ? (
         <ul className="agrupar-select__panel" role="listbox" aria-label="Comparar por">
-          {DIMENSIONES.map((d) => {
+          {lista.map((d) => {
             const I = ICONOS[d.id]
             const sel = d.id === value
             return (
@@ -103,7 +124,7 @@ export function AgruparPorSelect({ value, onChange }: { value: Dimension; onChan
                   <I size={16} aria-hidden />
                   <span>
                     <span className="agrupar-select__opcion-label">{d.label}</span>
-                    <span className="agrupar-select__opcion-ayuda">{AYUDA[d.id]}</span>
+                    <span className="agrupar-select__opcion-ayuda">{d.ayuda}</span>
                   </span>
                   {sel ? <Check size={16} aria-hidden className="agrupar-select__check" /> : null}
                 </button>

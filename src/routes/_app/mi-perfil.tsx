@@ -4,6 +4,7 @@ import { Camera, KeyRound, Star, User } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { toast } from 'sonner'
+import { CoordinasAviso } from '#/components/coordinaciones/CoordinasAviso'
 import { Field } from '#/components/ui/Field'
 import { Modal, useDismiss } from '#/components/ui/Modal'
 import { roleLabel } from '#/helpers/permissions'
@@ -150,7 +151,10 @@ function MiPerfilPage() {
             </p>
           </div>
         ) : (
-          <Expediente ficha={f!} />
+          <>
+            <CoordinasAviso />
+            <Expediente ficha={f!} />
+          </>
         )}
       </div>
 

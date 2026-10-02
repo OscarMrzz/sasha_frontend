@@ -5,6 +5,7 @@ import { FichaClaseActual } from '#/components/usuarios/FichaClaseActual'
 import { FichaHorarioSemanaModal } from '#/components/usuarios/FichaHorarioSemanaModal'
 import { FichaPlanPeriodoModal } from '#/components/usuarios/FichaPlanPeriodoModal'
 import { FichaTareasModal } from '#/components/usuarios/FichaTareasModal'
+import { formatHoras, minutosSemana } from '#/helpers/horas'
 import { roleLabel } from '#/helpers/permissions'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { userMessageFromError } from '#/lib/api'
@@ -18,16 +19,8 @@ import {
 } from '#/services/personas'
 
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-const DIAS_CORTO = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const yn = (v: boolean) => (v ? 'Sí' : 'No')
 const dash = (v?: string | number | null) => (v === undefined || v === null || v === '' ? '—' : String(v))
-
-function formatHorarios(horarios?: { dia_semana: number; hora_inicio: string; hora_fin: string }[]) {
-  if (!horarios?.length) return '—'
-  return horarios
-    .map((h) => `${DIAS_CORTO[h.dia_semana] ?? h.dia_semana} ${h.hora_inicio}–${h.hora_fin}`)
-    .join(', ')
-}
 
 function joinName(p?: UserFicha['perfil']) {
   if (!p) return ''
@@ -56,10 +49,13 @@ function Chips({ values, empty = 'Ninguna' }: { values?: string[]; empty?: strin
   )
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, extra, children }: { title: string; extra?: ReactNode; children: ReactNode }) {
   return (
     <section className="ficha__section">
-      <h3 className="ficha__section-title">{title}</h3>
+      <h3 className="ficha__section-title">
+        {title}
+        {extra ? <span className="ficha__section-extra">{extra}</span> : null}
+      </h3>
       {children}
     </section>
   )
@@ -480,7 +476,16 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
 
       {maestro ? (
         <>
-          <Section title="Cursos">
+          <Section
+            title="Cursos"
+            extra={
+              maestro.asignaciones.length ? (
+                <span data-testid="ficha-maestro-horas">
+                  {formatHoras(maestro.asignaciones.reduce((s, as) => s + minutosSemana(as.horarios), 0))} por semana
+                </span>
+              ) : null
+            }
+          >
             {maestro.asignaciones.length === 0 ? (
               <p className="texto-muted">Sin cursos asignados.</p>
             ) : (
@@ -490,24 +495,21 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
                     <th>Curso</th>
                     <th>Grado</th>
                     <th>Sección</th>
-                    <th>Periodo</th>
-                    <th>Horarios</th>
-                    <th>Estado</th>
+                    <th>Horas</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {maestro.asignaciones.map((as, i) => (
-                    <tr key={`${as.curso}-${as.seccion}-${as.periodo}-${i}`}>
-                      <td>{as.curso}</td>
-                      <td>{dash(as.grado)}</td>
-                      <td>{as.seccion}</td>
-                      <td>{as.periodo}</td>
-                      <td>{formatHorarios(as.horarios)}</td>
-                      <td>
-                        <span className="badge">{as.status}</span>
-                      </td>
-                    </tr>
-                  ))}
+                  {maestro.asignaciones.map((as, i) => {
+                    const min = minutosSemana(as.horarios)
+                    return (
+                      <tr key={`${as.curso}-${as.seccion}-${i}`}>
+                        <td>{as.curso}</td>
+                        <td>{dash(as.grado)}</td>
+                        <td>{as.seccion}</td>
+                        <td className={min ? undefined : 'texto-muted'}>{min ? formatHoras(min) : '—'}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             )}

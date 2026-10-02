@@ -11,6 +11,7 @@ export type Dimension =
   | 'periodo'
   | 'parcial'
   | 'mes'
+  | 'clase'
 
 export type Nivel = 'normal' | 'inusual' | 'muy_atipico' | 'insuficiente'
 
@@ -37,6 +38,15 @@ export interface OpcionAlumno extends OpcionItem {
   seccion_id: string | null
 }
 
+/** Asignación docente: materia en una sección (solo en las analíticas del maestro). */
+export interface OpcionClase extends OpcionItem {
+  curso_id: string
+  seccion_id: string
+  grado_id: string
+  modalidad_id: string
+  periodo_id: string
+}
+
 export interface OpcionesAnalisis {
   periodos: OpcionItem[]
   parciales: OpcionParcial[]
@@ -47,6 +57,7 @@ export interface OpcionesAnalisis {
   maestros: OpcionItem[]
   alumnos: OpcionAlumno[]
   tipos_tarea: OpcionItem[]
+  clases: OpcionClase[]
 }
 
 /** Arreglo vacío = todos. */
@@ -60,6 +71,7 @@ export interface FiltrosAnalisis {
   maestro_ids: string[]
   alumno_ids: string[]
   tipo_tarea_ids: string[]
+  asignacion_ids: string[]
   meses: number[]
   solo_liberadas: boolean
 }
@@ -74,6 +86,7 @@ export const FILTROS_VACIOS: FiltrosAnalisis = {
   maestro_ids: [],
   alumno_ids: [],
   tipo_tarea_ids: [],
+  asignacion_ids: [],
   meses: [],
   solo_liberadas: false,
 }
@@ -159,6 +172,18 @@ export async function getAnalisisOpciones() {
 
 export async function postAnalisis(agrupar_por: Dimension, filtros: FiltrosAnalisis) {
   return apiRequest<AnalisisResponse>('/estadisticas/analisis', {
+    method: 'POST',
+    body: { agrupar_por, filtros },
+  })
+}
+
+/** Analíticas del maestro: el backend recorta a sus clases. */
+export async function getMisAnalisisOpciones() {
+  return apiRequest<OpcionesAnalisis>('/estadisticas/mias/opciones')
+}
+
+export async function postMiAnalisis(agrupar_por: Dimension, filtros: FiltrosAnalisis) {
+  return apiRequest<AnalisisResponse>('/estadisticas/mias/analisis', {
     method: 'POST',
     body: { agrupar_por, filtros },
   })

@@ -607,7 +607,6 @@ function HorariosAdminView() {
         addLabel="Agregar horarios"
         canAdd={can('horarios:post')}
         onAdd={openCreate}
-        searchPlaceholder="Buscar…"
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
       />
       {loadingVersiones ? (

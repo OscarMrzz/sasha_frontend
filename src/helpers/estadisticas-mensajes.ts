@@ -2,6 +2,7 @@ import type { Dimension, Extremo, Nivel } from '#/services/estadisticas'
 
 export const DIMENSIONES: { id: Dimension; label: string; plural: string }[] = [
   { id: 'general', label: 'Institución', plural: 'la institución' },
+  { id: 'clase', label: 'Clase', plural: 'clases' },
   { id: 'maestro', label: 'Maestro', plural: 'maestros' },
   { id: 'alumno', label: 'Alumno', plural: 'alumnos' },
   { id: 'curso', label: 'Materia', plural: 'materias' },
@@ -22,6 +23,52 @@ export const NIVEL_ETIQUETA: Record<Nivel, string> = {
   inusual: 'Inusual',
   muy_atipico: 'Muy atípico',
   insuficiente: 'Pocos datos',
+}
+
+export type NivelHomogeneidad = 'muy_homogeneo' | 'homogeneo' | 'moderado' | 'heterogeneo'
+
+/** Cortes del Coeficiente de Variación (en %), de menor a mayor. */
+export const CORTES_CV: { hasta: number; nivel: NivelHomogeneidad; etiqueta: string; comentario: string }[] = [
+  {
+    hasta: 10,
+    nivel: 'muy_homogeneo',
+    etiqueta: 'Muy homogéneo',
+    comentario: 'Los grupos están muy parejos: el promedio los representa muy bien.',
+  },
+  {
+    hasta: 20,
+    nivel: 'homogeneo',
+    etiqueta: 'Homogéneo',
+    comentario: 'Hay poca variación entre los grupos: el promedio es representativo.',
+  },
+  {
+    hasta: 30,
+    nivel: 'moderado',
+    etiqueta: 'Moderadamente heterogéneo',
+    comentario: 'Hay diferencias notables entre los grupos: el promedio debe tomarse con cautela.',
+  },
+  {
+    hasta: Infinity,
+    nivel: 'heterogeneo',
+    etiqueta: 'Heterogéneo',
+    comentario: 'Los grupos están muy dispersos: el promedio no representa bien al conjunto.',
+  },
+]
+
+/** CV = σ / media × 100. `null` si no hay al menos dos grupos o la media es 0. */
+export function coeficienteVariacion(desviacion: number, media: number, nGrupos: number): number | null {
+  if (nGrupos < 2 || !media) return null
+  return Math.round((Math.abs(desviacion / media) * 100) * 10) / 10
+}
+
+export function nivelHomogeneidad(cv: number) {
+  return CORTES_CV.find((c) => cv < c.hasta) ?? CORTES_CV[CORTES_CV.length - 1]
+}
+
+export const SIN_CV = 'Se necesita más de un grupo para medir la variación.'
+
+export function formatoCV(cv: number) {
+  return `${cv.toLocaleString('es', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
 }
 
 function sigmas(z: number) {

@@ -215,7 +215,6 @@ export function BarrasHorizontales({
       {conBuscador ? (
         <SearchInput
           className="analisis-bento__buscar"
-          placeholder="Buscar por nombre…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           aria-label="Buscar en la lista"

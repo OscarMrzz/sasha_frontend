@@ -20,6 +20,9 @@ import type { NotaClaseRow, ParcialColumna, ResumenCalificaciones } from '#/serv
 
 export const Route = createFileRoute('/_app/calificaciones')({ component: CalificacionesPage })
 
+/** Roles que ven las notas de todo el colegio en vez de una sola clase. */
+const VISTA_GENERAL = new Set(['consejeria', 'director', 'secretaria', 'coordinador'])
+
 const col = createColumnHelper<NotaClaseRow>()
 
 function fmtPuntos(v: number | null | undefined) {
@@ -66,7 +69,7 @@ function CalificacionesPage() {
       </RequirePermission>
     )
   }
-  if (roles.includes('consejeria')) return <CalificacionesConsejeriaView />
+  if (roles.some((r) => VISTA_GENERAL.has(r))) return <CalificacionesConsejeriaView />
   return <CalificacionesStaffPage />
 }
 
@@ -284,7 +287,6 @@ function CalificacionesConsejeriaView() {
           columns={columns}
           filters={tableFilters}
           onFiltersChange={setSel}
-          searchPlaceholder="Buscar por código o nombre…"
           exportFilename="calificaciones"
           exportRows={exportRows}
           toolbarExtra={
@@ -446,7 +448,6 @@ function CalificacionesStaffPage() {
         data={isLoading ? [] : filas}
         columns={columns}
         filters={tableFilters}
-        searchPlaceholder="Buscar por código o nombre…"
         exportFilename={exportFilename}
         exportRows={isLoading ? undefined : exportRows}
       />

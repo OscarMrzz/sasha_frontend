@@ -16,6 +16,9 @@ import { listMateriasAsistencia } from '#/services/asistencia'
 import { listClasesTareas, listTareas, labelCriterioModo } from '#/services/tareas'
 import type { ClaseResumen, Tarea } from '#/services/tareas'
 
+/** Roles que ven las tareas por clase de todo el colegio, en solo lectura. */
+const VISTA_GENERAL = new Set(['consejeria', 'director', 'secretaria', 'coordinador'])
+
 export const Route = createFileRoute('/_app/tareas')({
   validateSearch: (s: Record<string, unknown>) => ({
     revisar: typeof s.revisar === 'string' ? s.revisar : undefined,
@@ -46,7 +49,7 @@ function TareasPage() {
       </RequirePermission>
     )
   }
-  if (roles.includes('consejeria')) return <TareasConsejeriaView />
+  if (roles.some((r) => VISTA_GENERAL.has(r))) return <TareasConsejeriaView />
   return <TareasStaffPage />
 }
 
@@ -109,7 +112,6 @@ function TareasConsejeriaView() {
           data={data}
           columns={columns}
           filters={tableFilters}
-          searchPlaceholder="Buscar…"
           canAdd={false}
           onRowDoubleClick={(row) => setVerClase(row)}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
@@ -248,7 +250,6 @@ function TareasStaffPage() {
           data={tareas}
           columns={columns}
           filters={tableFilters}
-          searchPlaceholder="Buscar…"
           canAdd={can('tareas:post')}
           addLabel="Nueva tarea"
           onAdd={() => setCreateOpen(true)}

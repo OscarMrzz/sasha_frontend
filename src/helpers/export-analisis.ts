@@ -1,4 +1,12 @@
-import { dimensionLabel, mensajeExtremo, NIVEL_ETIQUETA } from '#/helpers/estadisticas-mensajes'
+import {
+  coeficienteVariacion,
+  dimensionLabel,
+  formatoCV,
+  mensajeExtremo,
+  NIVEL_ETIQUETA,
+  nivelHomogeneidad,
+  SIN_CV,
+} from '#/helpers/estadisticas-mensajes'
 import type { ChartRegistry } from '#/components/estadisticas/EChart'
 import type { AnalisisResponse, Bloque } from '#/services/estadisticas'
 
@@ -38,6 +46,14 @@ function filas(b: Bloque) {
   return b.grupos.map((g) => [g.nombre, g.n, g.valor, g.mediana, g.q1, g.q3, g.min, g.max, g.z, g.metodo === 'd' ? g.d : '', NIVEL_ETIQUETA[g.nivel]])
 }
 
+function variacion(b: Bloque) {
+  const r = b.resumen
+  const cv = coeficienteVariacion(r.desviacion, r.media_general, r.n_grupos)
+  if (cv === null) return { cv: '—', nivel: '', comentario: SIN_CV }
+  const h = nivelHomogeneidad(cv)
+  return { cv: formatoCV(cv), nivel: h.etiqueta, comentario: h.comentario }
+}
+
 function nombreArchivo(data: AnalisisResponse, ext: string) {
   const fecha = new Date().toISOString().slice(0, 10)
   return `analisis-${data.agrupar_por}-${fecha}.${ext}`
@@ -73,6 +89,9 @@ export async function descargarAnalisisPdf(data: AnalisisResponse, registry: Cha
       14,
       y,
     )
+    y += 5
+    const v = variacion(s.bloque)
+    doc.text(`Coeficiente de Variación: ${v.cv}${v.nivel ? ` (${v.nivel})` : ''}. ${v.comentario}`, 14, y)
     y += 5
     for (const [e, tipo] of [
       [s.bloque.mas_alto, 'alto'],
@@ -128,14 +147,31 @@ export async function descargarAnalisisExcel(data: AnalisisResponse) {
   resumen.addRow([`Análisis por ${dimensionLabel(data.agrupar_por).toLowerCase()}`]).font = { bold: true, size: 14 }
   resumen.addRow([`Generado el ${new Date().toLocaleString('es')}`])
   resumen.addRow([])
-  const head = resumen.addRow(['Sección', 'Promedio general', 'Desviación', 'Grupos', 'Datos', 'Más alto', 'Comentario', 'Más bajo', 'Comentario'])
+  const head = resumen.addRow([
+    'Sección',
+    'Promedio general',
+    'Desviación',
+    'Coef. de variación',
+    'Homogeneidad',
+    'Comentario',
+    'Grupos',
+    'Datos',
+    'Más alto',
+    'Comentario',
+    'Más bajo',
+    'Comentario',
+  ])
   head.font = { bold: true }
   for (const s of secciones(data)) {
     const b = s.bloque
+    const v = variacion(b)
     resumen.addRow([
       s.titulo,
       b.resumen.media_general,
       b.resumen.desviacion,
+      v.cv,
+      v.nivel,
+      v.comentario,
       b.resumen.n_grupos,
       b.resumen.n_datos,
       b.mas_alto ? `${b.mas_alto.nombre} (${b.mas_alto.valor})` : '',
@@ -145,7 +181,7 @@ export async function descargarAnalisisExcel(data: AnalisisResponse) {
     ])
   }
   resumen.columns.forEach((c, i) => {
-    c.width = i === 0 ? 34 : i === 6 || i === 8 ? 60 : 16
+    c.width = i === 0 ? 34 : i === 5 || i === 9 || i === 11 ? 60 : i === 4 ? 26 : 16
   })
 
   for (const s of secciones(data)) {

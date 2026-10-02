@@ -32,7 +32,6 @@ type DataTableProps<T extends RowData> = {
   columns: LegacyColumnDef<T, any>[]
   /** Si se pasa, renderiza el h1 con el conteo de filas al lado. */
   title?: string
-  searchPlaceholder?: string
   /** Filtros clave (select). No incluir códigos. */
   filters?: DataTableFilter<T>[]
   onRowContextMenu?: (row: T, event: React.MouseEvent) => void
@@ -62,7 +61,6 @@ export function DataTable<T extends RowData>({
   data,
   columns,
   title,
-  searchPlaceholder = 'Buscar…',
   filters = [],
   onRowContextMenu,
   onRowClick,
@@ -205,7 +203,6 @@ export function DataTable<T extends RowData>({
           <SearchInput
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder={searchPlaceholder}
             data-testid="data-table-search"
           />
         </div>

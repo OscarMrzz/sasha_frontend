@@ -11,6 +11,7 @@ import {
   Clock,
   Download,
   FileText,
+  Gavel,
   Home,
   Layers,
   LayoutGrid,
@@ -19,12 +20,14 @@ import {
   ListTodo,
   LogOut,
   Moon,
+  Network,
   PanelLeftClose,
   PanelLeft,
   Receipt,
   Search,
   Settings,
   Shield,
+  ShieldAlert,
   Sun,
   Unlock,
   User,
@@ -32,7 +35,8 @@ import {
   Wallet,
   BarChart3,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState  } from 'react'
+import type {ReactNode} from 'react';
 import { Can, useCan } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { NotificationsBell } from '#/components/layout/NotificationsBell'
@@ -72,6 +76,9 @@ const ICONS: Record<string, ReactNode> = {
   chart: <BarChart3 className="sidebar-nav__icon" />,
   download: <Download className="sidebar-nav__icon" />,
   search: <Search className="sidebar-nav__icon" />,
+  'shield-alert': <ShieldAlert className="sidebar-nav__icon" />,
+  gavel: <Gavel className="sidebar-nav__icon" />,
+  network: <Network className="sidebar-nav__icon" />,
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -80,7 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const isHubLauncher =
-    ['/maestro', '/alumno', '/alumno/resultados', '/responsable', '/mi-perfil'].includes(
+    ['/maestro', '/maestro/analiticas', '/alumno', '/alumno/resultados', '/responsable', '/mi-perfil'].includes(
       pathname.replace(/\/$/, ''),
     ) ||
     pathname.startsWith('/hijo/')
@@ -104,6 +111,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       permission: (typeof NAV_ITEMS)[number]['permission'] | null
       icon: string
       onClick?: () => void
+      hideForRoles?: readonly string[]
     }
     const home: Item = maestro
       ? {
@@ -127,8 +135,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       : { to: '/dashboard', label: 'Inicio', permission: null, icon: 'home' }
     const rest = NAV_ITEMS.filter((i) => i.to !== '/dashboard')
     const base: Item[] = portal ? rest : [home, ...rest]
-    return base.filter((i) => (i.permission ? can(i.permission) : true))
-  }, [can, maestro, portal, navigate])
+    return base.filter(
+      (i) =>
+        (i.permission ? can(i.permission) : true) &&
+        !i.hideForRoles?.some((r) => roles.includes(r)),
+    )
+  }, [can, roles, maestro, portal, navigate])
 
   useEffect(() => {
     if (!userMenuOpen) return
@@ -204,6 +216,23 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <span className="user-panel__meta">
               <span className="user-panel__name">Inicio</span>
+            </span>
+          </button>
+        ) : null}
+
+        {maestro && can('mis_estadisticas:get') ? (
+          <button
+            type="button"
+            className="user-panel user-panel--top"
+            data-testid="top-analiticas"
+            onClick={() => void navigate({ to: '/maestro/analiticas', search: { agrupar: undefined, filtros: undefined } })}
+            title="Mis analíticas"
+          >
+            <span className="user-panel__avatar" aria-hidden>
+              <BarChart3 size={16} />
+            </span>
+            <span className="user-panel__meta">
+              <span className="user-panel__name">Analíticas</span>
             </span>
           </button>
         ) : null}
@@ -313,7 +342,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 const isDashboard = item.label === 'Dashboard'
                 const active = isDashboard
                   ? pathname.startsWith('/maestro/clases/')
-                  : pathname === item.to || pathname.startsWith(item.to + '/')
+                  : pathname === item.to ||
+                    (pathname.startsWith(item.to + '/') &&
+                      !items.some((o) => o.to.startsWith(item.to + '/') && pathname.startsWith(o.to)))
                 if (item.onClick) {
                   return (
                     <button

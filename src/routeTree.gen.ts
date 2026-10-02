@@ -20,6 +20,7 @@ import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppCalificacionesRouteImport } from './routes/_app/calificaciones'
 import { Route as AppConfiguracionRouteImport } from './routes/_app/configuracion'
 import { Route as AppControladoresRouteImport } from './routes/_app/controladores'
+import { Route as AppCoordinacionesRouteImport } from './routes/_app/coordinaciones'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppEstadisticasRouteImport } from './routes/_app/estadisticas'
 import { Route as AppHorariosRouteImport } from './routes/_app/horarios'
@@ -42,10 +43,16 @@ import { Route as AppCatalogosGradosRouteImport } from './routes/_app/catalogos/
 import { Route as AppCatalogosModalidadesRouteImport } from './routes/_app/catalogos/modalidades'
 import { Route as AppCatalogosPeriodosRouteImport } from './routes/_app/catalogos/periodos'
 import { Route as AppCatalogosSeccionesRouteImport } from './routes/_app/catalogos/secciones'
+import { Route as AppConsejeriaAlumnosRouteImport } from './routes/_app/consejeria/alumnos'
+import { Route as AppConsejeriaHorariosRouteImport } from './routes/_app/consejeria/horarios'
+import { Route as AppConsejeriaMaestrosRouteImport } from './routes/_app/consejeria/maestros'
+import { Route as AppDisciplinaIndexRouteImport } from './routes/_app/disciplina/index'
+import { Route as AppDisciplinaTiposRouteImport } from './routes/_app/disciplina/tipos'
 import { Route as AppHijoHorarioRouteImport } from './routes/_app/hijo/horario'
 import { Route as AppHijoPagosRouteImport } from './routes/_app/hijo/pagos'
 import { Route as AppHijoTareasRouteImport } from './routes/_app/hijo/tareas'
 import { Route as AppMaestroIndexRouteImport } from './routes/_app/maestro/index'
+import { Route as AppMaestroAnaliticasRouteImport } from './routes/_app/maestro/analiticas'
 import { Route as AppResponsableIndexRouteImport } from './routes/_app/responsable/index'
 import { Route as AppHijoPlanIndexRouteImport } from './routes/_app/hijo/plan/index'
 import { Route as AppHijoPlanAsignacionIdRouteImport } from './routes/_app/hijo/plan/$asignacionId'
@@ -103,6 +110,11 @@ const AppConfiguracionRoute = AppConfiguracionRouteImport.update({
 const AppControladoresRoute = AppControladoresRouteImport.update({
   id: '/controladores',
   path: '/controladores',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCoordinacionesRoute = AppCoordinacionesRouteImport.update({
+  id: '/coordinaciones',
+  path: '/coordinaciones',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -215,6 +227,31 @@ const AppCatalogosSeccionesRoute = AppCatalogosSeccionesRouteImport.update({
   path: '/catalogos/secciones',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConsejeriaAlumnosRoute = AppConsejeriaAlumnosRouteImport.update({
+  id: '/consejeria/alumnos',
+  path: '/consejeria/alumnos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsejeriaHorariosRoute = AppConsejeriaHorariosRouteImport.update({
+  id: '/consejeria/horarios',
+  path: '/consejeria/horarios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConsejeriaMaestrosRoute = AppConsejeriaMaestrosRouteImport.update({
+  id: '/consejeria/maestros',
+  path: '/consejeria/maestros',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDisciplinaIndexRoute = AppDisciplinaIndexRouteImport.update({
+  id: '/disciplina/',
+  path: '/disciplina/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDisciplinaTiposRoute = AppDisciplinaTiposRouteImport.update({
+  id: '/disciplina/tipos',
+  path: '/disciplina/tipos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppHijoHorarioRoute = AppHijoHorarioRouteImport.update({
   id: '/hijo/horario',
   path: '/hijo/horario',
@@ -233,6 +270,11 @@ const AppHijoTareasRoute = AppHijoTareasRouteImport.update({
 const AppMaestroIndexRoute = AppMaestroIndexRouteImport.update({
   id: '/maestro/',
   path: '/maestro/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMaestroAnaliticasRoute = AppMaestroAnaliticasRouteImport.update({
+  id: '/maestro/analiticas',
+  path: '/maestro/analiticas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppResponsableIndexRoute = AppResponsableIndexRouteImport.update({
@@ -268,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/calificaciones': typeof AppCalificacionesRoute
   '/configuracion': typeof AppConfiguracionRoute
   '/controladores': typeof AppControladoresRoute
+  '/coordinaciones': typeof AppCoordinacionesRoute
   '/dashboard': typeof AppDashboardRoute
   '/estadisticas': typeof AppEstadisticasRoute
   '/horarios': typeof AppHorariosRoute
@@ -289,10 +332,16 @@ export interface FileRoutesByFullPath {
   '/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
   '/catalogos/periodos': typeof AppCatalogosPeriodosRoute
   '/catalogos/secciones': typeof AppCatalogosSeccionesRoute
+  '/consejeria/alumnos': typeof AppConsejeriaAlumnosRoute
+  '/consejeria/horarios': typeof AppConsejeriaHorariosRoute
+  '/consejeria/maestros': typeof AppConsejeriaMaestrosRoute
+  '/disciplina/tipos': typeof AppDisciplinaTiposRoute
   '/hijo/horario': typeof AppHijoHorarioRoute
   '/hijo/pagos': typeof AppHijoPagosRoute
   '/hijo/tareas': typeof AppHijoTareasRoute
+  '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
   '/alumno/': typeof AppAlumnoIndexRoute
+  '/disciplina/': typeof AppDisciplinaIndexRoute
   '/maestro/': typeof AppMaestroIndexRoute
   '/responsable/': typeof AppResponsableIndexRoute
   '/hijo/plan/$asignacionId': typeof AppHijoPlanAsignacionIdRoute
@@ -310,6 +359,7 @@ export interface FileRoutesByTo {
   '/calificaciones': typeof AppCalificacionesRoute
   '/configuracion': typeof AppConfiguracionRoute
   '/controladores': typeof AppControladoresRoute
+  '/coordinaciones': typeof AppCoordinacionesRoute
   '/dashboard': typeof AppDashboardRoute
   '/estadisticas': typeof AppEstadisticasRoute
   '/horarios': typeof AppHorariosRoute
@@ -331,10 +381,16 @@ export interface FileRoutesByTo {
   '/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
   '/catalogos/periodos': typeof AppCatalogosPeriodosRoute
   '/catalogos/secciones': typeof AppCatalogosSeccionesRoute
+  '/consejeria/alumnos': typeof AppConsejeriaAlumnosRoute
+  '/consejeria/horarios': typeof AppConsejeriaHorariosRoute
+  '/consejeria/maestros': typeof AppConsejeriaMaestrosRoute
+  '/disciplina/tipos': typeof AppDisciplinaTiposRoute
   '/hijo/horario': typeof AppHijoHorarioRoute
   '/hijo/pagos': typeof AppHijoPagosRoute
   '/hijo/tareas': typeof AppHijoTareasRoute
+  '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
   '/alumno': typeof AppAlumnoIndexRoute
+  '/disciplina': typeof AppDisciplinaIndexRoute
   '/maestro': typeof AppMaestroIndexRoute
   '/responsable': typeof AppResponsableIndexRoute
   '/hijo/plan/$asignacionId': typeof AppHijoPlanAsignacionIdRoute
@@ -354,6 +410,7 @@ export interface FileRoutesById {
   '/_app/calificaciones': typeof AppCalificacionesRoute
   '/_app/configuracion': typeof AppConfiguracionRoute
   '/_app/controladores': typeof AppControladoresRoute
+  '/_app/coordinaciones': typeof AppCoordinacionesRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/estadisticas': typeof AppEstadisticasRoute
   '/_app/horarios': typeof AppHorariosRoute
@@ -375,10 +432,16 @@ export interface FileRoutesById {
   '/_app/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
   '/_app/catalogos/periodos': typeof AppCatalogosPeriodosRoute
   '/_app/catalogos/secciones': typeof AppCatalogosSeccionesRoute
+  '/_app/consejeria/alumnos': typeof AppConsejeriaAlumnosRoute
+  '/_app/consejeria/horarios': typeof AppConsejeriaHorariosRoute
+  '/_app/consejeria/maestros': typeof AppConsejeriaMaestrosRoute
+  '/_app/disciplina/tipos': typeof AppDisciplinaTiposRoute
   '/_app/hijo/horario': typeof AppHijoHorarioRoute
   '/_app/hijo/pagos': typeof AppHijoPagosRoute
   '/_app/hijo/tareas': typeof AppHijoTareasRoute
+  '/_app/maestro/analiticas': typeof AppMaestroAnaliticasRoute
   '/_app/alumno/': typeof AppAlumnoIndexRoute
+  '/_app/disciplina/': typeof AppDisciplinaIndexRoute
   '/_app/maestro/': typeof AppMaestroIndexRoute
   '/_app/responsable/': typeof AppResponsableIndexRoute
   '/_app/hijo/plan/$asignacionId': typeof AppHijoPlanAsignacionIdRoute
@@ -398,6 +461,7 @@ export interface FileRouteTypes {
     | '/calificaciones'
     | '/configuracion'
     | '/controladores'
+    | '/coordinaciones'
     | '/dashboard'
     | '/estadisticas'
     | '/horarios'
@@ -419,10 +483,16 @@ export interface FileRouteTypes {
     | '/catalogos/modalidades'
     | '/catalogos/periodos'
     | '/catalogos/secciones'
+    | '/consejeria/alumnos'
+    | '/consejeria/horarios'
+    | '/consejeria/maestros'
+    | '/disciplina/tipos'
     | '/hijo/horario'
     | '/hijo/pagos'
     | '/hijo/tareas'
+    | '/maestro/analiticas'
     | '/alumno/'
+    | '/disciplina/'
     | '/maestro/'
     | '/responsable/'
     | '/hijo/plan/$asignacionId'
@@ -440,6 +510,7 @@ export interface FileRouteTypes {
     | '/calificaciones'
     | '/configuracion'
     | '/controladores'
+    | '/coordinaciones'
     | '/dashboard'
     | '/estadisticas'
     | '/horarios'
@@ -461,10 +532,16 @@ export interface FileRouteTypes {
     | '/catalogos/modalidades'
     | '/catalogos/periodos'
     | '/catalogos/secciones'
+    | '/consejeria/alumnos'
+    | '/consejeria/horarios'
+    | '/consejeria/maestros'
+    | '/disciplina/tipos'
     | '/hijo/horario'
     | '/hijo/pagos'
     | '/hijo/tareas'
+    | '/maestro/analiticas'
     | '/alumno'
+    | '/disciplina'
     | '/maestro'
     | '/responsable'
     | '/hijo/plan/$asignacionId'
@@ -483,6 +560,7 @@ export interface FileRouteTypes {
     | '/_app/calificaciones'
     | '/_app/configuracion'
     | '/_app/controladores'
+    | '/_app/coordinaciones'
     | '/_app/dashboard'
     | '/_app/estadisticas'
     | '/_app/horarios'
@@ -504,10 +582,16 @@ export interface FileRouteTypes {
     | '/_app/catalogos/modalidades'
     | '/_app/catalogos/periodos'
     | '/_app/catalogos/secciones'
+    | '/_app/consejeria/alumnos'
+    | '/_app/consejeria/horarios'
+    | '/_app/consejeria/maestros'
+    | '/_app/disciplina/tipos'
     | '/_app/hijo/horario'
     | '/_app/hijo/pagos'
     | '/_app/hijo/tareas'
+    | '/_app/maestro/analiticas'
     | '/_app/alumno/'
+    | '/_app/disciplina/'
     | '/_app/maestro/'
     | '/_app/responsable/'
     | '/_app/hijo/plan/$asignacionId'
@@ -598,6 +682,13 @@ declare module '@tanstack/react-router' {
       path: '/controladores'
       fullPath: '/controladores'
       preLoaderRoute: typeof AppControladoresRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/coordinaciones': {
+      id: '/_app/coordinaciones'
+      path: '/coordinaciones'
+      fullPath: '/coordinaciones'
+      preLoaderRoute: typeof AppCoordinacionesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -754,6 +845,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCatalogosSeccionesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/consejeria/alumnos': {
+      id: '/_app/consejeria/alumnos'
+      path: '/consejeria/alumnos'
+      fullPath: '/consejeria/alumnos'
+      preLoaderRoute: typeof AppConsejeriaAlumnosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/consejeria/horarios': {
+      id: '/_app/consejeria/horarios'
+      path: '/consejeria/horarios'
+      fullPath: '/consejeria/horarios'
+      preLoaderRoute: typeof AppConsejeriaHorariosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/consejeria/maestros': {
+      id: '/_app/consejeria/maestros'
+      path: '/consejeria/maestros'
+      fullPath: '/consejeria/maestros'
+      preLoaderRoute: typeof AppConsejeriaMaestrosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/disciplina/': {
+      id: '/_app/disciplina/'
+      path: '/disciplina'
+      fullPath: '/disciplina/'
+      preLoaderRoute: typeof AppDisciplinaIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/disciplina/tipos': {
+      id: '/_app/disciplina/tipos'
+      path: '/disciplina/tipos'
+      fullPath: '/disciplina/tipos'
+      preLoaderRoute: typeof AppDisciplinaTiposRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/hijo/horario': {
       id: '/_app/hijo/horario'
       path: '/hijo/horario'
@@ -780,6 +906,13 @@ declare module '@tanstack/react-router' {
       path: '/maestro'
       fullPath: '/maestro/'
       preLoaderRoute: typeof AppMaestroIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/maestro/analiticas': {
+      id: '/_app/maestro/analiticas'
+      path: '/maestro/analiticas'
+      fullPath: '/maestro/analiticas'
+      preLoaderRoute: typeof AppMaestroAnaliticasRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/responsable/': {
@@ -822,6 +955,7 @@ interface AppRouteChildren {
   AppCalificacionesRoute: typeof AppCalificacionesRoute
   AppConfiguracionRoute: typeof AppConfiguracionRoute
   AppControladoresRoute: typeof AppControladoresRoute
+  AppCoordinacionesRoute: typeof AppCoordinacionesRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstadisticasRoute: typeof AppEstadisticasRoute
   AppHorariosRoute: typeof AppHorariosRoute
@@ -843,10 +977,16 @@ interface AppRouteChildren {
   AppCatalogosModalidadesRoute: typeof AppCatalogosModalidadesRoute
   AppCatalogosPeriodosRoute: typeof AppCatalogosPeriodosRoute
   AppCatalogosSeccionesRoute: typeof AppCatalogosSeccionesRoute
+  AppConsejeriaAlumnosRoute: typeof AppConsejeriaAlumnosRoute
+  AppConsejeriaHorariosRoute: typeof AppConsejeriaHorariosRoute
+  AppConsejeriaMaestrosRoute: typeof AppConsejeriaMaestrosRoute
+  AppDisciplinaTiposRoute: typeof AppDisciplinaTiposRoute
   AppHijoHorarioRoute: typeof AppHijoHorarioRoute
   AppHijoPagosRoute: typeof AppHijoPagosRoute
   AppHijoTareasRoute: typeof AppHijoTareasRoute
+  AppMaestroAnaliticasRoute: typeof AppMaestroAnaliticasRoute
   AppAlumnoIndexRoute: typeof AppAlumnoIndexRoute
+  AppDisciplinaIndexRoute: typeof AppDisciplinaIndexRoute
   AppMaestroIndexRoute: typeof AppMaestroIndexRoute
   AppResponsableIndexRoute: typeof AppResponsableIndexRoute
   AppHijoPlanAsignacionIdRoute: typeof AppHijoPlanAsignacionIdRoute
@@ -863,6 +1003,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalificacionesRoute: AppCalificacionesRoute,
   AppConfiguracionRoute: AppConfiguracionRoute,
   AppControladoresRoute: AppControladoresRoute,
+  AppCoordinacionesRoute: AppCoordinacionesRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEstadisticasRoute: AppEstadisticasRoute,
   AppHorariosRoute: AppHorariosRoute,
@@ -884,10 +1025,16 @@ const AppRouteChildren: AppRouteChildren = {
   AppCatalogosModalidadesRoute: AppCatalogosModalidadesRoute,
   AppCatalogosPeriodosRoute: AppCatalogosPeriodosRoute,
   AppCatalogosSeccionesRoute: AppCatalogosSeccionesRoute,
+  AppConsejeriaAlumnosRoute: AppConsejeriaAlumnosRoute,
+  AppConsejeriaHorariosRoute: AppConsejeriaHorariosRoute,
+  AppConsejeriaMaestrosRoute: AppConsejeriaMaestrosRoute,
+  AppDisciplinaTiposRoute: AppDisciplinaTiposRoute,
   AppHijoHorarioRoute: AppHijoHorarioRoute,
   AppHijoPagosRoute: AppHijoPagosRoute,
   AppHijoTareasRoute: AppHijoTareasRoute,
+  AppMaestroAnaliticasRoute: AppMaestroAnaliticasRoute,
   AppAlumnoIndexRoute: AppAlumnoIndexRoute,
+  AppDisciplinaIndexRoute: AppDisciplinaIndexRoute,
   AppMaestroIndexRoute: AppMaestroIndexRoute,
   AppResponsableIndexRoute: AppResponsableIndexRoute,
   AppHijoPlanAsignacionIdRoute: AppHijoPlanAsignacionIdRoute,

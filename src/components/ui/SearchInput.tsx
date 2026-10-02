@@ -1,9 +1,8 @@
 import { Search } from 'lucide-react'
 import type { CSSProperties, InputHTMLAttributes } from 'react'
 
-type SearchInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
-  /** Por defecto «Buscar…» */
-  placeholder?: string
+/** El placeholder siempre es «Buscar…» (REG-UI-11); no se acepta otro texto. */
+type SearchInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'placeholder'> & {
   wrapperStyle?: CSSProperties
 }
 
@@ -12,7 +11,6 @@ export function SearchInput({
   className,
   style,
   wrapperStyle,
-  placeholder = 'Buscar…',
   'aria-label': ariaLabel = 'Buscar',
   ...rest
 }: SearchInputProps) {
@@ -21,7 +19,7 @@ export function SearchInput({
       <input
         type="search"
         className="field__input search-input__field"
-        placeholder={placeholder}
+        placeholder="Buscar…"
         aria-label={ariaLabel}
         {...rest}
       />

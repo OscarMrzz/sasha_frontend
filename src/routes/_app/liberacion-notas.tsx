@@ -199,7 +199,6 @@ function LiberacionNotasPage() {
           data={bloqueadosQ.data ?? []}
           columns={columns}
           filters={tableFilters}
-          searchPlaceholder="Buscar por código o nombre"
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
         />
       </section>

@@ -96,7 +96,7 @@ export async function apiRequest<T = unknown>(
   if (raw) {
     if (!res.ok) {
       const text = await res.text()
-      let message = text || res.statusText
+      let message = mensajePorEstado(res.status)
       try {
         const parsed = apiErrorSchema.safeParse(JSON.parse(text))
         if (parsed.success && parsed.data.message) message = parsed.data.message
@@ -118,14 +118,22 @@ export async function apiRequest<T = unknown>(
 
   if (!res.ok) {
     const parsed = apiErrorSchema.safeParse(data)
-    const message =
-      (parsed.success && parsed.data.message) ||
-      (typeof data === 'string' && data) ||
-      `Error HTTP ${res.status}`
+    const message = (parsed.success && parsed.data.message) || mensajePorEstado(res.status)
     throw new ApiError(message, res.status, parsed.success ? parsed.data.code : undefined, data)
   }
 
   return data as T
+}
+
+/** Los mensajes del backend vienen en español en el JSON; las respuestas en texto plano (las del router de Go) traen inglés. */
+function mensajePorEstado(status: number): string {
+  if (status === 400) return 'La solicitud no es válida.'
+  if (status === 403) return 'No tienes permiso para esta acción.'
+  if (status === 404) return 'No se encontró lo que buscas.'
+  if (status === 405) return 'El servidor no reconoce esta acción. Puede que el backend esté desactualizado: reinícialo.'
+  if (status === 413) return 'El archivo es demasiado grande.'
+  if (status >= 500) return 'El servidor tuvo un problema. Intenta de nuevo en un momento.'
+  return `Error del servidor (${status}).`
 }
 
 export function userMessageFromError(err: unknown): string {
@@ -134,6 +142,7 @@ export function userMessageFromError(err: unknown): string {
     if (err.status === 403) return err.message || 'No tienes permiso para esta acción.'
     return err.message
   }
+  if (err instanceof TypeError) return 'No se pudo conectar con el servidor.'
   if (err instanceof Error) return err.message
   return 'Error inesperado'
 }

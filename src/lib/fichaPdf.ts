@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { formatHoras, minutosSemana } from '#/helpers/horas'
 import { roleLabel } from '#/helpers/permissions'
 import { labelAsistencia, type UserFicha } from '#/services/personas'
 
@@ -166,26 +167,17 @@ export function downloadFichaPdf(ficha: UserFicha) {
 
   const m = ficha.maestro
   if (m) {
-    const diasCorto = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
     y = dataTable(
       doc,
       y + 8,
       'Cursos',
-      ['Curso', 'Grado', 'Sección', 'Periodo', 'Horarios', 'Estado'],
+      ['Curso', 'Grado', 'Sección', 'Horas'],
       m.asignaciones.length
-        ? m.asignaciones.map((as) => [
-            as.curso,
-            dash(as.grado),
-            as.seccion,
-            as.periodo,
-            as.horarios?.length
-              ? as.horarios
-                  .map((h) => `${diasCorto[h.dia_semana] ?? h.dia_semana} ${h.hora_inicio}–${h.hora_fin}`)
-                  .join(', ')
-              : '—',
-            as.status,
-          ])
-        : [['—', '—', '—', '—', '—', '—']],
+        ? m.asignaciones.map((as) => {
+            const min = minutosSemana(as.horarios)
+            return [as.curso, dash(as.grado), as.seccion, min ? formatHoras(min) : '—']
+          })
+        : [['—', '—', '—', '—']],
     )
     if (m.disponibilidad.length) {
       y = dataTable(

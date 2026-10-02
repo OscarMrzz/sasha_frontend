@@ -69,7 +69,6 @@ function SacePage() {
           data={data}
           columns={columns}
           filters={tableFilters}
-          searchPlaceholder="Buscar maestro…"
           canAdd={false}
           onRowDoubleClick={(row) => setVer(row)}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
