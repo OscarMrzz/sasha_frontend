@@ -27,7 +27,7 @@ const SECCIONES: { clave: Clave; titulo: string; ayuda?: string }[] = [
   { clave: 'modalidad_ids', titulo: 'Modalidad' },
   { clave: 'seccion_ids', titulo: 'Sección', ayuda: 'Solo las secciones de los grados y modalidades marcados.' },
   { clave: 'curso_ids', titulo: 'Materia' },
-  { clave: 'asignacion_ids', titulo: 'Clase', ayuda: 'Solo las clases de los grados, secciones y materias marcados.' },
+  { clave: 'asignacion_ids', titulo: 'Clase', ayuda: 'Solo las clases de los periodos, grados, secciones y materias marcados.' },
   { clave: 'maestro_ids', titulo: 'Maestro' },
   { clave: 'alumno_ids', titulo: 'Alumno', ayuda: 'Solo los alumnos de las secciones marcadas.' },
   { clave: 'tipo_tarea_ids', titulo: 'Tipo de tarea', ayuda: 'Afecta a las tarjetas por tipo, no a la nota general.' },
@@ -62,7 +62,9 @@ function visiblesDe(op: OpcionesAnalisis, b: Borrador): Record<Clave, OpcionItem
     modalidad_ids: op.modalidades,
     seccion_ids: secciones,
     curso_ids: op.cursos,
-    asignacion_ids: op.clases.filter((c) => secSel.has(c.seccion_id) && en(b.curso_ids, c.curso_id)),
+    asignacion_ids: op.clases.filter(
+      (c) => secSel.has(c.seccion_id) && en(b.curso_ids, c.curso_id) && en(b.periodo_ids, c.periodo_id),
+    ),
     maestro_ids: op.maestros,
     alumno_ids: op.alumnos
       .filter((a) => !filtrarAlumnos || (a.seccion_id !== null && secSel.has(a.seccion_id)))
