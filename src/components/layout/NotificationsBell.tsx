@@ -1,11 +1,34 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bell } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Bell, CircleAlert, OctagonAlert, ShieldCheck } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '#/components/ui/Modal'
+import { useNotificacionesStream } from '#/hooks/use-notificaciones-stream'
 import { userMessageFromError } from '#/lib/api'
 import { listNotificaciones, markNotificacionLeida  } from '#/services/notificaciones'
-import type {Notificacion} from '#/services/notificaciones';
+import type {NivelNotificacion, Notificacion} from '#/services/notificaciones';
+
+const NIVEL_LABEL: Record<NivelNotificacion, string> = {
+  info_ok: 'Informativo',
+  advertencia: 'Atención',
+  grave: 'Importante',
+}
+
+function NivelIcono({ nivel, size = 18 }: { nivel?: NivelNotificacion; size?: number }) {
+  if (!nivel) return null
+  const Icono = nivel === 'info_ok' ? ShieldCheck : nivel === 'advertencia' ? CircleAlert : OctagonAlert
+  return (
+    <span
+      className={`notif-nivel notif-nivel--${nivel}`}
+      data-testid="notification-nivel"
+      data-nivel={nivel}
+      aria-label={NIVEL_LABEL[nivel]}
+      title={NIVEL_LABEL[nivel]}
+    >
+      <Icono size={size} aria-hidden />
+    </span>
+  )
+}
 
 function formatFecha(fecha?: string) {
   if (!fecha) return ''
@@ -29,6 +52,26 @@ export function NotificationsBell() {
     queryKey: ['notificaciones'],
     queryFn: () => listNotificaciones(),
     refetchInterval: 60_000,
+  })
+
+  const conocidas = useRef<Set<string> | null>(null)
+  useEffect(() => {
+    if (isLoading) return
+    const previas = conocidas.current
+    conocidas.current = new Set(data.map((n) => n.id))
+    if (!previas) return
+    for (const n of data) {
+      if (n.leida || previas.has(n.id)) continue
+      toast(n.titulo, {
+        description: n.mensaje,
+        icon: <NivelIcono nivel={n.nivel} size={16} />,
+        duration: 8000,
+      })
+    }
+  }, [data, isLoading])
+
+  useNotificacionesStream(() => {
+    void qc.invalidateQueries({ queryKey: ['notificaciones'] })
   })
 
   const unread = data.filter((n) => !n.leida).length
@@ -99,6 +142,7 @@ export function NotificationsBell() {
                     className={`notif-dot${n.leida ? ' notif-dot--read' : ''}`}
                     aria-label={n.leida ? 'Leída' : 'No leída'}
                   />
+                  <NivelIcono nivel={n.nivel} />
                   <span className="notif-row__body">
                     <span className="notif-row__top">
                       <span className="notif-row__title">{n.titulo}</span>
@@ -127,6 +171,7 @@ export function NotificationsBell() {
         {shown ? (
           <div className="notif-detail" data-testid="notification-detail">
             <div className="notif-detail__meta">
+              <NivelIcono nivel={shown.nivel} size={22} />
               {shown.fecha ? <span>{formatFecha(shown.fecha)}</span> : null}
               {shown.tipo_nombre ? <span className="badge">{shown.tipo_nombre}</span> : null}
               {shown.es_banner ? <span className="badge badge--warn">Importante</span> : null}

@@ -40,6 +40,9 @@ export interface SemanaMarca {
   fecha: string
   tipo_codigo?: string | null
   letra: string
+  /** La puso una excusa registrada: no se puede cambiar. */
+  bloqueada?: boolean
+  excusa_tipo?: string
 }
 
 export interface SemanaAlumno {
@@ -109,12 +112,19 @@ export function nextLetra(actual: string): string {
   return LETRA_CYCLE[(idx + 1) % LETRA_CYCLE.length]
 }
 
-export async function postAsistencia(item: AsistenciaItem) {
-  return apiRequest<Asistencia[]>('/asistencia/', { method: 'POST', body: item })
+export interface CeldaLista {
+  alumno_id: string
+  fecha: string
+  /** '' vacía la celda */
+  tipo_codigo: string
 }
 
-export async function postAsistenciaBatch(items: AsistenciaItem[]) {
-  return apiRequest<Asistencia[]>('/asistencia/', { method: 'POST', body: { items } })
+/** Guarda la lista de una clase de una vez; al guardar el backend avisa a los padres. */
+export async function guardarLista(asignacionDocenteId: string, items: CeldaLista[]) {
+  return apiRequest<{ guardadas: number }>('/asistencia/', {
+    method: 'POST',
+    body: { asignacion_docente_id: asignacionDocenteId, items },
+  })
 }
 
 export async function listMateriasAsistencia() {
@@ -158,6 +168,32 @@ export async function getInasistenciaDetalle(asignacionDocenteId: string, alumno
     alumno_id: alumnoId,
   })
   return apiRequest<InasistenciaDetalleResponse>(`/asistencia/inasistencias/detalle?${qs}`)
+}
+
+/** Lo que vale la asistencia de la clase en un parcial. `plan_suma + puntos` debería dar 100. */
+export interface PuntosAsistenciaParcial {
+  parcial_id: string
+  numero: number
+  etiqueta: string
+  fecha_inicio: string
+  fecha_fin: string
+  puntos: number
+  plan_suma: number
+}
+
+export async function getPuntosAsistencia(asignacionDocenteId: string) {
+  const qs = new URLSearchParams({ asignacion_docente_id: asignacionDocenteId })
+  return apiRequest<PuntosAsistenciaParcial[]>(`/asistencia/puntos?${qs}`)
+}
+
+export async function guardarPuntosAsistencia(
+  asignacionDocenteId: string,
+  items: { parcial_id: string; puntos: number }[],
+) {
+  return apiRequest<PuntosAsistenciaParcial[]>('/asistencia/puntos', {
+    method: 'PUT',
+    body: { asignacion_docente_id: asignacionDocenteId, items },
+  })
 }
 
 export async function downloadAsistenciaPdf(asignacionDocenteId: string, fecha?: string) {

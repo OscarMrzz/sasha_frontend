@@ -10,7 +10,11 @@ export interface Notificacion {
   fecha?: string
   es_banner?: boolean
   leida: boolean
+  /** Avisos de asistencia: info_ok (falta justificada), advertencia (tarde), grave (falta sin justificar). */
+  nivel?: NivelNotificacion
 }
+
+export type NivelNotificacion = 'info_ok' | 'advertencia' | 'grave'
 
 export interface NotificacionSegmento {
   tipo_segmento: string
