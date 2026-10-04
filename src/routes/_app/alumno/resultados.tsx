@@ -14,8 +14,9 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { Anillo, CUADRO, claseNivelNota } from '#/components/portal/notas-ui'
+import { ResultadoPeriodo } from '#/components/portal/ResultadoPeriodo'
 import { usePortal } from '#/hooks/use-portal'
-import { getResumenCalificaciones } from '#/services/portal'
+import { getResultadoPeriodo, getResumenCalificaciones } from '#/services/portal'
 import type { PortalMensajeAnalisis, PortalParcialResumen, PortalResumen, Tendencia } from '#/services/portal'
 
 export const Route = createFileRoute('/_app/alumno/resultados')({
@@ -201,9 +202,21 @@ function ParcialBloque({ p }: { p: PortalParcialResumen }) {
               <span className="parcial-bloque__curso">{m.curso}</span>
               {m.nota != null ? (
                 <>
-                  <Termometro nota={m.nota} aprobada={m.aprobada} />
-                  <span className="parcial-bloque__nota">{m.nota}</span>
+                  <Termometro nota={m.nota_efectiva ?? m.nota} aprobada={m.aprobada} />
+                  <span
+                    className={`parcial-bloque__nota${m.recuperacion != null ? ' parcial-bloque__nota--tachada' : ''}`}
+                  >
+                    {m.nota}
+                  </span>
                   <Flecha tendencia={m.tendencia} diferencia={m.diferencia} />
+                  {m.recuperacion != null ? (
+                    <span
+                      className={`parcial-bloque__recuperacion${m.aprobada ? '' : ' parcial-bloque__recuperacion--reprobada'}`}
+                      data-testid={`resultado-parcial-${p.numero}-recuperacion-${m.asignacion_docente_id}`}
+                    >
+                      Recuperación {m.recuperacion} → cuenta <strong>{m.nota_efectiva}</strong>
+                    </span>
+                  ) : null}
                 </>
               ) : (
                 <>
@@ -237,13 +250,12 @@ function ParcialBloque({ p }: { p: PortalParcialResumen }) {
   )
 }
 
-function Resultados({ data }: { data: PortalResumen }) {
+function Resultados({ data, conResultado }: { data: PortalResumen; conResultado: boolean }) {
   const cuadro = data.indicador ? CUADRO[data.indicador] : undefined
   const liberados = data.parciales.filter((p) => p.estado !== 'no_liberado')
-  const pendientes = data.parciales.filter((p) => p.estado === 'no_liberado')
   return (
     <>
-      <div className="mdash__bento notas-bento">
+      <div className={`mdash__bento notas-bento${conResultado ? ' notas-bento--sin-cuadro' : ''}`}>
         <section className="mdash__tile resultado-bento__promedio" data-testid="resultado-promedio">
           <h2 className="mdash__tile-title">Promedio general</h2>
           <div className="notas-bento__promedio-body" style={{ flexDirection: 'column' }}>
@@ -264,40 +276,31 @@ function Resultados({ data }: { data: PortalResumen }) {
 
         <TendenciaCard data={data} />
 
-        <section
-          className={`mdash__tile resultado-bento__cuadro notas-bento__cuadro--${data.indicador ?? 'sin'}`}
-          data-testid="resultado-cuadro"
-        >
-          <h2 className="mdash__tile-title">Cuadro</h2>
-          {cuadro ? (
-            <div className="notas-bento__cuadro-body">
-              <cuadro.Icon size={40} aria-hidden />
-              <div>
-                <p className="notas-bento__cuadro-titulo">{cuadro.titulo}</p>
-                <p className="notas-bento__nota">{cuadro.detalle}</p>
+        {conResultado ? null : (
+          <section
+            className={`mdash__tile resultado-bento__cuadro notas-bento__cuadro--${data.indicador ?? 'sin'}`}
+            data-testid="resultado-cuadro"
+          >
+            <h2 className="mdash__tile-title">Cuadro</h2>
+            {cuadro ? (
+              <div className="notas-bento__cuadro-body">
+                <cuadro.Icon size={40} aria-hidden />
+                <div>
+                  <p className="notas-bento__cuadro-titulo">{cuadro.titulo}</p>
+                  <p className="notas-bento__nota">{cuadro.detalle}</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <p className="notas-bento__vacio">{data.etiqueta}</p>
-          )}
-        </section>
+            ) : (
+              <p className="notas-bento__vacio">{data.etiqueta}</p>
+            )}
+          </section>
+        )}
       </div>
 
       <div className="parciales-lista" data-testid="resultado-parciales">
         {liberados.map((p) => (
           <ParcialBloque key={p.parcial_id} p={p} />
         ))}
-        {pendientes.length > 0 ? (
-          <p className="parciales-lista__pendientes" data-testid="resultado-parciales-pendientes">
-            <Clock size={16} aria-hidden /> Aún no liberados:{' '}
-            {pendientes
-              .map((p) => p.numero)
-              .sort((a, b) => a - b)
-              .map(nombreParcial)
-              .join(', ')}
-            .
-          </p>
-        ) : null}
       </div>
     </>
   )
@@ -310,6 +313,12 @@ function ResultadosPage() {
     queryFn: () => getResumenCalificaciones(alumnoId),
     enabled: portal && (!responsable || Boolean(alumnoId)),
   })
+  const { data: periodo } = useQuery({
+    queryKey: ['portal-resultado', alumnoId ?? 'self'],
+    queryFn: () => getResultadoPeriodo(alumnoId),
+    enabled: portal && (!responsable || Boolean(alumnoId)),
+  })
+  const conResultado = periodo?.estado === 'disponible'
 
   if (!portal) {
     return (
@@ -340,6 +349,7 @@ function ResultadosPage() {
           </Link>
         </header>
       )}
+      <ResultadoPeriodo alumnoId={alumnoId} />
       {isLoading ? (
         <div className="empty-state">Cargando…</div>
       ) : isError || !data ? (
@@ -349,7 +359,7 @@ function ResultadosPage() {
           Aún no hay calificaciones liberadas.
         </div>
       ) : (
-        <Resultados data={data} />
+        <Resultados data={data} conResultado={conResultado} />
       )}
     </div>
   )

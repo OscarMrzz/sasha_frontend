@@ -50,6 +50,7 @@ function MatriculaPage() {
   const [sugerencia, setSugerencia] = useState<SugerenciaResponse | null>(null)
   const [reingresoPeriodo, setReingresoPeriodo] = useState('')
   const [reingresoSeccion, setReingresoSeccion] = useState('')
+  const seccionElegida = secciones.find((s) => s.id === reingresoSeccion)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -241,7 +242,27 @@ function MatriculaPage() {
             <p style={{ margin: '0 0 0.35rem' }}>
               <strong>Grado sugerido:</strong> {sugerencia.grado_sugerido?.nombre ?? '—'}
             </p>
-            {sugerencia.mensaje ? <p className="texto-muted" style={{ margin: 0 }}>{sugerencia.mensaje}</p> : null}
+            {sugerencia.resultado ? (
+              <p
+                className={`reingreso-resultado reingreso-resultado--${sugerencia.resultado.aprueba ? 'aprueba' : 'repite'}`}
+                data-testid="reingreso-resultado"
+              >
+                {sugerencia.resultado.periodo_nombre}: {sugerencia.resultado.mensaje}
+              </p>
+            ) : sugerencia.mensaje ? (
+              <p className="texto-muted" style={{ margin: 0 }}>{sugerencia.mensaje}</p>
+            ) : null}
+            {sugerencia.retrasadas.length > 0 ? (
+              <p style={{ margin: '0.35rem 0 0' }} data-testid="reingreso-retrasadas">
+                <strong>Clases retrasadas:</strong>{' '}
+                {sugerencia.retrasadas.map((c) => `${c.curso} (${c.final})`).join(', ')}
+              </p>
+            ) : null}
+            {seccionElegida && sugerencia.grado_sugerido && seccionElegida.grado_id !== sugerencia.grado_sugerido.id ? (
+              <p className="texto-muted" style={{ margin: '0.35rem 0 0' }} data-testid="reingreso-otro-grado">
+                La sección elegida no es del grado sugerido.
+              </p>
+            ) : null}
           </div>
         ) : null}
         <Field label="Periodo académico" htmlFor="reingreso-periodo">

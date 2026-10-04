@@ -1,8 +1,10 @@
 import type { ComboboxOption } from '#/components/ui/Combobox'
 import type { Periodo } from '#/services/catalogos'
 
-export function periodoEstadoPalabra(status: string): 'activo' | 'inactivo' {
-  return status === 'ACTIVE' ? 'activo' : 'inactivo'
+export function periodoEstadoPalabra(status: string): 'activo' | 'inactivo' | 'finalizado' {
+  if (status === 'ACTIVE') return 'activo'
+  if (status === 'FINALIZED') return 'finalizado'
+  return 'inactivo'
 }
 
 export function labelPeriodo(p: Pick<Periodo, 'nombre' | 'status'>): string {

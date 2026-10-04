@@ -1,7 +1,7 @@
 import { test, expect, loginAs } from './fixtures/auth'
 import type { Page } from '@playwright/test'
 
-// data_test.sql: P1 y P2 liberados, P3 liberado hoy; P4 en curso (nada pendiente de liberar).
+// data_test.sql: P1 y P2 liberados, P3 liberado hoy; P4 en curso y sin liberar (no se muestra).
 // 701 (padre 901) debe julio/agosto (P3); 704 debe marzo (P1); 708 debe mayo (P2).
 const ALUMNO_701 = '1002026701'
 const PADRE_701 = '1002026901'
@@ -25,7 +25,7 @@ test.describe('liberación de notas por parcial', () => {
     await expect(page.getByTestId('portal-calif-parcial-2')).toHaveAttribute('data-estado', 'visible')
     await expect(page.getByTestId('portal-calif-parcial-3')).toHaveAttribute('data-estado', 'bloqueado_pago')
     await expect(page.getByTestId('portal-calif-parcial-3')).toContainText(/julio/i)
-    await expect(page.getByTestId('portal-calif-parcial-4')).toHaveAttribute('data-estado', 'no_liberado')
+    await expect(page.getByTestId('portal-calif-parcial-4')).toHaveCount(0)
     await expect(page.locator('table.data-table')).toHaveCount(0)
   })
 

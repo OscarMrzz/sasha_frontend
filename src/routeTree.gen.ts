@@ -33,6 +33,7 @@ import { Route as AppPagosRouteImport } from './routes/_app/pagos'
 import { Route as AppPersonasRouteImport } from './routes/_app/personas'
 import { Route as AppPlanEstudioRouteImport } from './routes/_app/plan-estudio'
 import { Route as AppRecibosRouteImport } from './routes/_app/recibos'
+import { Route as AppRecuperacionesRouteImport } from './routes/_app/recuperaciones'
 import { Route as AppSaceRouteImport } from './routes/_app/sace'
 import { Route as AppTareasRouteImport } from './routes/_app/tareas'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
@@ -178,6 +179,11 @@ const AppPlanEstudioRoute = AppPlanEstudioRouteImport.update({
 const AppRecibosRoute = AppRecibosRouteImport.update({
   id: '/recibos',
   path: '/recibos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecuperacionesRoute = AppRecuperacionesRouteImport.update({
+  id: '/recuperaciones',
+  path: '/recuperaciones',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSaceRoute = AppSaceRouteImport.update({
@@ -341,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/personas': typeof AppPersonasRoute
   '/plan-estudio': typeof AppPlanEstudioRoute
   '/recibos': typeof AppRecibosRoute
+  '/recuperaciones': typeof AppRecuperacionesRoute
   '/sace': typeof AppSaceRoute
   '/tareas': typeof AppTareasRoute
   '/usuarios': typeof AppUsuariosRoute
@@ -393,6 +400,7 @@ export interface FileRoutesByTo {
   '/personas': typeof AppPersonasRoute
   '/plan-estudio': typeof AppPlanEstudioRoute
   '/recibos': typeof AppRecibosRoute
+  '/recuperaciones': typeof AppRecuperacionesRoute
   '/sace': typeof AppSaceRoute
   '/tareas': typeof AppTareasRoute
   '/usuarios': typeof AppUsuariosRoute
@@ -447,6 +455,7 @@ export interface FileRoutesById {
   '/_app/personas': typeof AppPersonasRoute
   '/_app/plan-estudio': typeof AppPlanEstudioRoute
   '/_app/recibos': typeof AppRecibosRoute
+  '/_app/recuperaciones': typeof AppRecuperacionesRoute
   '/_app/sace': typeof AppSaceRoute
   '/_app/tareas': typeof AppTareasRoute
   '/_app/usuarios': typeof AppUsuariosRoute
@@ -501,6 +510,7 @@ export interface FileRouteTypes {
     | '/personas'
     | '/plan-estudio'
     | '/recibos'
+    | '/recuperaciones'
     | '/sace'
     | '/tareas'
     | '/usuarios'
@@ -553,6 +563,7 @@ export interface FileRouteTypes {
     | '/personas'
     | '/plan-estudio'
     | '/recibos'
+    | '/recuperaciones'
     | '/sace'
     | '/tareas'
     | '/usuarios'
@@ -606,6 +617,7 @@ export interface FileRouteTypes {
     | '/_app/personas'
     | '/_app/plan-estudio'
     | '/_app/recibos'
+    | '/_app/recuperaciones'
     | '/_app/sace'
     | '/_app/tareas'
     | '/_app/usuarios'
@@ -809,6 +821,13 @@ declare module '@tanstack/react-router' {
       path: '/recibos'
       fullPath: '/recibos'
       preLoaderRoute: typeof AppRecibosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recuperaciones': {
+      id: '/_app/recuperaciones'
+      path: '/recuperaciones'
+      fullPath: '/recuperaciones'
+      preLoaderRoute: typeof AppRecuperacionesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/sace': {
@@ -1025,6 +1044,7 @@ interface AppRouteChildren {
   AppPersonasRoute: typeof AppPersonasRoute
   AppPlanEstudioRoute: typeof AppPlanEstudioRoute
   AppRecibosRoute: typeof AppRecibosRoute
+  AppRecuperacionesRoute: typeof AppRecuperacionesRoute
   AppSaceRoute: typeof AppSaceRoute
   AppTareasRoute: typeof AppTareasRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
@@ -1076,6 +1096,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPersonasRoute: AppPersonasRoute,
   AppPlanEstudioRoute: AppPlanEstudioRoute,
   AppRecibosRoute: AppRecibosRoute,
+  AppRecuperacionesRoute: AppRecuperacionesRoute,
   AppSaceRoute: AppSaceRoute,
   AppTareasRoute: AppTareasRoute,
   AppUsuariosRoute: AppUsuariosRoute,

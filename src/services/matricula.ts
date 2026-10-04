@@ -40,6 +40,16 @@ export interface SugerenciaResponse {
   grado_sugerido?: GradoInfo
   needs_seccion: boolean
   mensaje?: string
+  /** Resultado del último periodo, solo si ya está finalizado. */
+  resultado?: {
+    periodo_id: string
+    periodo_nombre: string
+    anio_lectivo: number
+    aprueba: boolean
+    reprobadas: number
+    mensaje: string
+  }
+  retrasadas: { curso_id: string; curso: string; final: number }[]
 }
 
 export interface ReingresoRequest {

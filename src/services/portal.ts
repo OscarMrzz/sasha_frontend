@@ -118,6 +118,9 @@ export interface PortalMateriaParcial {
   aprobada: boolean
   tendencia?: Tendencia
   diferencia?: number
+  /** Recuperación del parcial (0–100) y la nota que cuenta con ella. */
+  recuperacion?: number
+  nota_efectiva?: number
 }
 
 export interface PortalParcialResumen {
@@ -234,6 +237,46 @@ export function getCalificacionesClase(asignacionId: string, alumnoId?: string |
 
 export function getResumenCalificaciones(alumnoId?: string | null) {
   return apiRequest<PortalResumen>(`/portal/resumen${alumnoQs(alumnoId)}`)
+}
+
+export interface ResultadoClase {
+  asignacion_id: string
+  curso_id: string
+  curso: string
+  promedio: number
+  final: number
+  aprobada: boolean
+  /** Número de la recuperación de periodo con la que aprobó; 0 si no la necesitó. */
+  recuperacion_aprobada: number
+  /** [k] = nota de la recuperación de periodo k+1; null sin nota. */
+  recuperaciones_periodo: (number | null)[]
+}
+
+export interface ResultadoAlumno {
+  periodo_id: string
+  periodo_nombre: string
+  periodo_status: string
+  anio_lectivo: number
+  aprueba: boolean
+  reprobadas: number
+  grado_actual: { id: string; nombre: string; orden: number }
+  grado_siguiente: { id: string; nombre: string; orden: number } | null
+  clases: ResultadoClase[]
+  retrasadas: ResultadoClase[]
+  mensaje: string
+  config: { nota_minima: number; max_clases_reprobadas: number }
+}
+
+export interface PortalResultado {
+  estado: 'sin_matricula' | 'pendiente' | 'bloqueado' | 'disponible'
+  mensaje?: string
+  /** Disponible pero el periodo aún no está finalizado. */
+  preliminar: boolean
+  resultado: ResultadoAlumno | null
+}
+
+export function getResultadoPeriodo(alumnoId?: string | null) {
+  return apiRequest<PortalResultado>(`/portal/resultado${alumnoQs(alumnoId)}`)
 }
 
 export function listTareasHijo(alumnoId?: string | null) {

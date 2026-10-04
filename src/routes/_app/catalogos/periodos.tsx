@@ -30,11 +30,25 @@ const defaultForm: PeriodoCreate = {
   fecha_inicio: '',
   fecha_fin: '',
   status: 'INACTIVE',
+  nota_minima: 70,
+  max_clases_reprobadas: 1,
+  recuperaciones_periodo: 2,
+  tope_recuperacion_parcial: 100,
+  tope_recuperacion_periodo: 100,
 }
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'Activo' },
   { value: 'INACTIVE', label: 'Inactivo' },
+  { value: 'FINALIZED', label: 'Finalizado' },
+]
+
+const REGLAS: { key: keyof PeriodoCreate; label: string; testid: string; min: number; max: number }[] = [
+  { key: 'nota_minima', label: 'Nota mínima para aprobar', testid: 'periodo-nota-minima', min: 0, max: 100 },
+  { key: 'max_clases_reprobadas', label: 'Máximo de clases reprobadas para pasar', testid: 'periodo-max-reprobadas', min: 0, max: 50 },
+  { key: 'recuperaciones_periodo', label: 'Recuperaciones de periodo', testid: 'periodo-recuperaciones', min: 0, max: 10 },
+  { key: 'tope_recuperacion_parcial', label: 'Tope de nota en recuperación de parcial', testid: 'periodo-tope-parcial', min: 0, max: 100 },
+  { key: 'tope_recuperacion_periodo', label: 'Tope de nota en recuperación de periodo', testid: 'periodo-tope-periodo', min: 0, max: 100 },
 ]
 
 function PeriodosPage() {
@@ -75,6 +89,11 @@ function PeriodosPage() {
       fecha_inicio: row.fecha_inicio.slice(0, 10),
       fecha_fin: row.fecha_fin.slice(0, 10),
       status: row.status,
+      nota_minima: row.nota_minima,
+      max_clases_reprobadas: row.max_clases_reprobadas,
+      recuperaciones_periodo: row.recuperaciones_periodo,
+      tope_recuperacion_parcial: row.tope_recuperacion_parcial,
+      tope_recuperacion_periodo: row.tope_recuperacion_periodo,
     })
     setModalOpen(true)
     closeCtx()
@@ -119,9 +138,10 @@ function PeriodosPage() {
       col.accessor('status', {
         header: 'Estado',
         cell: (i) => {
-          const activo = i.getValue() === 'ACTIVE'
+          const v = String(i.getValue())
+          const cls = v === 'ACTIVE' ? '' : v === 'FINALIZED' ? ' badge--warn' : ' badge--muted'
           return (
-            <span className={`badge${activo ? '' : ' badge--muted'}`}>
+            <span className={`badge${cls}`}>
               {periodoEstadoPalabra(String(i.getValue()))}
             </span>
           )
@@ -275,15 +295,38 @@ function PeriodosPage() {
             placeholder="Buscar estado…"
           />
         </Field>
+        <fieldset className="periodo-reglas" data-testid="periodo-reglas">
+          <legend className="periodo-reglas__titulo">Promoción y recuperaciones</legend>
+          <div className="periodo-reglas__grid">
+            {REGLAS.map((r) => (
+              <Field key={r.key} label={r.label}>
+                <input
+                  type="number"
+                  className="field__input"
+                  data-testid={r.testid}
+                  min={r.min}
+                  max={r.max}
+                  disabled={viewOnly}
+                  value={(form[r.key] as number | undefined) ?? ''}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, [r.key]: e.target.value === '' ? undefined : Number(e.target.value) }))
+                  }
+                />
+              </Field>
+            ))}
+          </div>
+        </fieldset>
       </Modal>
 
       <ConfirmDialog
         open={confirmSave}
         title="Confirmar guardado"
         message={
-          form.status === 'ACTIVE'
-            ? '¿Guardar el periodo como activo? Si había otro activo, pasará a inactivo.'
-            : '¿Guardar los datos del periodo?'
+          form.status === 'FINALIZED' && editing?.status !== 'FINALIZED'
+            ? '¿Finalizar el periodo? Se calculará el resultado final y nadie podrá cambiar recuperaciones hasta que se vuelva a activar.'
+            : form.status === 'ACTIVE'
+              ? '¿Guardar el periodo como activo? Si había otro activo, pasará a inactivo.'
+              : '¿Guardar los datos del periodo?'
         }
         onConfirm={() => saveMut.mutate()}
         onCancel={() => setConfirmSave(false)}

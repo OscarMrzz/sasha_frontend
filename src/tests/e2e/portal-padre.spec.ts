@@ -1,9 +1,9 @@
 import { test, expect, entrarComoPadre } from './fixtures/auth'
 
 // data_test.sql: padre 901 → Ana (mayo pagado; julio y agosto sin pagar, julio con recibo en revisión).
-// Padre 902 → Bruno (al día hasta septiembre). Padre 904 → Daniel (recibo de marzo denegado).
+// Padre 908 → Héctor (debe mayo, octubre y noviembre). Padre 904 → Daniel (recibo de marzo denegado).
 const PADRE_ANA = '1002026901'
-const PADRE_BRUNO = '1002026902'
+const PADRE_HECTOR = '1002026908'
 const PADRE_DANIEL = '1002026904'
 
 /** PNG de 1×1 para simular la foto del recibo. */
@@ -67,9 +67,9 @@ test.describe('portal del padre estilo app', () => {
   })
 
   test('pagos: el padre sube la foto del recibo y el mes queda en revisión', async ({ page }) => {
-    await entrarComoPadre(page, PADRE_BRUNO)
+    await entrarComoPadre(page, PADRE_HECTOR)
     await page.getByTestId('padre-tile-pagos').click()
-    await expect(page.getByTestId('padre-pagos-proximo')).toContainText('Octubre 2026', { timeout: 15_000 })
+    await expect(page.getByTestId('padre-mes-2026-10')).toBeVisible({ timeout: 15_000 })
 
     await page.getByTestId('padre-subir-recibo').click()
     await expect(page.getByTestId('recibo-enviar')).toBeDisabled()
@@ -79,7 +79,7 @@ test.describe('portal del padre estilo app', () => {
       buffer: PNG,
     })
     await expect(page.getByTestId('recibo-preview')).toContainText('recibo-octubre.png')
-    await expect(page.getByTestId('recibo-mes')).toHaveValue('2026-10')
+    await page.getByTestId('recibo-mes').selectOption('2026-10')
     await page.getByTestId('recibo-enviar').click()
     await page.getByRole('button', { name: 'Sí, enviar' }).click()
 

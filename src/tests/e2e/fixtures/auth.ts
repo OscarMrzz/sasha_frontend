@@ -9,9 +9,9 @@ function isAlumnoCode(code: string) {
   return /^10020267(0[1-9]|1[0-2])$/.test(code)
 }
 
-/** Responsables 1002026901–912 (un hijo cada uno) aterrizan en /responsable (tarjetas de hijos). */
+/** Responsables 1002026901–913 aterrizan en /responsable (tarjetas de hijos); 913 tiene a Ana y Bruno. */
 function isResponsableCode(code: string) {
-  return /^10020269(0[1-9]|1[0-2])$/.test(code)
+  return /^10020269(0[1-9]|1[0-3])$/.test(code)
 }
 
 function defaultHome(code: string) {

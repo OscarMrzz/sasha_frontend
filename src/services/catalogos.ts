@@ -156,6 +156,11 @@ export interface Periodo {
   fecha_inicio: string
   fecha_fin: string
   status: string
+  nota_minima: number
+  max_clases_reprobadas: number
+  recuperaciones_periodo: number
+  tope_recuperacion_parcial: number
+  tope_recuperacion_periodo: number
 }
 
 export interface PeriodoCreate {
@@ -164,6 +169,11 @@ export interface PeriodoCreate {
   fecha_inicio: string
   fecha_fin: string
   status: string
+  nota_minima?: number
+  max_clases_reprobadas?: number
+  recuperaciones_periodo?: number
+  tope_recuperacion_parcial?: number
+  tope_recuperacion_periodo?: number
 }
 
 export async function listGrados() {

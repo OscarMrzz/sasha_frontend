@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Clock, Lock } from 'lucide-react'
+import { Lock } from 'lucide-react'
 import type { PortalCalificaciones, PortalParcialNota } from '#/services/portal'
 import { getCalificacionesClase } from '#/services/portal'
 import { Anillo, claseNivelNota } from '#/components/portal/notas-ui'
@@ -45,15 +45,10 @@ function TileParcial({ p }: { p: PortalParcialNota }) {
           {p.puntos ?? '—'}
           {p.puntos_max > 0 ? <span className="notas-bento__max"> / {p.puntos_max}</span> : null}
         </p>
-      ) : p.estado === 'bloqueado_pago' ? (
+      ) : (
         <div className="notas-bento__bloqueo">
           <Lock size={22} aria-hidden />
           <p>{p.mensaje}</p>
-        </div>
-      ) : (
-        <div className="notas-bento__bloqueo notas-bento__bloqueo--espera">
-          <Clock size={20} aria-hidden />
-          <p>Aún no liberado</p>
         </div>
       )}
     </article>
@@ -90,9 +85,11 @@ export function PortalCalificacionesView({
       ) : (
         <div className="mdash__bento notas-bento">
           <TilePromedio data={data} />
-          {data.parciales.map((p) => (
-            <TileParcial key={p.parcial_id} p={p} />
-          ))}
+          {data.parciales
+            .filter((p) => p.estado !== 'no_liberado')
+            .map((p) => (
+              <TileParcial key={p.parcial_id} p={p} />
+            ))}
         </div>
       )}
     </div>

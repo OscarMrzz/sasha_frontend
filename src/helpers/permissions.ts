@@ -82,6 +82,8 @@ const adminPerms: Permission[] = [
   'excusas:post',
   'tipos_excusa:get',
   'tipos_excusa:post',
+  'recuperaciones:get',
+  'recuperaciones:post',
 ]
 
 export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
@@ -213,6 +215,8 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'notas:delete',
     'mis_estadisticas:get',
     'mi_sace:get',
+    'recuperaciones:get',
+    'recuperaciones:post',
   ],
   responsable: [
     'tareas:get',

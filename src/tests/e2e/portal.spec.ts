@@ -88,18 +88,19 @@ test.describe('portal alumno y responsable @smoke', () => {
       await expect(page.getByTestId(`resultado-${id}`)).toBeVisible({ timeout: 15_000 })
     }
     await expect(page.getByTestId('resultado-promedio-parcial')).toBeVisible()
-    // Del más reciente al primero: III (bloqueado por julio y agosto), II y I; IV aún sin liberar.
+    // Del más reciente al primero: III (bloqueado por julio y agosto), II y I. El IV no se libera y no aparece.
     const bloques = page.getByTestId('resultado-parciales').locator('.parcial-bloque')
+    await expect(bloques).toHaveCount(3)
     await expect(bloques.nth(0)).toHaveAttribute('data-testid', 'resultado-parcial-3')
     await expect(bloques.nth(0)).toHaveAttribute('data-estado', 'bloqueado_pago')
     await expect(bloques.nth(0)).toContainText(/julio/i)
-    await expect(bloques.nth(1)).toHaveAttribute('data-testid', 'resultado-parcial-2')
-    await expect(bloques.nth(1)).toContainText('Matemáticas')
+    const ii = page.getByTestId('resultado-parcial-2')
+    await expect(ii).toContainText('Matemáticas')
     await expect(bloques.nth(2)).toHaveAttribute('data-testid', 'resultado-parcial-1')
     // De I a II: Matemáticas 62 → 75 sube, Inglés 68 → 64 baja; el promedio mejora.
     await expect(page.getByTestId('resultado-tendencia')).toHaveAttribute('data-estado', 'mejoro')
-    await expect(bloques.nth(1).locator('.nota-flecha--sube').first()).toBeVisible()
-    await expect(bloques.nth(1).locator('.nota-flecha--baja').first()).toBeVisible()
+    await expect(ii.locator('.nota-flecha--sube').first()).toBeVisible()
+    await expect(ii.locator('.nota-flecha--baja').first()).toBeVisible()
     // Análisis del II: tareas en casa bajas pero mejores que en I; felicitación por asistencia.
     const mejorar = page.getByTestId('resultado-parcial-2-mejorar')
     await expect(mejorar.locator('[data-categoria="casa"]')).toContainText('sin embargo')
@@ -107,8 +108,7 @@ test.describe('portal alumno y responsable @smoke', () => {
       'Felicitamos',
     )
     await expect(page.getByTestId('resultado-parcial-3-mejorar')).toHaveCount(0)
-    await expect(page.getByTestId('resultado-parciales-pendientes')).toContainText('IV parcial')
-    await expect(page.getByTestId('resultado-parciales-pendientes')).not.toContainText('III parcial')
+    await expect(page.getByTestId('resultado-periodo')).toHaveAttribute('data-estado', 'bloqueado')
 
     await page.getByTestId('alumno-resultados-volver').click()
     await expect(page).toHaveURL(/\/alumno\/?$/, { timeout: 10_000 })

@@ -26,6 +26,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Receipt,
+  RefreshCw,
   Search,
   Settings,
   Shield,
@@ -85,6 +86,7 @@ const ICONS: Record<string, ReactNode> = {
   network: <Network className="sidebar-nav__icon" />,
   'calendar-check': <CalendarCheck className="sidebar-nav__icon" />,
   'shield-plus': <ShieldPlus className="sidebar-nav__icon" />,
+  refresh: <RefreshCw className="sidebar-nav__icon" />,
 }
 
 export function AppShell({ children }: { children: ReactNode }) {

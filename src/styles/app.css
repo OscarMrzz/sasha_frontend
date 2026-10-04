@@ -2928,6 +2928,63 @@ input.field__input,
   color: var(--sasha-texto-muted);
 }
 
+.recuperacion-aviso {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(201, 162, 39, 0.15);
+  color: var(--sasha-warning);
+  font-size: 0.85rem;
+}
+
+.recuperacion-tipo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0 0.75rem;
+}
+
+.recuperacion-cuenta--ok {
+  color: var(--sasha-success);
+  font-weight: 600;
+}
+
+.recuperacion-cuenta--mal {
+  color: var(--sasha-danger);
+  font-weight: 600;
+}
+
+.reingreso-resultado {
+  margin: 0.35rem 0 0;
+  font-weight: 600;
+}
+
+.reingreso-resultado--aprueba {
+  color: var(--sasha-success);
+}
+
+.reingreso-resultado--repite {
+  color: var(--sasha-danger);
+}
+
+.periodo-reglas {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 8px;
+}
+
+.periodo-reglas__titulo {
+  padding: 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.periodo-reglas__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0 0.75rem;
+}
+
 /* Cartera de caja: estado de pago, monto y lista de hijos */
 .estado-pago {
   display: inline-flex;
@@ -4757,6 +4814,10 @@ a.app-list__item:hover {
   grid-column: span 7;
 }
 
+.notas-bento--sin-cuadro .resultado-bento__promedio {
+  grid-row: auto;
+}
+
 .resultado-bento__stat {
   grid-column: span 7;
   display: grid;
@@ -4872,6 +4933,89 @@ a.app-list__item:hover {
 }
 
 .resultado-tendencia--empeoro svg {
+  color: var(--sasha-danger);
+}
+
+.resultado-periodo {
+  margin-bottom: 1rem;
+}
+
+.resultado-periodo--aprueba {
+  box-shadow: inset 0 0 0 1px var(--sasha-success);
+}
+
+.resultado-periodo--aprueba .resultado-periodo__cabecera svg {
+  color: var(--sasha-success);
+}
+
+.resultado-periodo--repite {
+  box-shadow: inset 0 0 0 1px var(--sasha-danger);
+}
+
+.resultado-periodo--repite .resultado-periodo__cabecera svg {
+  color: var(--sasha-danger);
+}
+
+.resultado-periodo__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.resultado-periodo__mensaje {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.resultado-periodo__clases {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.35rem 1rem;
+}
+
+.resultado-periodo__clase {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--sasha-border-suave);
+}
+
+.resultado-periodo__clase--reprobada .resultado-periodo__nota {
+  color: var(--sasha-danger);
+}
+
+.resultado-periodo__nota {
+  font-weight: 600;
+}
+
+.resultado-periodo__curso {
+  display: flex;
+  flex-direction: column;
+}
+
+.resultado-periodo__recups {
+  color: var(--sasha-texto-muted);
+  font-size: 0.75rem;
+}
+
+.parcial-bloque__nota--tachada {
+  text-decoration: line-through;
+  color: var(--sasha-texto-muted);
+  font-weight: 400;
+}
+
+.parcial-bloque__recuperacion {
+  grid-column: 1 / -1;
+  margin-top: -0.4rem;
+  font-size: 0.8rem;
+  color: var(--sasha-success);
+}
+
+.parcial-bloque__recuperacion--reprobada {
   color: var(--sasha-danger);
 }
 
