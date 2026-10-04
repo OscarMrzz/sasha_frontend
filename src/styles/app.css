@@ -337,6 +337,147 @@
   color: var(--sasha-danger);
 }
 
+/* Navegación móvil: hamburguesa + panel lateral */
+.app-shell__burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-left: -0.5rem;
+  border: none;
+  border-radius: var(--sasha-radius);
+  background: transparent;
+  color: var(--sasha-texto-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-shell__burger:hover {
+  background: var(--sasha-bg-hover);
+}
+
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .app-shell__top {
+    padding: 0 1rem;
+  }
+
+  .app-shell__burger {
+    display: inline-flex;
+  }
+
+  .app-shell__top-desktop,
+  .app-shell__sidebar {
+    display: none;
+  }
+
+  .mobile-nav {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+  }
+
+  .mobile-nav--open {
+    pointer-events: auto;
+  }
+
+  .mobile-nav__backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--sasha-backdrop);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.28s ease;
+  }
+
+  .mobile-nav--open .mobile-nav__backdrop {
+    opacity: 1;
+  }
+
+  .mobile-nav__panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 50vw;
+    min-width: 14rem;
+    max-width: 22rem;
+    display: flex;
+    flex-direction: column;
+    background: var(--sasha-bg-raised);
+    border-right: 1px solid var(--sasha-border-suave);
+    box-shadow: var(--sasha-shadow-modal);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .mobile-nav--open .mobile-nav__panel {
+    transform: translateX(0);
+  }
+
+  .mobile-nav__head {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: var(--sasha-topbar-height);
+    padding: 0.5rem 0.5rem 0.5rem 0.85rem;
+    border-bottom: 1px solid var(--sasha-border-suave);
+    flex-shrink: 0;
+  }
+
+  .mobile-nav__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    border: none;
+    border-radius: var(--sasha-radius);
+    background: transparent;
+    color: var(--sasha-texto-muted);
+    cursor: pointer;
+  }
+
+  .mobile-nav__close:hover {
+    background: var(--sasha-bg-hover);
+    color: var(--sasha-texto-primary);
+  }
+
+  .mobile-nav__list .sidebar-nav__item span,
+  .mobile-nav__foot .sidebar-nav__item span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-nav__foot {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.5rem;
+    border-top: 1px solid var(--sasha-border-suave);
+    flex-shrink: 0;
+  }
+
+  .mobile-nav__danger {
+    color: var(--sasha-danger);
+  }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  .mobile-nav__backdrop,
+  .mobile-nav__panel {
+    transition-duration: 0.01ms;
+  }
+}
+
 /* Mi perfil: carnet a la izquierda, expediente por bloques a la derecha */
 .perfil-page {
   display: grid;
@@ -1417,6 +1558,27 @@
   border-right: none;
 }
 
+.asistencia-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.asistencia-toolbar .field {
+  margin-bottom: 0;
+}
+
+.asistencia-toolbar .segmento {
+  height: 2.5rem;
+}
+
+.asistencia-toolbar .segmento__item {
+  display: inline-flex;
+  align-items: center;
+}
+
 .segmento__item input {
   position: absolute;
   opacity: 0;
@@ -1901,6 +2063,23 @@
 
 .asistencia-celda--futuro {
   cursor: not-allowed;
+}
+
+/* Cambio aún sin guardar */
+.asistencia-celda--cambio {
+  outline: 2px dashed var(--sasha-accent);
+  outline-offset: 2px;
+}
+
+/* Excusa registrada: fija para todos los maestros */
+.asistencia-celda--bloqueada {
+  gap: 0.15rem;
+  border-style: solid;
+  cursor: not-allowed;
+}
+
+.asistencia-celda--bloqueada svg {
+  flex-shrink: 0;
 }
 
 /* Buttons */
@@ -2863,6 +3042,30 @@ input.field__input,
   border: 1px solid var(--sasha-border-suave);
 }
 
+/* Icono por nivel del aviso: tranquilidad, admiración o alerta */
+.notif-nivel {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-row .notif-nivel {
+  margin-top: 0.1rem;
+}
+
+.notif-nivel--info_ok {
+  color: var(--sasha-success);
+}
+
+.notif-nivel--advertencia {
+  color: var(--sasha-warning);
+}
+
+.notif-nivel--grave {
+  color: var(--sasha-danger);
+}
+
 .notif-row__body {
   display: flex;
   flex-direction: column;
@@ -3141,13 +3344,6 @@ input.field__input,
 }
 
 @media (max-width: 768px) {
-  .app-shell__sidebar:not(.app-shell__sidebar--collapsed) {
-    position: fixed;
-    z-index: 40;
-    top: var(--sasha-topbar-height);
-    height: calc(100vh - var(--sasha-topbar-height));
-  }
-
   .app-shell__content {
     padding: 1rem;
   }

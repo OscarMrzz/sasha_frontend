@@ -32,6 +32,28 @@ function claseLabel(t: Tarea) {
   return `${t.curso_nombre ?? '—'} · ${t.grado_nombre ?? ''} sec${t.seccion_nombre ?? ''}`
 }
 
+function isoLocal(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** Lunes y domingo (AAAA-MM-DD) de la semana actual. */
+function semanaActual() {
+  const hoy = new Date()
+  const lunes = new Date(hoy)
+  lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7))
+  const domingo = new Date(lunes)
+  domingo.setDate(lunes.getDate() + 6)
+  return { inicio: isoLocal(lunes), fin: isoLocal(domingo) }
+}
+
+function periodoEntrega(fecha: string): 'semana' | 'proximas' | 'anteriores' {
+  const { inicio, fin } = semanaActual()
+  const f = fecha.slice(0, 10)
+  if (f < inicio) return 'anteriores'
+  if (f > fin) return 'proximas'
+  return 'semana'
+}
+
 function TareasPage() {
   const { roles } = useCan()
   if (isPortalRole(roles)) {
@@ -210,6 +232,16 @@ function TareasStaffPage() {
   const tableFilters = useMemo(
     () => [
       {
+        id: 'entrega',
+        label: 'Entrega',
+        getValue: (r: Tarea) => periodoEntrega(r.fecha_entrega),
+        options: [
+          { value: 'semana', label: 'Esta semana' },
+          { value: 'proximas', label: 'Próximas' },
+          { value: 'anteriores', label: 'Anteriores' },
+        ],
+      },
+      {
         id: 'parcial',
         label: 'Parcial',
         getValue: (r: Tarea) => r.parcial_nombre || 'Sin parcial',
@@ -250,6 +282,7 @@ function TareasStaffPage() {
           data={tareas}
           columns={columns}
           filters={tableFilters}
+          initialFilters={{ entrega: 'semana' }}
           canAdd={can('tareas:post')}
           addLabel="Nueva tarea"
           onAdd={() => setCreateOpen(true)}

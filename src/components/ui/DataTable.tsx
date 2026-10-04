@@ -40,6 +40,8 @@ type DataTableProps<T extends RowData> = {
   toolbarExtra?: ReactNode
   /** Recibe los valores de los selects cada vez que cambian (para filtros que calcula el padre). */
   onFiltersChange?: (values: Record<string, string>) => void
+  /** Valores con los que arrancan los selects (id del filtro → valor). */
+  initialFilters?: Record<string, string>
   /** Contenido entre la barra de filtros y la tabla. */
   beforeTable?: ReactNode
   addLabel?: string
@@ -67,6 +69,7 @@ export function DataTable<T extends RowData>({
   onRowDoubleClick,
   toolbarExtra,
   onFiltersChange,
+  initialFilters,
   beforeTable,
   addLabel = 'Agregar',
   onAdd,
@@ -78,7 +81,7 @@ export function DataTable<T extends RowData>({
 }: DataTableProps<T>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([])
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+  const [filterValues, setFilterValues] = useState<Record<string, string>>(() => initialFilters ?? {})
   const exportRef = useRef<HTMLDetailsElement>(null)
   const paginationRef = useRef({ pageIndex: 0, pageSize })
 

@@ -4,6 +4,7 @@ import {
   Bell,
   BookOpen,
   Calendar,
+  CalendarCheck,
   CalendarDays,
   CheckSquare,
   ChevronDown,
@@ -19,6 +20,7 @@ import {
   Link2,
   ListTodo,
   LogOut,
+  Menu,
   Moon,
   Network,
   PanelLeftClose,
@@ -28,12 +30,14 @@ import {
   Settings,
   Shield,
   ShieldAlert,
+  ShieldPlus,
   Sun,
   Unlock,
   User,
   Users,
   Wallet,
   BarChart3,
+  X,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState  } from 'react'
 import type {ReactNode} from 'react';
@@ -79,6 +83,8 @@ const ICONS: Record<string, ReactNode> = {
   'shield-alert': <ShieldAlert className="sidebar-nav__icon" />,
   gavel: <Gavel className="sidebar-nav__icon" />,
   network: <Network className="sidebar-nav__icon" />,
+  'calendar-check': <CalendarCheck className="sidebar-nav__icon" />,
+  'shield-plus': <ShieldPlus className="sidebar-nav__icon" />,
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -97,6 +103,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof document === 'undefined') return 'dark'
@@ -160,6 +167,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [userMenuOpen])
 
+  useEffect(() => {
+    setMobileNavOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!mobileNavOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileNavOpen(false)
+    }
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [mobileNavOpen])
+
   const panelTitle = session?.username
     ? `${session.username} · ${session.code}`
     : session?.code || 'Usuario'
@@ -178,12 +203,66 @@ export function AppShell({ children }: { children: ReactNode }) {
     void navigate({ to: maestro ? '/maestro' : portal ? homePathForRoles(roles) : '/dashboard' })
   }
 
+  const renderNavItems = (showLabels: boolean, onNavigate?: () => void) =>
+    items.map((item) => {
+      const isDashboard = item.label === 'Dashboard'
+      const active = isDashboard
+        ? pathname.startsWith('/maestro/clases/')
+        : pathname === item.to ||
+          (pathname.startsWith(item.to + '/') &&
+            !items.some((o) => o.to.startsWith(item.to + '/') && pathname.startsWith(o.to)))
+      if (item.onClick) {
+        const onClick = item.onClick
+        return (
+          <button
+            key={item.label}
+            type="button"
+            className={`sidebar-nav__item${active ? ' sidebar-nav__item--active' : ''}`}
+            title={item.label}
+            data-testid="nav-dashboard"
+            onClick={() => {
+              onClick()
+              onNavigate?.()
+            }}
+          >
+            {ICONS[item.icon] ?? ICONS.home}
+            {showLabels ? <span>{item.label}</span> : null}
+          </button>
+        )
+      }
+      return (
+        <Link
+          key={item.to}
+          to={item.to}
+          className={`sidebar-nav__item${active ? ' sidebar-nav__item--active' : ''}`}
+          title={item.label}
+          onClick={onNavigate}
+        >
+          {ICONS[item.icon] ?? ICONS.home}
+          {showLabels ? <span>{item.label}</span> : null}
+        </Link>
+      )
+    })
+
+  const closeMobileNav = () => setMobileNavOpen(false)
+
   return (
     <div
       className={`app-shell${isHubLauncher ? ' app-shell--hub' : ''}${collapsed && !isHubLauncher ? ' app-shell--sidebar-collapsed' : ''}`}
       data-theme={theme}
     >
       <header className="app-shell__top">
+        <button
+          type="button"
+          className="app-shell__burger"
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Abrir menú"
+          aria-expanded={mobileNavOpen}
+          aria-controls="mobile-nav"
+          data-testid="mobile-nav-open"
+        >
+          <Menu size={22} />
+        </button>
         <div className="app-shell__top-brand" data-testid="maestro-hub-brand">
           <button
             type="button"
@@ -194,19 +273,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             Sasha
           </button>
-          <span className="badge" data-testid="session-code">
-            {session?.code}
-          </span>
         </div>
-
-        <Can permission="notificaciones:get">
-          <NotificationsBell />
-        </Can>
 
         {maestro || portal ? (
           <button
             type="button"
-            className="user-panel user-panel--top"
+            className="user-panel user-panel--top app-shell__top-desktop"
             data-testid="top-inicio"
             onClick={goInicio}
             title="Inicio"
@@ -223,7 +295,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {maestro && can('mis_estadisticas:get') ? (
           <button
             type="button"
-            className="user-panel user-panel--top"
+            className="user-panel user-panel--top app-shell__top-desktop"
             data-testid="top-analiticas"
             onClick={() => void navigate({ to: '/maestro/analiticas', search: { agrupar: undefined, filtros: undefined } })}
             title="Mis analíticas"
@@ -237,7 +309,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         ) : null}
 
-        <div className="app-shell__top-user" ref={userMenuRef}>
+        <div className="app-shell__top-user app-shell__top-desktop" ref={userMenuRef}>
           {userMenuOpen ? (
             <div className="user-menu" role="menu" data-testid="user-menu">
               <Link
@@ -305,6 +377,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             />
           </button>
         </div>
+
+        <Can permission="notificaciones:get">
+          <NotificationsBell />
+        </Can>
       </header>
 
       <div className="app-shell__body">
@@ -337,46 +413,113 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             ) : null}
 
-            <nav className="sidebar-nav">
-              {items.map((item) => {
-                const isDashboard = item.label === 'Dashboard'
-                const active = isDashboard
-                  ? pathname.startsWith('/maestro/clases/')
-                  : pathname === item.to ||
-                    (pathname.startsWith(item.to + '/') &&
-                      !items.some((o) => o.to.startsWith(item.to + '/') && pathname.startsWith(o.to)))
-                if (item.onClick) {
-                  return (
-                    <button
-                      key={item.label}
-                      type="button"
-                      className={`sidebar-nav__item${active ? ' sidebar-nav__item--active' : ''}`}
-                      title={item.label}
-                      data-testid="nav-dashboard"
-                      onClick={item.onClick}
-                    >
-                      {ICONS[item.icon] ?? ICONS.home}
-                      {!collapsed ? <span>{item.label}</span> : null}
-                    </button>
-                  )
-                }
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={`sidebar-nav__item${active ? ' sidebar-nav__item--active' : ''}`}
-                    title={item.label}
-                  >
-                    {ICONS[item.icon] ?? ICONS.home}
-                    {!collapsed ? <span>{item.label}</span> : null}
-                  </Link>
-                )
-              })}
-            </nav>
+            <nav className="sidebar-nav">{renderNavItems(!collapsed)}</nav>
           </aside>
         ) : null}
 
         <main className="app-shell__content">{children}</main>
+      </div>
+
+      <div
+        className={`mobile-nav${mobileNavOpen ? ' mobile-nav--open' : ''}`}
+        aria-hidden={!mobileNavOpen}
+        inert={!mobileNavOpen}
+      >
+        <div className="mobile-nav__backdrop" onClick={closeMobileNav} data-testid="mobile-nav-backdrop" />
+        <aside
+          id="mobile-nav"
+          className="mobile-nav__panel"
+          aria-label="Menú"
+          role="dialog"
+          aria-modal="true"
+          data-testid="mobile-nav"
+        >
+          <div className="mobile-nav__head">
+            <span className="user-panel__avatar" aria-hidden>
+              {fotoSrc ? (
+                <img src={fotoSrc} alt="" className="user-panel__avatar-img" />
+              ) : (
+                <User size={16} />
+              )}
+            </span>
+            <span className="user-panel__meta">
+              <span className="user-panel__name">{session?.username || 'Usuario'}</span>
+              <span className="user-panel__code">{session?.code}</span>
+            </span>
+            <button
+              type="button"
+              className="mobile-nav__close"
+              onClick={closeMobileNav}
+              aria-label="Cerrar menú"
+              data-testid="mobile-nav-close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {portal && portalClase && !isHubLauncher ? (
+            <div className="sidebar-clase" title={portalClase.cursoNombre}>
+              <BookOpen size={14} />
+              <span>{portalClase.cursoNombre}</span>
+            </div>
+          ) : null}
+
+          <nav className="sidebar-nav mobile-nav__list">
+            {maestro || portal ? (
+              <button
+                type="button"
+                className="sidebar-nav__item"
+                onClick={() => {
+                  goInicio()
+                  closeMobileNav()
+                }}
+              >
+                <Home className="sidebar-nav__icon" />
+                <span>Inicio</span>
+              </button>
+            ) : null}
+            {maestro && can('mis_estadisticas:get') ? (
+              <button
+                type="button"
+                className={`sidebar-nav__item${pathname.startsWith('/maestro/analiticas') ? ' sidebar-nav__item--active' : ''}`}
+                onClick={() => {
+                  void navigate({ to: '/maestro/analiticas', search: { agrupar: undefined, filtros: undefined } })
+                  closeMobileNav()
+                }}
+              >
+                <BarChart3 className="sidebar-nav__icon" />
+                <span>Analíticas</span>
+              </button>
+            ) : null}
+            {!isHubLauncher ? renderNavItems(true, closeMobileNav) : null}
+          </nav>
+
+          <div className="mobile-nav__foot">
+            <Link
+              to="/mi-perfil"
+              className="sidebar-nav__item"
+              onClick={closeMobileNav}
+            >
+              <User className="sidebar-nav__icon" />
+              <span>Mi perfil</span>
+            </Link>
+            <button type="button" className="sidebar-nav__item" onClick={toggleTheme}>
+              {theme === 'dark' ? <Sun className="sidebar-nav__icon" /> : <Moon className="sidebar-nav__icon" />}
+              <span>{theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}</span>
+            </button>
+            <button
+              type="button"
+              className="sidebar-nav__item mobile-nav__danger"
+              onClick={() => {
+                closeMobileNav()
+                setConfirmLogout(true)
+              }}
+            >
+              <LogOut className="sidebar-nav__icon" />
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
+        </aside>
       </div>
 
       <ConfirmDialog

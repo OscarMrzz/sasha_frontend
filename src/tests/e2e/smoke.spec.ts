@@ -36,7 +36,7 @@ test.describe('smoke @smoke @critical', () => {
     await page.getByTestId('login-password').fill('Admin123!')
     await page.getByTestId('login-submit').click()
     await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 })
-    await expect(page.getByTestId('session-code')).toContainText('1002026100')
+    await expect(page.getByTestId('user-panel')).toContainText('1002026100')
   })
 
   test('menú admin muestra configuración y usuarios', async ({ page }) => {
