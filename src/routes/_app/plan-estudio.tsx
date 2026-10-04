@@ -30,6 +30,7 @@ import {
   updatePlan,
   updatePlanItem,
   type MisCurso,
+  type MisParcial,
   type Plan,
   type PlanComentario,
   type PlanItem,
@@ -1099,6 +1100,11 @@ function AuditarModal({
   )
 }
 
+/** Lo que deben sumar los ítems del parcial: 100 menos los puntos de asistencia. */
+function objetivoParcial(p: MisParcial | undefined) {
+  return 100 - (p?.puntos_asistencia ?? 0)
+}
+
 function CrearPlanModal({
   onClose,
   onCreated,
@@ -1130,7 +1136,7 @@ function CrearPlanModal({
     setParcialBlocks([
       {
         parcial_id: parciales[0].id,
-        items: [{ ...emptyItem, parcial_id: parciales[0].id, puntos: 100 }],
+        items: [{ ...emptyItem, parcial_id: parciales[0].id, puntos: objetivoParcial(parciales[0]) }],
       },
     ])
   }, [selected?.asignacion_docente_id])
@@ -1261,6 +1267,8 @@ function CrearPlanModal({
           {parcialBlocks.map((block, bi) => {
             const parcial = parciales.find((p) => p.id === block.parcial_id)
             const sum = sumParcial(block.items)
+            const objetivo = objetivoParcial(parcial)
+            const asistencia = parcial?.puntos_asistencia ?? 0
             return (
               <div
                 key={block.parcial_id}
@@ -1275,8 +1283,12 @@ function CrearPlanModal({
                   <h3 style={{ margin: 0 }}>
                     {parcial?.nombre ?? `Parcial ${bi + 1}`}
                   </h3>
-                  <span style={{ color: sum !== 100 ? '#b00' : undefined }}>
-                    {sum} / 100 pts
+                  <span
+                    style={{ color: Math.abs(sum - objetivo) > 0.001 ? '#b00' : undefined }}
+                    data-testid={`plan-parcial-suma-${bi}`}
+                  >
+                    {sum} / {objetivo} pts
+                    {asistencia > 0 ? ` (${asistencia} de asistencia)` : ''}
                   </span>
                 </div>
                 {block.items.map((it, ii) => (
@@ -1465,7 +1477,7 @@ function CrearPlanModal({
                   ...blocks,
                   {
                     parcial_id: p.id,
-                    items: [{ ...emptyItem, parcial_id: p.id, puntos: 100 }],
+                    items: [{ ...emptyItem, parcial_id: p.id, puntos: objetivoParcial(p) }],
                   },
                 ])
               }}
@@ -1478,7 +1490,7 @@ function CrearPlanModal({
       <ConfirmDialog
         open={confirm}
         title="Crear plan"
-        message="¿Crear este plan? Cada parcial debe sumar exactamente 100 puntos."
+        message="¿Crear este plan? Cada parcial debe sumar exactamente 100 puntos menos los de asistencia."
         onCancel={() => setConfirm(false)}
         onConfirm={() => {
           setConfirm(false)
@@ -1555,7 +1567,8 @@ function EditarPlanModal({
       }
     >
       <p className="texto-muted" style={{ marginBottom: '0.75rem' }}>
-        Σ puntos (todos los ítems): {sumaPuntos} — cada parcial debe sumar 100
+        Σ puntos (todos los ítems): {sumaPuntos} — cada parcial debe sumar 100 menos sus puntos de
+        asistencia
       </p>
       {items.map((it, idx) => (
         <div

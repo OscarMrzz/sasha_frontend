@@ -4,10 +4,13 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AsistenciaGridModal, type AsistenciaGridMode } from '#/components/asistencia/AsistenciaGridModal'
+import { PuntosAsistenciaModal } from '#/components/asistencia/PuntosAsistenciaModal'
 import { RequirePermission, useCan } from '#/components/gates/Can'
 import { DataTable } from '#/components/ui/DataTable'
 import { Modal, useDismiss } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
+import { isMaestroRole } from '#/lib/home-path'
+import { readLastAsignacionId } from '#/lib/last-asignacion'
 import {
   getInasistenciaDetalle,
   listInasistencias,
@@ -22,7 +25,7 @@ export const Route = createFileRoute('/_app/asistencia')({ component: Asistencia
 const col = createColumnHelper<AsistenciaMateria>()
 
 function AsistenciaPage() {
-  const { can } = useCan()
+  const { can, roles } = useCan()
   const canPost = can('asistencia:post')
 
   const { data = [], isLoading } = useQuery({
@@ -34,6 +37,7 @@ function AsistenciaPage() {
   const [gridMateria, setGridMateria] = useState<AsistenciaMateria | null>(null)
   const [gridMode, setGridMode] = useState<AsistenciaGridMode>('pasar')
   const [inaMateria, setInaMateria] = useState<AsistenciaMateria | null>(null)
+  const [puntosMateria, setPuntosMateria] = useState<AsistenciaMateria | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -93,6 +97,55 @@ function AsistenciaPage() {
   )
 
   if (isLoading) return <div className="empty-state">Cargando materias…</div>
+
+  if (isMaestroRole(roles)) {
+    const lastId = readLastAsignacionId()
+    const materia =
+      data.find((m) => m.asignacion_docente_id === lastId) ?? data[0]
+    return (
+      <RequirePermission permission="asistencia:get">
+        {materia ? (
+          <AsistenciaGridModal
+            key={materia.asignacion_docente_id}
+            materia={materia}
+            mode={canPost ? 'editar' : 'ver'}
+            inline
+            onClose={() => {}}
+            extraActions={
+              <>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  data-testid="asistencia-ver-faltas"
+                  onClick={() => setInaMateria(materia)}
+                >
+                  Ver faltas
+                </button>
+                {canPost ? (
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    data-testid="asistencia-puntos"
+                    onClick={() => setPuntosMateria(materia)}
+                  >
+                    Puntos por parcial
+                  </button>
+                ) : null}
+              </>
+            }
+          />
+        ) : (
+          <div className="empty-state">No tienes clases asignadas</div>
+        )}
+        {inaMateria ? (
+          <InasistenciasModal materia={inaMateria} onClose={() => setInaMateria(null)} />
+        ) : null}
+        {puntosMateria ? (
+          <PuntosAsistenciaModal materia={puntosMateria} onClose={() => setPuntosMateria(null)} />
+        ) : null}
+      </RequirePermission>
+    )
+  }
 
   return (
     <RequirePermission permission="asistencia:get">

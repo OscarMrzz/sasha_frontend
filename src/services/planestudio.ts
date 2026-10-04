@@ -228,6 +228,8 @@ export interface MisParcial {
   id: string
   numero: number
   nombre: string
+  /** Los ítems del parcial deben sumar 100 menos esto. */
+  puntos_asistencia?: number
 }
 
 export interface MisCurso {
