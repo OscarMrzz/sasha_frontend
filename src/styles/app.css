@@ -4042,6 +4042,43 @@ input.field__input,
   border-top: 1px solid var(--sasha-border-suave);
 }
 
+.maestro-hub__general {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sasha-border-suave);
+}
+
+.maestro-hub__general-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--sasha-texto-title);
+}
+
+.maestro-hub__general-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.maestro-hub__general-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.1rem;
+  background: var(--sasha-bg-raised);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+  color: var(--sasha-texto-title);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.maestro-hub__general-boton:hover {
+  border-color: var(--sasha-accent);
+}
+
 /* Portal alumno / responsable */
 .portal-home__section {
   margin-bottom: 2rem;
@@ -7633,6 +7670,20 @@ a.app-list__item:hover {
   margin: 0.75rem 0 0;
   text-align: center;
   color: var(--sasha-texto-muted);
+}
+
+.mi-sace__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.mi-sace__acciones {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .export-menu--arriba .export-menu__list {

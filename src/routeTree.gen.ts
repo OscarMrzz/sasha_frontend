@@ -55,6 +55,7 @@ import { Route as AppHijoPagosRouteImport } from './routes/_app/hijo/pagos'
 import { Route as AppHijoTareasRouteImport } from './routes/_app/hijo/tareas'
 import { Route as AppMaestroIndexRouteImport } from './routes/_app/maestro/index'
 import { Route as AppMaestroAnaliticasRouteImport } from './routes/_app/maestro/analiticas'
+import { Route as AppMaestroSaceRouteImport } from './routes/_app/maestro/sace'
 import { Route as AppResponsableIndexRouteImport } from './routes/_app/responsable/index'
 import { Route as AppHijoPlanIndexRouteImport } from './routes/_app/hijo/plan/index'
 import { Route as AppHijoPlanAsignacionIdRouteImport } from './routes/_app/hijo/plan/$asignacionId'
@@ -289,6 +290,11 @@ const AppMaestroAnaliticasRoute = AppMaestroAnaliticasRouteImport.update({
   path: '/maestro/analiticas',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMaestroSaceRoute = AppMaestroSaceRouteImport.update({
+  id: '/maestro/sace',
+  path: '/maestro/sace',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppResponsableIndexRoute = AppResponsableIndexRouteImport.update({
   id: '/responsable/',
   path: '/responsable/',
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/hijo/pagos': typeof AppHijoPagosRoute
   '/hijo/tareas': typeof AppHijoTareasRoute
   '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
+  '/maestro/sace': typeof AppMaestroSaceRoute
   '/alumno/': typeof AppAlumnoIndexRoute
   '/disciplina/': typeof AppDisciplinaIndexRoute
   '/excusas/': typeof AppExcusasIndexRoute
@@ -404,6 +411,7 @@ export interface FileRoutesByTo {
   '/hijo/pagos': typeof AppHijoPagosRoute
   '/hijo/tareas': typeof AppHijoTareasRoute
   '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
+  '/maestro/sace': typeof AppMaestroSaceRoute
   '/alumno': typeof AppAlumnoIndexRoute
   '/disciplina': typeof AppDisciplinaIndexRoute
   '/excusas': typeof AppExcusasIndexRoute
@@ -457,6 +465,7 @@ export interface FileRoutesById {
   '/_app/hijo/pagos': typeof AppHijoPagosRoute
   '/_app/hijo/tareas': typeof AppHijoTareasRoute
   '/_app/maestro/analiticas': typeof AppMaestroAnaliticasRoute
+  '/_app/maestro/sace': typeof AppMaestroSaceRoute
   '/_app/alumno/': typeof AppAlumnoIndexRoute
   '/_app/disciplina/': typeof AppDisciplinaIndexRoute
   '/_app/excusas/': typeof AppExcusasIndexRoute
@@ -510,6 +519,7 @@ export interface FileRouteTypes {
     | '/hijo/pagos'
     | '/hijo/tareas'
     | '/maestro/analiticas'
+    | '/maestro/sace'
     | '/alumno/'
     | '/disciplina/'
     | '/excusas/'
@@ -561,6 +571,7 @@ export interface FileRouteTypes {
     | '/hijo/pagos'
     | '/hijo/tareas'
     | '/maestro/analiticas'
+    | '/maestro/sace'
     | '/alumno'
     | '/disciplina'
     | '/excusas'
@@ -613,6 +624,7 @@ export interface FileRouteTypes {
     | '/_app/hijo/pagos'
     | '/_app/hijo/tareas'
     | '/_app/maestro/analiticas'
+    | '/_app/maestro/sace'
     | '/_app/alumno/'
     | '/_app/disciplina/'
     | '/_app/excusas/'
@@ -953,6 +965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMaestroAnaliticasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/maestro/sace': {
+      id: '/_app/maestro/sace'
+      path: '/maestro/sace'
+      fullPath: '/maestro/sace'
+      preLoaderRoute: typeof AppMaestroSaceRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/responsable/': {
       id: '/_app/responsable/'
       path: '/responsable'
@@ -1024,6 +1043,7 @@ interface AppRouteChildren {
   AppHijoPagosRoute: typeof AppHijoPagosRoute
   AppHijoTareasRoute: typeof AppHijoTareasRoute
   AppMaestroAnaliticasRoute: typeof AppMaestroAnaliticasRoute
+  AppMaestroSaceRoute: typeof AppMaestroSaceRoute
   AppAlumnoIndexRoute: typeof AppAlumnoIndexRoute
   AppDisciplinaIndexRoute: typeof AppDisciplinaIndexRoute
   AppExcusasIndexRoute: typeof AppExcusasIndexRoute
@@ -1074,6 +1094,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppHijoPagosRoute: AppHijoPagosRoute,
   AppHijoTareasRoute: AppHijoTareasRoute,
   AppMaestroAnaliticasRoute: AppMaestroAnaliticasRoute,
+  AppMaestroSaceRoute: AppMaestroSaceRoute,
   AppAlumnoIndexRoute: AppAlumnoIndexRoute,
   AppDisciplinaIndexRoute: AppDisciplinaIndexRoute,
   AppExcusasIndexRoute: AppExcusasIndexRoute,

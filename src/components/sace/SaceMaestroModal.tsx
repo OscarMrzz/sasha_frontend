@@ -89,11 +89,13 @@ export function SaceHoja({ doc, clase }: { doc: DocumentoMaestroSace; clase: Cla
 function MenuDescarga({
   label,
   testId,
+  arriba,
   onPdf,
   onExcel,
 }: {
   label: string
   testId: string
+  arriba: boolean
   onPdf: () => Promise<void>
   onExcel: () => Promise<void>
 }) {
@@ -102,7 +104,7 @@ function MenuDescarga({
     fn().catch((e) => toast.error(userMessageFromError(e)))
   }
   return (
-    <details className="export-menu export-menu--arriba">
+    <details className={`export-menu${arriba ? ' export-menu--arriba' : ''}`}>
       <summary className="btn btn--ghost" data-testid={testId}>
         {label}
         <ChevronDown size={14} />
@@ -131,14 +133,12 @@ function MenuDescarga({
   )
 }
 
-export function SaceMaestroModal({ maestro, onClose }: { maestro: MaestroSaceResumen; onClose: () => void }) {
-  const { open, dismiss } = useDismiss(onClose)
-  const { data: doc, isLoading } = useQuery({
-    queryKey: ['sace-maestro', maestro.maestro_id],
-    queryFn: () => getDocumentoMaestro(maestro.maestro_id),
-  })
-  const clases = doc?.clases ?? []
-  const [sel, setSel] = useState<{ materia: string; grado: string; seccion: string } | null>(null)
+type Seleccion = { materia: string; grado: string; seccion: string }
+
+/** Hoja elegida en cascada materia → grado → sección; por defecto la primera clase. */
+export function useSaceSeleccion(doc: DocumentoMaestroSace | undefined) {
+  const clases = useMemo(() => doc?.clases ?? [], [doc])
+  const [sel, setSel] = useState<Seleccion | null>(null)
 
   const actual = sel ?? (clases[0] ? { materia: clases[0].materia, grado: clases[0].grado, seccion: clases[0].seccion } : null)
 
@@ -153,7 +153,7 @@ export function SaceMaestroModal({ maestro, onClose }: { maestro: MaestroSaceRes
     : -1
   const clase = idx >= 0 ? clases[idx] : undefined
 
-  const elegir = (cambio: Partial<{ materia: string; grado: string; seccion: string }>) => {
+  const elegir = (cambio: Partial<Seleccion>) => {
     if (!actual) return
     const quiere = { ...actual, ...cambio }
     const c =
@@ -162,6 +162,125 @@ export function SaceMaestroModal({ maestro, onClose }: { maestro: MaestroSaceRes
       clases.find((x) => x.materia === quiere.materia)
     if (c) setSel({ materia: c.materia, grado: c.grado, seccion: c.seccion })
   }
+
+  return { clases, actual, materias, grados, secciones, idx, clase, elegir }
+}
+
+export type SaceSeleccion = ReturnType<typeof useSaceSeleccion>
+
+/** `arriba`: el menú abre hacia arriba (pie de modal). */
+export function SaceDescargas({
+  doc,
+  clase,
+  arriba = false,
+}: {
+  doc: DocumentoMaestroSace
+  clase: ClaseSace
+  arriba?: boolean
+}) {
+  return (
+    <>
+      <MenuDescarga
+        label="Descargar actual"
+        testId="sace-descargar-actual"
+        arriba={arriba}
+        onPdf={() => descargarSacePdf(doc, clase)}
+        onExcel={() => descargarSaceExcel(doc, clase)}
+      />
+      <MenuDescarga
+        label="Descargar completa"
+        testId="sace-descargar-completa"
+        arriba={arriba}
+        onPdf={() => descargarSacePdf(doc, null)}
+        onExcel={() => descargarSaceExcel(doc, null)}
+      />
+    </>
+  )
+}
+
+/** Filtros materia / grado / sección, conteo, Copiar y la hoja. */
+export function SaceContenido({ doc, s }: { doc: DocumentoMaestroSace; s: SaceSeleccion }) {
+  const { clases, actual, materias, grados, secciones, idx, clase, elegir } = s
+  return (
+    <>
+      <div className="plan-ver__filtros sace-filtros" data-testid="sace-filtros">
+        <Field label="Materia" htmlFor="sace-f-materia">
+          <select
+            id="sace-f-materia"
+            className="field__input"
+            value={actual?.materia ?? ''}
+            onChange={(e) => elegir({ materia: e.target.value })}
+            data-testid="sace-filtro-materia"
+          >
+            {materias.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Grado" htmlFor="sace-f-grado">
+          <select
+            id="sace-f-grado"
+            className="field__input"
+            value={actual?.grado ?? ''}
+            onChange={(e) => elegir({ grado: e.target.value })}
+            data-testid="sace-filtro-grado"
+          >
+            {grados.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Sección" htmlFor="sace-f-seccion">
+          <select
+            id="sace-f-seccion"
+            className="field__input"
+            value={actual?.seccion ?? ''}
+            onChange={(e) => elegir({ seccion: e.target.value })}
+            data-testid="sace-filtro-seccion"
+          >
+            {secciones.map((x) => (
+              <option key={x} value={x}>
+                {x}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <div className="sace-filtros__barra">
+        <p className="sace-filtros__conteo" data-testid="sace-clase-conteo">
+          Clase {idx + 1} de {clases.length} · Periodo {doc.periodo}
+        </p>
+        {clase ? (
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => void copiarHoja(clase)}
+            disabled={clase.estudiantes.length === 0}
+            title="Copiar el contenido de la tabla, sin encabezados, para pegarlo en Excel"
+            data-testid="sace-copiar"
+          >
+            <Copy size={14} />
+            Copiar
+          </button>
+        ) : null}
+      </div>
+      {clase ? <SaceHoja doc={doc} clase={clase} /> : null}
+    </>
+  )
+}
+
+export function SaceMaestroModal({ maestro, onClose }: { maestro: MaestroSaceResumen; onClose: () => void }) {
+  const { open, dismiss } = useDismiss(onClose)
+  const { data: doc, isLoading } = useQuery({
+    queryKey: ['sace-maestro', maestro.maestro_id],
+    queryFn: () => getDocumentoMaestro(maestro.maestro_id),
+  })
+  const s = useSaceSeleccion(doc)
+  const { clases, clase } = s
 
   return (
     <Modal
@@ -175,22 +294,7 @@ export function SaceMaestroModal({ maestro, onClose }: { maestro: MaestroSaceRes
             Cerrar
           </button>
           <span style={{ flex: 1 }} />
-          {doc && clase ? (
-            <>
-              <MenuDescarga
-                label="Descargar actual"
-                testId="sace-descargar-actual"
-                onPdf={() => descargarSacePdf(doc, clase)}
-                onExcel={() => descargarSaceExcel(doc, clase)}
-              />
-              <MenuDescarga
-                label="Descargar completa"
-                testId="sace-descargar-completa"
-                onPdf={() => descargarSacePdf(doc, null)}
-                onExcel={() => descargarSaceExcel(doc, null)}
-              />
-            </>
-          ) : null}
+          {doc && clase ? <SaceDescargas doc={doc} clase={clase} arriba /> : null}
         </>
       }
     >
@@ -199,75 +303,9 @@ export function SaceMaestroModal({ maestro, onClose }: { maestro: MaestroSaceRes
       ) : !doc || clases.length === 0 ? (
         <div className="empty-state">Este maestro no tiene clases en el periodo activo.</div>
       ) : (
-        <>
-          <div className="plan-ver__filtros sace-filtros" data-testid="sace-filtros">
-            <Field label="Materia" htmlFor="sace-f-materia">
-              <select
-                id="sace-f-materia"
-                className="field__input"
-                value={actual?.materia ?? ''}
-                onChange={(e) => elegir({ materia: e.target.value })}
-                data-testid="sace-filtro-materia"
-              >
-                {materias.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Grado" htmlFor="sace-f-grado">
-              <select
-                id="sace-f-grado"
-                className="field__input"
-                value={actual?.grado ?? ''}
-                onChange={(e) => elegir({ grado: e.target.value })}
-                data-testid="sace-filtro-grado"
-              >
-                {grados.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Sección" htmlFor="sace-f-seccion">
-              <select
-                id="sace-f-seccion"
-                className="field__input"
-                value={actual?.seccion ?? ''}
-                onChange={(e) => elegir({ seccion: e.target.value })}
-                data-testid="sace-filtro-seccion"
-              >
-                {secciones.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <div className="sace-filtros__barra">
-            <p className="sace-filtros__conteo" data-testid="sace-clase-conteo">
-              Clase {idx + 1} de {clases.length} · Periodo {doc.periodo}
-            </p>
-            {clase ? (
-              <button
-                type="button"
-                className="btn btn--ghost"
-                onClick={() => void copiarHoja(clase)}
-                disabled={clase.estudiantes.length === 0}
-                title="Copiar el contenido de la tabla, sin encabezados, para pegarlo en Excel"
-                data-testid="sace-copiar"
-              >
-                <Copy size={14} />
-                Copiar
-              </button>
-            ) : null}
-          </div>
-          {clase ? <SaceHoja doc={doc} clase={clase} /> : null}
-        </>
+        <SaceContenido doc={doc} s={s} />
       )}
     </Modal>
   )
 }
+

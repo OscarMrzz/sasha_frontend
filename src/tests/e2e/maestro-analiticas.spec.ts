@@ -5,10 +5,11 @@ import { test, expect, loginAs } from './fixtures/auth'
 const PEDRO = '1002026501'
 
 test.describe('maestro: mis analíticas', () => {
-  test('entra desde la barra superior y ve el bento de sus clases', async ({ page }) => {
+  test('entra desde General en Inicio y ve el bento de sus clases', async ({ page }) => {
     await loginAs(page, { code: PEDRO })
     await expect(page.getByTestId('maestro-hub')).toBeVisible({ timeout: 15_000 })
-    await page.getByTestId('top-analiticas').click()
+    await expect(page.getByTestId('top-analiticas')).toHaveCount(0)
+    await page.getByTestId('hub-analiticas').click()
     await expect(page).toHaveURL(/\/maestro\/analiticas/)
     await expect(page.getByTestId('mis-analiticas-page')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('sidebar-collapse')).toHaveCount(0)

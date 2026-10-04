@@ -93,6 +93,11 @@ export async function getDocumentoMaestro(maestroId: string) {
   return apiRequest<DocumentoMaestroSace>(`/sace/maestros/${maestroId}`)
 }
 
+/** SACE del maestro de la sesión: solo sus clases. */
+export async function getMiDocumentoSace() {
+  return apiRequest<DocumentoMaestroSace>('/sace/mio')
+}
+
 export async function exportSace(query: SaceExportQuery) {
   const qs = new URLSearchParams({
     periodo_academico_id: query.periodo_academico_id,

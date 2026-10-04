@@ -93,7 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const isHubLauncher =
-    ['/maestro', '/maestro/analiticas', '/alumno', '/alumno/resultados', '/responsable', '/mi-perfil'].includes(
+    ['/maestro', '/maestro/analiticas', '/maestro/sace', '/alumno', '/alumno/resultados', '/responsable', '/mi-perfil'].includes(
       pathname.replace(/\/$/, ''),
     ) ||
     pathname.startsWith('/hijo/')
@@ -288,23 +288,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <span className="user-panel__meta">
               <span className="user-panel__name">Inicio</span>
-            </span>
-          </button>
-        ) : null}
-
-        {maestro && can('mis_estadisticas:get') ? (
-          <button
-            type="button"
-            className="user-panel user-panel--top app-shell__top-desktop"
-            data-testid="top-analiticas"
-            onClick={() => void navigate({ to: '/maestro/analiticas', search: { agrupar: undefined, filtros: undefined } })}
-            title="Mis analíticas"
-          >
-            <span className="user-panel__avatar" aria-hidden>
-              <BarChart3 size={16} />
-            </span>
-            <span className="user-panel__meta">
-              <span className="user-panel__name">Analíticas</span>
             </span>
           </button>
         ) : null}

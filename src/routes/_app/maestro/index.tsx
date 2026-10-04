@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { MoreVertical } from 'lucide-react'
+import { BarChart3, FileSpreadsheet, MoreVertical } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { AsistenciaGridModal } from '#/components/asistencia/AsistenciaGridModal'
 import { MaestroHorarioView } from '#/components/horarios/MaestroHorarioView'
@@ -35,7 +35,6 @@ function MaestroHubPage() {
   const [ver, setVer] = useState<AsistenciaMateria | null>(null)
   const [pasar, setPasar] = useState<AsistenciaMateria | null>(null)
   const [tarea, setTarea] = useState<AsistenciaMateria | null>(null)
-
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
     if (!ctx) return
@@ -122,6 +121,37 @@ function MaestroHubPage() {
         <MaestroHorarioView title="Mi horario" />
       </section>
 
+      {can('mis_estadisticas:get') || can('mi_sace:get') ? (
+        <section className="maestro-hub__general" data-testid="maestro-hub-general">
+          <h2 className="maestro-hub__general-title">General</h2>
+          <div className="maestro-hub__general-botones">
+            {can('mis_estadisticas:get') ? (
+              <button
+                type="button"
+                className="maestro-hub__general-boton"
+                data-testid="hub-analiticas"
+                onClick={() =>
+                  void navigate({ to: '/maestro/analiticas', search: { agrupar: undefined, filtros: undefined } })
+                }
+              >
+                <BarChart3 size={18} />
+                Analíticas
+              </button>
+            ) : null}
+            {can('mi_sace:get') ? (
+              <button
+                type="button"
+                className="maestro-hub__general-boton"
+                data-testid="hub-sace"
+                onClick={() => void navigate({ to: '/maestro/sace' })}
+              >
+                <FileSpreadsheet size={18} />
+                SACE
+              </button>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
       {ctx ? (
         <div
           className="ctx-menu"

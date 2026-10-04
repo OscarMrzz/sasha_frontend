@@ -212,6 +212,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'notas:put',
     'notas:delete',
     'mis_estadisticas:get',
+    'mi_sace:get',
   ],
   responsable: [
     'tareas:get',
