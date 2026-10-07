@@ -53,7 +53,7 @@ import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { clearPortalContext, usePortalClase } from '#/lib/portal-context'
 import { logout } from '#/services/auth'
 import { toast } from 'sonner'
-import { useBovedaImage } from '#/hooks/use-boveda-image'
+import { useMiFoto } from '#/hooks/use-mi-foto'
 
 const ICONS: Record<string, ReactNode> = {
   home: <Home className="sidebar-nav__icon" />,
@@ -111,7 +111,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (typeof document === 'undefined') return 'dark'
     return (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') || 'dark'
   })
-  const fotoSrc = useBovedaImage(session?.fotoKey)
+  const fotoSrc = useMiFoto()
 
   const items = useMemo(() => {
     type Item = {

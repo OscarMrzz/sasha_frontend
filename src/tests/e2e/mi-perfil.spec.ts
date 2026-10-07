@@ -6,6 +6,12 @@ const ALUMNA_ANA = '1002026701'
 const PADRE_ANA = '1002026901'
 const MAESTRO_PEDRO = '1002026501'
 
+// PNG de 1×1 px.
+const PNG_1PX = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+)
+
 test.describe('mi perfil', () => {
   test('padre: sin sidebar, sus datos, hogar y alumnos a cargo', async ({ page }) => {
     await loginAs(page, { code: PADRE_ANA })
@@ -27,6 +33,30 @@ test.describe('mi perfil', () => {
     await expect(page.getByTestId('perfil-nombre')).toContainText('Ana')
     await expect(page.getByTestId('perfil-responsables')).toContainText('Principal')
     await expect(page.getByTestId('perfil-a-cargo')).toHaveCount(0)
+  })
+
+  test('alumna: la foto de perfil sigue al cerrar y volver a entrar', async ({ page }) => {
+    await loginAs(page, { code: ALUMNA_ANA })
+    await page.goto('/mi-perfil')
+    await expect(page.getByTestId('mi-perfil-page')).toBeVisible({ timeout: 15_000 })
+
+    await page.getByTestId('perfil-foto-input').setInputFiles({
+      name: 'foto.png',
+      mimeType: 'image/png',
+      buffer: PNG_1PX,
+    })
+    await expect(page.getByText('Foto de perfil actualizada')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('perfil-foto-btn').locator('img')).toBeVisible()
+
+    await page.getByTestId('user-panel').click()
+    await page.getByTestId('logout-button').click()
+    await page.getByRole('button', { name: 'Salir' }).click()
+    await expect(page).toHaveURL(/\/login/, { timeout: 15_000 })
+
+    await loginAs(page, { code: ALUMNA_ANA })
+    await expect(page.getByTestId('user-panel').locator('img')).toBeVisible({ timeout: 15_000 })
+    await page.goto('/mi-perfil')
+    await expect(page.getByTestId('perfil-foto-btn').locator('img')).toBeVisible({ timeout: 15_000 })
   })
 
   test('maestro: carga académica con materias y grupos', async ({ page }) => {

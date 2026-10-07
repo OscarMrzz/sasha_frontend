@@ -274,3 +274,11 @@ export async function getFicha(code: string, consulta?: { fecha?: string; hora?:
 export async function getMiFicha() {
   return apiRequest<UserFicha>('/personas/mi-ficha')
 }
+
+/** Guarda en el perfil la foto ya subida a la bóveda (tipo perfil_foto). */
+export async function guardarMiFoto(objectKey: string) {
+  return apiRequest<{ status: string; path_imagen: string }>('/personas/mi-foto', {
+    method: 'PUT',
+    body: { object_key: objectKey },
+  })
+}

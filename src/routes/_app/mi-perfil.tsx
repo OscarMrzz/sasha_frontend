@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { Camera, KeyRound, Star, User } from 'lucide-react'
 import { useRef, useState } from 'react'
@@ -8,12 +8,12 @@ import { CoordinasAviso } from '#/components/coordinaciones/CoordinasAviso'
 import { Field } from '#/components/ui/Field'
 import { Modal, useDismiss } from '#/components/ui/Modal'
 import { roleLabel } from '#/helpers/permissions'
-import { useBovedaImage } from '#/hooks/use-boveda-image'
+import { useMiFoto } from '#/hooks/use-mi-foto'
 import { useSession } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
 import { changeOwnPassword } from '#/services/auth'
 import { upload } from '#/services/boveda'
-import { getMiFicha } from '#/services/personas'
+import { getMiFicha, guardarMiFoto } from '#/services/personas'
 import type { UserFicha } from '#/services/personas'
 
 export const Route = createFileRoute('/_app/mi-perfil')({
@@ -55,7 +55,8 @@ function MiPerfilPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [cambiarPwd, setCambiarPwd] = useState(false)
-  const fotoSrc = useBovedaImage(session?.fotoKey)
+  const queryClient = useQueryClient()
+  const fotoSrc = useMiFoto()
   const ficha = useQuery({ queryKey: ['mi-ficha'], queryFn: getMiFicha })
 
   const f = ficha.data
@@ -75,7 +76,9 @@ function MiPerfilPage() {
     setUploading(true)
     try {
       const res = await upload(file, 'perfil_foto')
+      await guardarMiFoto(res.object_key)
       setSession({ ...session, fotoKey: res.object_key })
+      await queryClient.invalidateQueries({ queryKey: ['mi-ficha'] })
       toast.success('Foto de perfil actualizada')
     } catch (err) {
       toast.error(userMessageFromError(err))
