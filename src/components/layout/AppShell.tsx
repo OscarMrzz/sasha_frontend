@@ -44,10 +44,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const isHubLauncher =
-    ['/maestro', '/maestro/analiticas', '/maestro/sace', '/alumno', '/alumno/resultados', '/responsable', '/mi-perfil'].includes(
+    ['/maestro', '/maestro/analiticas', '/maestro/sace', '/alumno', '/responsable', '/mi-perfil'].includes(
       pathname.replace(/\/$/, ''),
     ) ||
-    pathname.startsWith('/hijo/')
+    pathname.startsWith('/hijo/') ||
+    pathname.startsWith('/alumno/')
   const maestro = isMaestroRole(roles)
   const portal = isPortalRole(roles)
   const portalClase = usePortalClase()

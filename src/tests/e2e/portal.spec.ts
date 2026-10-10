@@ -4,18 +4,30 @@ const ALUMNO = '1002026701'
 const RESPONSABLE = '1002026901'
 
 test.describe('portal alumno y responsable @smoke', () => {
-  test('alumno: inicio sin sidebar con horario y cards; la card filtra tareas', async ({ page }) => {
+  test('alumno: inicio con bienvenida y botones; horario, clases y modo clase', async ({ page }) => {
     await loginAs(page, { code: ALUMNO })
     await expect(page.getByTestId('alumno-home')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('sidebar-collapse')).toHaveCount(0)
     await expect(page.getByTestId('top-inicio')).toBeVisible()
+    for (const id of ['tareas', 'clases', 'horario', 'notas']) {
+      await expect(page.getByTestId(`alumno-tile-${id}`)).toBeVisible()
+    }
+
+    // Horario
+    await page.getByTestId('alumno-tile-horario').click()
+    await expect(page).toHaveURL(/\/alumno\/horario$/, { timeout: 10_000 })
     await expect(page.getByTestId('alumno-horario')).toBeVisible()
     await expect(page.getByTestId('alumno-horario-semana')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('horario-recreo')).toHaveText(/Recreo/i)
+    await page.getByTestId('alumno-atras').click()
+    await expect(page).toHaveURL(/\/alumno\/?$/, { timeout: 10_000 })
 
-    const card = page.getByTestId('alumno-clases').locator('.clase-card').first()
+    // Clases → modo clase
+    await page.getByTestId('alumno-tile-clases').click()
+    await expect(page).toHaveURL(/\/alumno\/clases$/, { timeout: 10_000 })
+    const card = page.getByTestId('alumno-clases-lista').locator('.app-tile').first()
     await expect(card).toBeVisible({ timeout: 15_000 })
-    const curso = (await card.locator('.maestro-hub__card-title').textContent())?.trim() ?? ''
+    const curso = (await card.locator('.app-tile__label').textContent())?.trim() ?? ''
     await card.click()
 
     await expect(page).toHaveURL(/\/tareas/, { timeout: 10_000 })
@@ -38,7 +50,10 @@ test.describe('portal alumno y responsable @smoke', () => {
 
   test('alumno: badge T y aviso de tareas para hoy/mañana sin revisar', async ({ page }) => {
     await loginAs(page, { code: ALUMNO })
-    await expect(page.getByTestId('alumno-clases')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('alumno-tile-clases')).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId('alumno-tile-clases').click()
+    await expect(page.getByTestId('alumno-clases-lista')).toBeVisible({ timeout: 15_000 })
+
     const badges = page.locator('[data-testid^="alumno-clase-badge-"]')
     const n = await badges.count()
     for (let i = 0; i < n; i++) {
@@ -46,14 +61,28 @@ test.describe('portal alumno y responsable @smoke', () => {
     }
 
     // data_test.sql: Pedro (Español) tiene 2 tareas sin calificar que vencen mañana.
-    const espanol = page.getByTestId('alumno-clases').locator('.clase-card', { hasText: 'Español' })
+    const espanol = page.getByTestId('alumno-clases-lista').locator('.app-tile', { hasText: 'Español' })
     await expect(espanol.locator('[data-testid^="alumno-clase-badge-"]')).toBeVisible()
     await expect(espanol.locator('[data-testid^="alumno-clase-tareas-"]')).toContainText(/mañana/i)
   })
 
+  test('alumno: tareas muestra todas sin importar la clase', async ({ page }) => {
+    await loginAs(page, { code: ALUMNO })
+    await page.getByTestId('alumno-tile-tareas').click()
+    await expect(page).toHaveURL(/\/alumno\/tareas$/, { timeout: 10_000 })
+    await expect(page.getByTestId('alumno-tareas')).toBeVisible()
+    await expect(page.getByTestId('alumno-tareas-pendientes')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('alumno-tareas-revisadas')).toBeVisible()
+    // El curso de cada tarea viene del backend (sin importar la clase elegida).
+    await expect(page.getByTestId('alumno-tareas-pendientes').locator('.app-list__sub').first()).toContainText(
+      /·/,
+    )
+  })
+
   test('alumno: plan de estudio muestra pensum y plan activo, sin tabla ni filtros', async ({ page }) => {
     await loginAs(page, { code: ALUMNO })
-    await page.getByTestId('alumno-clases').locator('.clase-card', { hasText: 'Español' }).click()
+    await page.getByTestId('alumno-tile-clases').click()
+    await page.getByTestId('alumno-clases-lista').locator('.app-tile', { hasText: 'Español' }).click()
     await expect(page.getByTestId('portal-tareas')).toBeVisible({ timeout: 15_000 })
     await page.getByRole('link', { name: 'Plan de estudio' }).click()
 
@@ -70,18 +99,9 @@ test.describe('portal alumno y responsable @smoke', () => {
     expect((await download).suggestedFilename()).toMatch(/\.pdf$/)
   })
 
-  test('alumno: resultado general en el inicio y Ver más abre el bento sin sidebar', async ({ page }) => {
+  test('alumno: Notas abre el bento sin sidebar', async ({ page }) => {
     await loginAs(page, { code: ALUMNO })
-    const resultado = page.getByTestId('alumno-resultado')
-    await expect(resultado).toBeVisible({ timeout: 15_000 })
-    // data_test.sql: 701 ve el I y el II en las 11 materias; el III está bloqueado por julio y agosto.
-    await expect(page.getByTestId('alumno-resultado-promedio')).toHaveText(/^\d+(\.\d)?$/, {
-      timeout: 15_000,
-    })
-    await expect(page.getByTestId('alumno-resultado-cuadro')).not.toBeEmpty()
-    await expect(resultado).toContainText('pendientes de habilitar')
-
-    await page.getByTestId('alumno-resultado-ver-mas').click()
+    await page.getByTestId('alumno-tile-notas').click()
     await expect(page).toHaveURL(/\/alumno\/resultados$/, { timeout: 10_000 })
     await expect(page.getByTestId('sidebar-collapse')).toHaveCount(0)
     for (const id of ['promedio', 'cuadro', 'tendencia', 'parciales']) {
@@ -135,7 +155,7 @@ test.describe('portal alumno y responsable @smoke', () => {
     for (const id of ['tareas', 'horario', 'plan', 'pagos', 'calificaciones']) {
       await expect(page.getByTestId(`padre-tile-${id}`)).toBeVisible()
     }
-    await expect(page.getByTestId('alumno-clases')).toHaveCount(0)
+    await expect(page.getByTestId('alumno-tiles')).toHaveCount(0)
 
     await page.getByTestId('alumno-cambiar').click()
     await expect(page).toHaveURL(/\/responsable\/?$/, { timeout: 10_000 })

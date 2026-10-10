@@ -39,7 +39,10 @@ import { Route as AppSaceRouteImport } from './routes/_app/sace'
 import { Route as AppTareasRouteImport } from './routes/_app/tareas'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 import { Route as AppAlumnoIndexRouteImport } from './routes/_app/alumno/index'
+import { Route as AppAlumnoClasesRouteImport } from './routes/_app/alumno/clases'
+import { Route as AppAlumnoHorarioRouteImport } from './routes/_app/alumno/horario'
 import { Route as AppAlumnoResultadosRouteImport } from './routes/_app/alumno/resultados'
+import { Route as AppAlumnoTareasRouteImport } from './routes/_app/alumno/tareas'
 import { Route as AppCatalogosCursosRouteImport } from './routes/_app/catalogos/cursos'
 import { Route as AppCatalogosGradosRouteImport } from './routes/_app/catalogos/grados'
 import { Route as AppCatalogosModalidadesRouteImport } from './routes/_app/catalogos/modalidades'
@@ -213,9 +216,24 @@ const AppAlumnoIndexRoute = AppAlumnoIndexRouteImport.update({
   path: '/alumno/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAlumnoClasesRoute = AppAlumnoClasesRouteImport.update({
+  id: '/alumno/clases',
+  path: '/alumno/clases',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAlumnoHorarioRoute = AppAlumnoHorarioRouteImport.update({
+  id: '/alumno/horario',
+  path: '/alumno/horario',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAlumnoResultadosRoute = AppAlumnoResultadosRouteImport.update({
   id: '/alumno/resultados',
   path: '/alumno/resultados',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAlumnoTareasRoute = AppAlumnoTareasRouteImport.update({
+  id: '/alumno/tareas',
+  path: '/alumno/tareas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCatalogosCursosRoute = AppCatalogosCursosRouteImport.update({
@@ -364,7 +382,10 @@ export interface FileRoutesByFullPath {
   '/sace': typeof AppSaceRoute
   '/tareas': typeof AppTareasRoute
   '/usuarios': typeof AppUsuariosRoute
+  '/alumno/clases': typeof AppAlumnoClasesRoute
+  '/alumno/horario': typeof AppAlumnoHorarioRoute
   '/alumno/resultados': typeof AppAlumnoResultadosRoute
+  '/alumno/tareas': typeof AppAlumnoTareasRoute
   '/catalogos/cursos': typeof AppCatalogosCursosRoute
   '/catalogos/grados': typeof AppCatalogosGradosRoute
   '/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
@@ -419,7 +440,10 @@ export interface FileRoutesByTo {
   '/sace': typeof AppSaceRoute
   '/tareas': typeof AppTareasRoute
   '/usuarios': typeof AppUsuariosRoute
+  '/alumno/clases': typeof AppAlumnoClasesRoute
+  '/alumno/horario': typeof AppAlumnoHorarioRoute
   '/alumno/resultados': typeof AppAlumnoResultadosRoute
+  '/alumno/tareas': typeof AppAlumnoTareasRoute
   '/catalogos/cursos': typeof AppCatalogosCursosRoute
   '/catalogos/grados': typeof AppCatalogosGradosRoute
   '/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
@@ -476,7 +500,10 @@ export interface FileRoutesById {
   '/_app/sace': typeof AppSaceRoute
   '/_app/tareas': typeof AppTareasRoute
   '/_app/usuarios': typeof AppUsuariosRoute
+  '/_app/alumno/clases': typeof AppAlumnoClasesRoute
+  '/_app/alumno/horario': typeof AppAlumnoHorarioRoute
   '/_app/alumno/resultados': typeof AppAlumnoResultadosRoute
+  '/_app/alumno/tareas': typeof AppAlumnoTareasRoute
   '/_app/catalogos/cursos': typeof AppCatalogosCursosRoute
   '/_app/catalogos/grados': typeof AppCatalogosGradosRoute
   '/_app/catalogos/modalidades': typeof AppCatalogosModalidadesRoute
@@ -533,7 +560,10 @@ export interface FileRouteTypes {
     | '/sace'
     | '/tareas'
     | '/usuarios'
+    | '/alumno/clases'
+    | '/alumno/horario'
     | '/alumno/resultados'
+    | '/alumno/tareas'
     | '/catalogos/cursos'
     | '/catalogos/grados'
     | '/catalogos/modalidades'
@@ -588,7 +618,10 @@ export interface FileRouteTypes {
     | '/sace'
     | '/tareas'
     | '/usuarios'
+    | '/alumno/clases'
+    | '/alumno/horario'
     | '/alumno/resultados'
+    | '/alumno/tareas'
     | '/catalogos/cursos'
     | '/catalogos/grados'
     | '/catalogos/modalidades'
@@ -644,7 +677,10 @@ export interface FileRouteTypes {
     | '/_app/sace'
     | '/_app/tareas'
     | '/_app/usuarios'
+    | '/_app/alumno/clases'
+    | '/_app/alumno/horario'
     | '/_app/alumno/resultados'
+    | '/_app/alumno/tareas'
     | '/_app/catalogos/cursos'
     | '/_app/catalogos/grados'
     | '/_app/catalogos/modalidades'
@@ -889,11 +925,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAlumnoIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/alumno/clases': {
+      id: '/_app/alumno/clases'
+      path: '/alumno/clases'
+      fullPath: '/alumno/clases'
+      preLoaderRoute: typeof AppAlumnoClasesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/alumno/horario': {
+      id: '/_app/alumno/horario'
+      path: '/alumno/horario'
+      fullPath: '/alumno/horario'
+      preLoaderRoute: typeof AppAlumnoHorarioRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/alumno/resultados': {
       id: '/_app/alumno/resultados'
       path: '/alumno/resultados'
       fullPath: '/alumno/resultados'
       preLoaderRoute: typeof AppAlumnoResultadosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/alumno/tareas': {
+      id: '/_app/alumno/tareas'
+      path: '/alumno/tareas'
+      fullPath: '/alumno/tareas'
+      preLoaderRoute: typeof AppAlumnoTareasRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/catalogos/cursos': {
@@ -1087,7 +1144,10 @@ interface AppRouteChildren {
   AppSaceRoute: typeof AppSaceRoute
   AppTareasRoute: typeof AppTareasRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
+  AppAlumnoClasesRoute: typeof AppAlumnoClasesRoute
+  AppAlumnoHorarioRoute: typeof AppAlumnoHorarioRoute
   AppAlumnoResultadosRoute: typeof AppAlumnoResultadosRoute
+  AppAlumnoTareasRoute: typeof AppAlumnoTareasRoute
   AppCatalogosCursosRoute: typeof AppCatalogosCursosRoute
   AppCatalogosGradosRoute: typeof AppCatalogosGradosRoute
   AppCatalogosModalidadesRoute: typeof AppCatalogosModalidadesRoute
@@ -1141,7 +1201,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppSaceRoute: AppSaceRoute,
   AppTareasRoute: AppTareasRoute,
   AppUsuariosRoute: AppUsuariosRoute,
+  AppAlumnoClasesRoute: AppAlumnoClasesRoute,
+  AppAlumnoHorarioRoute: AppAlumnoHorarioRoute,
   AppAlumnoResultadosRoute: AppAlumnoResultadosRoute,
+  AppAlumnoTareasRoute: AppAlumnoTareasRoute,
   AppCatalogosCursosRoute: AppCatalogosCursosRoute,
   AppCatalogosGradosRoute: AppCatalogosGradosRoute,
   AppCatalogosModalidadesRoute: AppCatalogosModalidadesRoute,

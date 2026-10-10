@@ -9,7 +9,8 @@ const ALUMNO_DEBE_MARZO = '1002026704'
 
 async function abrirCalificacionesEspanol(page: Page, code: string) {
   await loginAs(page, { code })
-  await page.getByTestId('alumno-clases').locator('.clase-card', { hasText: 'Español' }).click()
+  await page.getByTestId('alumno-tile-clases').click()
+  await page.getByTestId('alumno-clases-lista').locator('.app-tile', { hasText: 'Español' }).click()
   await expect(page.getByTestId('portal-tareas')).toBeVisible({ timeout: 15_000 })
   await page.getByRole('link', { name: 'Calificaciones' }).click()
   await expect(page.getByTestId('portal-calificaciones')).toContainText('Español', { timeout: 15_000 })
