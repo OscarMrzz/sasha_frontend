@@ -18,6 +18,7 @@ import {
   type Grado,
   type GradoCreate,
 } from '#/services/catalogos'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/catalogos/grados')({ component: GradosPage })
 
@@ -77,6 +78,8 @@ function GradosPage() {
     setForm(defaultForm)
     setModalOpen(true)
   }
+
+  useAccionPalette('nuevo-grado', openCreate)
 
   const openEdit = (row: Grado, view = false) => {
     setEditing(row)

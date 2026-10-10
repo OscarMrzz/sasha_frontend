@@ -1,8 +1,119 @@
+/* =============================================================================
+   Sasha — HOJA PRINCIPAL DE ESTILOS  (src/styles.css)
+   -----------------------------------------------------------------------------
+   Esta hoja NO describe el aspecto visual de los componentes: solo
+   1) centraliza el CONTRATO de estilos (el catálogo de bloques semánticos y sus
+      clases, más abajo) y
+   2) elige la HOJA DE DISEÑO ACTIVA con una sola línea (@import, más abajo).
+
+   Para cambiar de diseño:
+     - Crea otra hoja, p. ej. src/styles/style2.css (autocontenida: su paleta y
+       sus detalles).
+     - Cambia solo la línea marcada como "DISEÑO ACTIVO".
+     - No hace falta tocar nada más de este archivo.
+
+   Para volver al diseño original, vuelve a poner style1.css.
+
+   Reglas de diseño (no negociables, ver REG-UI-01/11):
+     - Nunca degradados (linear/radial/conic-gradient) ni en gráficas. Colores
+       sólidos de los tokens.
+     - Los buscadores dicen solo «Buscar…» como placeholder.
+     - Los detalles de color/espaciado/sombra viven en la hoja de diseño activa.
+   ============================================================================= */
+
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,300;0,400;0,500;0,600;0,700;0,900;1,100&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @import 'tailwindcss';
-@import './styles/app.css';
 
+/* -----------------------------------------------------------------------------
+   >>> DISEÑO ACTIVO <<<  (cambia SOLO esta línea para cambiar de diseño)
+   ----------------------------------------------------------------------------- */
+@import './styles/style2.css';
+/* Ejemplos futuros:
+   @import './styles/style2.css';
+   @import './styles/style3.css'; */
+
+/* =============================================================================
+   CONTRATO DE ESTILOS — catálogo de bloques semánticos
+   -----------------------------------------------------------------------------
+   Toda hoja de diseño debe implementar estas clases (BEM) con el mismo nombre y
+   significado. Cambia el aspecto, no el contrato.
+
+   PALETA / TOKENS
+     Variables `--sasha-*` en el `:root` del diseño (p. ej. `--sasha-bg-base`,
+     `--sasha-bg-raised`, `--sasha-bg-overlay`, `--sasha-bg-muted`,
+     `--sasha-bg-hover`, `--sasha-texto-primary/-muted/-emphasis/-title`,
+     `--sasha-border-suave/-fuerte`, `--sasha-accent`, `--sasha-success/-warning/-danger`,
+     `--sasha-backdrop`, `--sasha-shadow-modal`, `--sasha-radius`,
+     `--sasha-control-h`, `--sasha-sidebar-width`, `--sasha-topbar-height`).
+     Tema claro con `[data-theme='light']`.
+
+   TEXTO
+     .texto-primary · .texto-muted · .texto-emphasis · .texto-title · .page-title
+
+   BOTONES
+     .btn                     — base.
+     .btn.btn--primary        — acción principal (fondo de acento).
+     .btn.btn--ghost          — acción secundaria (borde/transparente).
+     .btn.btn--danger         — acción destructiva.
+     .btn.btn--sm             — tamaño pequeño.
+     .btn-submit              — botón de envío (login/wizard).
+     .app-boton-grande        — botón grande de portal (celular).
+
+   CAMPOS DE FORMULARIO
+     .field · .field__label · .field__input · .field__select · .field__textarea · .field__error
+     .combobox (control con lista filtrable) · .switch · .nivel-check
+
+   BUSCADOR
+     .search-input            — buscador con icono; placeholder siempre «Buscar…».
+
+   TABLA DE REGISTROS
+     .data-table-wrap · .data-table · .data-table__th(--sortable) · .data-table__sort
+     · .data-table__rownum · .data-table__pager · .data-table__th-inner
+
+   SUPERFICIES / TARJETAS
+     .card-left · .card-right · .wizard-card · .clase-card · .tarea-card · .hijo-card
+     .neon-surface(--pendiente|--iniciado|--finalizado) — superficie con estado.
+     Bento de informes: .mdash__bento (rejilla 12 col) · .mdash__tile(--*) · .notas-bento
+     · .analisis-bento · .resultado-bento
+
+   MODALES
+     .modal-backdrop(--closing) · .modal(--wide|--xl|--board) · .modal__header
+     · .modal__body · .modal__footer · .modal__title
+
+   MENÚ DE FILA (clic derecho)
+     .ctx-menu · .ctx-menu__item · .ctx-menu__item--danger
+
+   SIDEBAR / NAVBAR
+     .app-shell · .app-shell--hub · .app-shell__top (navbar) · .app-shell__top-brand
+     · .app-shell__burger · .app-shell__sidebar(--collapsed) · .sidebar-toolbar
+     · .sidebar-nav__item(--active) · .sidebar-nav__icon · .sidebar-clase
+     · .user-panel · .user-menu · .mobile-nav
+
+   BADGES / PÍLDORAS
+     .badge(--ok|--warn|--danger|--muted) · .nivel-badge · .sancion-badge · .estado-pill
+
+   AVISOS Y NOTIFICACIONES
+     .aviso-banner · .notif-bell · .notif-list · .notif-row · .notif-detail · .notif-nivel
+
+   ASISTENTES (wizard)
+     .wizard-steps · .wizard-card · .wizard-grid · .wizard-pane · .wizard-choice
+     · .wizard-summary · .wizard-success
+
+   BUSCADOR DE COMANDOS (Ctrl+K)
+     .cmdk-backdrop · .cmdk · .cmdk__head · .cmdk__input · .cmdk__kbd · .cmdk__list
+     · .cmdk__group · .cmdk__item(--active) · .cmdk__item-icon · .cmdk__item-title
+     · .cmdk__item-desc · .cmdk__empty
+
+   COMPONENTES PROPIOS DE UN DISEÑO
+     Cada hoja puede traer los suyos (p. ej. el diseño 1 trae `.neon-*`).
+
+   ESTADOS VACÍOS
+     .empty-state
+   ============================================================================= */
+
+/* --- Base global (resets comunes a todos los diseños) --- */
 * {
   box-sizing: border-box;
 }
@@ -21,31 +132,8 @@ body {
   position: relative;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    115deg,
-    #1b2129 0%,
-    #1b2129 35%,
-    #232a34 35%,
-    #232a34 45%,
-    #151920 45%,
-    #151920 70%,
-    #1b2129 70%
-  );
-  opacity: 0.6;
-}
-
 #app {
   position: relative;
   z-index: 1;
   min-height: 100%;
-}
-
-[data-theme='light'] body::before {
-  display: none;
 }

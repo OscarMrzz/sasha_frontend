@@ -26,6 +26,7 @@ import {
   type Matricula,
   type SugerenciaResponse,
 } from '#/services/matricula'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/matricula')({ component: MatriculaPage })
 
@@ -45,6 +46,8 @@ function MatriculaPage() {
   const [reingresoOpen, setReingresoOpen] = useState(false)
   const [confirmSave, setConfirmSave] = useState(false)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Matricula } | null>(null)
+
+  useAccionPalette('nuevo-matricula', () => setCreateOpen(true))
 
   const [reingresoCode, setReingresoCode] = useState('')
   const [sugerencia, setSugerencia] = useState<SugerenciaResponse | null>(null)

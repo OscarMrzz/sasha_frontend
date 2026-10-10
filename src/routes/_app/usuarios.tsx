@@ -23,6 +23,7 @@ import {
 } from '#/services/users'
 import { createAlumno, createMaestro, createResponsable } from '#/services/personas'
 import { asignarCoordinaciones, coordinacionesDeUsuario, listCoordinaciones } from '#/services/coordinaciones'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/usuarios')({ component: UsuariosPage })
 
@@ -131,6 +132,8 @@ function UsuariosPage() {
     setCoordSel([])
     setModalOpen(true)
   }
+
+  useAccionPalette('nuevo-usuario', openCreate)
 
   const openEdit = (row: ResponseUser) => {
     setMode('edit')

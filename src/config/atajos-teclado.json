@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "atajos": [
+    {
+      "id": "abrir-buscador-comandos",
+      "titulo": "Abrir buscador de comandos",
+      "descripcion": "Abre el buscador rápido para ir a una página o crear un registro.",
+      "atajo": "Ctrl+K",
+      "activo": true
+    }
+  ]
+}

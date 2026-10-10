@@ -15,6 +15,7 @@ import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
 import { listClasesTareas, listTareas, labelCriterioModo } from '#/services/tareas'
 import type { ClaseResumen, Tarea } from '#/services/tareas'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 /** Roles que ven las tareas por clase de todo el colegio, en solo lectura. */
 const VISTA_GENERAL = new Set(['consejeria', 'director', 'secretaria', 'coordinador'])
@@ -182,6 +183,8 @@ function TareasStaffPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [revisarId, setRevisarId] = useState<string | null>(revisarFromSearch ?? null)
   const [asigId, setAsigId] = useState(() => readLastAsignacionId() ?? '')
+
+  useAccionPalette('nuevo-tarea', () => setCreateOpen(true))
 
   useEffect(() => {
     if (revisarFromSearch) setRevisarId(revisarFromSearch)

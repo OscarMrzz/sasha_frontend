@@ -1,51 +1,30 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
-  Award,
-  Bell,
+  BarChart3,
   BookOpen,
-  Calendar,
-  CalendarCheck,
-  CalendarDays,
-  CheckSquare,
   ChevronDown,
-  ClipboardList,
-  Clock,
-  Download,
-  FileText,
-  Gavel,
   Home,
-  Layers,
-  LayoutGrid,
-  LayoutDashboard,
-  Link2,
-  ListTodo,
   LogOut,
   Menu,
   Moon,
-  Network,
   PanelLeftClose,
   PanelLeft,
-  Receipt,
-  RefreshCw,
-  Search,
-  Settings,
-  Shield,
-  ShieldAlert,
-  ShieldPlus,
   Sun,
-  Unlock,
   User,
-  Users,
-  Wallet,
-  BarChart3,
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState  } from 'react'
 import type {ReactNode} from 'react';
 import { Can, useCan } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
+import { CommandPalette } from '#/components/layout/CommandPalette'
+import { NavIcon } from '#/components/layout/nav-icons'
 import { NotificationsBell } from '#/components/layout/NotificationsBell'
+import atajosTeclado from '#/config/atajos-teclado.json'
+import { DESCRIPCION_RUTA, PALABRAS_CLAVE_RUTA, COMANDOS_AGREGAR } from '#/helpers/command-palette'
+import type { Comando } from '#/helpers/command-palette'
 import { NAV_ITEMS } from '#/helpers/nav'
+import { solicitarAccion } from '#/lib/accion-palette'
 import { useSession } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
 import { homePathForRoles, isMaestroRole, isPortalRole, isResponsableRole } from '#/lib/home-path'
@@ -55,39 +34,9 @@ import { logout } from '#/services/auth'
 import { toast } from 'sonner'
 import { useMiFoto } from '#/hooks/use-mi-foto'
 
-const ICONS: Record<string, ReactNode> = {
-  home: <Home className="sidebar-nav__icon" />,
-  dashboard: <LayoutDashboard className="sidebar-nav__icon" />,
-  settings: <Settings className="sidebar-nav__icon" />,
-  layers: <Layers className="sidebar-nav__icon" />,
-  clock: <Clock className="sidebar-nav__icon" />,
-  grid: <LayoutGrid className="sidebar-nav__icon" />,
-  book: <BookOpen className="sidebar-nav__icon" />,
-  calendar: <Calendar className="sidebar-nav__icon" />,
-  users: <Users className="sidebar-nav__icon" />,
-  shield: <Shield className="sidebar-nav__icon" />,
-  user: <User className="sidebar-nav__icon" />,
-  clipboard: <ClipboardList className="sidebar-nav__icon" />,
-  link: <Link2 className="sidebar-nav__icon" />,
-  'calendar-days': <CalendarDays className="sidebar-nav__icon" />,
-  file: <FileText className="sidebar-nav__icon" />,
-  check: <CheckSquare className="sidebar-nav__icon" />,
-  list: <ListTodo className="sidebar-nav__icon" />,
-  award: <Award className="sidebar-nav__icon" />,
-  unlock: <Unlock className="sidebar-nav__icon" />,
-  wallet: <Wallet className="sidebar-nav__icon" />,
-  receipt: <Receipt className="sidebar-nav__icon" />,
-  bell: <Bell className="sidebar-nav__icon" />,
-  chart: <BarChart3 className="sidebar-nav__icon" />,
-  download: <Download className="sidebar-nav__icon" />,
-  search: <Search className="sidebar-nav__icon" />,
-  'shield-alert': <ShieldAlert className="sidebar-nav__icon" />,
-  gavel: <Gavel className="sidebar-nav__icon" />,
-  network: <Network className="sidebar-nav__icon" />,
-  'calendar-check': <CalendarCheck className="sidebar-nav__icon" />,
-  'shield-plus': <ShieldPlus className="sidebar-nav__icon" />,
-  refresh: <RefreshCw className="sidebar-nav__icon" />,
-}
+const ATAJO_BUSCADOR = atajosTeclado.atajos.find((a) => a.id === 'abrir-buscador-comandos')
+const BUSCADOR_ACTIVO = ATAJO_BUSCADOR?.activo ?? false
+const BUSCADOR_TECLA = ATAJO_BUSCADOR?.atajo ?? 'Ctrl+K'
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, clearSession } = useSession()
@@ -112,6 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') || 'dark'
   })
   const fotoSrc = useMiFoto()
+  const [paletteOpen, setPaletteOpen] = useState(false)
 
   const items = useMemo(() => {
     type Item = {
@@ -150,6 +100,49 @@ export function AppShell({ children }: { children: ReactNode }) {
         !i.hideForRoles?.some((r) => roles.includes(r)),
     )
   }, [can, roles, maestro, portal, navigate])
+
+  const comandos = useMemo<Comando[]>(() => {
+    const navegar: Comando[] = items.map((item) => ({
+      id: `ir-${item.to}`,
+      titulo: item.label,
+      descripcion: DESCRIPCION_RUTA[item.to] ?? '',
+      grupo: 'Ir a',
+      icono: item.icon,
+      palabrasClave: PALABRAS_CLAVE_RUTA[item.to] ?? [],
+      ejecutar: () => {
+        if (item.onClick) {
+          item.onClick()
+          return
+        }
+        void navigate({ to: item.to })
+      },
+    }))
+    const agregar: Comando[] = COMANDOS_AGREGAR.filter((a) => can(a.permiso)).map((a) => ({
+      id: a.id,
+      titulo: a.titulo,
+      descripcion: a.descripcion,
+      grupo: 'Agregar',
+      icono: a.icono,
+      palabrasClave: a.palabrasClave,
+      ejecutar: () => {
+        solicitarAccion(a.intentId)
+        void navigate({ to: a.to })
+      },
+    }))
+    return [...navegar, ...agregar]
+  }, [items, can, navigate])
+
+  useEffect(() => {
+    if (!BUSCADOR_ACTIVO) return
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPaletteOpen((open) => !open)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   useEffect(() => {
     if (!userMenuOpen) return
@@ -227,7 +220,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               onNavigate?.()
             }}
           >
-            {ICONS[item.icon] ?? ICONS.home}
+            <NavIcon name={item.icon} className="sidebar-nav__icon" />
             {showLabels ? <span>{item.label}</span> : null}
           </button>
         )
@@ -240,7 +233,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           title={item.label}
           onClick={onNavigate}
         >
-          {ICONS[item.icon] ?? ICONS.home}
+          <NavIcon name={item.icon} className="sidebar-nav__icon" />
           {showLabels ? <span>{item.label}</span> : null}
         </Link>
       )
@@ -525,6 +518,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             window.location.href = '/login'
           }
         }}
+      />
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        comandos={comandos}
+        atajo={BUSCADOR_TECLA}
       />
     </div>
   )

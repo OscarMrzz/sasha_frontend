@@ -20,6 +20,7 @@ import {
 import type { Periodo, PeriodoCreate } from '#/services/catalogos'
 import { listContratos } from '#/services/contratos'
 import { periodoEstadoPalabra } from '#/helpers/periodos'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/catalogos/periodos')({ component: PeriodosPage })
 
@@ -97,6 +98,8 @@ function PeriodosPage() {
     setForm(defaultForm)
     setModalOpen(true)
   }
+
+  useAccionPalette('nuevo-periodo', openCreate)
 
   const openEdit = (row: Periodo, view = false) => {
     setEditing(row)

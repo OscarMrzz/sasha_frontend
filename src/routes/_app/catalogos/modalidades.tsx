@@ -19,6 +19,7 @@ import {
   type Modalidad,
   type ModalidadCreate,
 } from '#/services/catalogos'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/catalogos/modalidades')({ component: ModalidadesPage })
 
@@ -98,6 +99,8 @@ function ModalidadesPage() {
     setStep(0)
     setModalOpen(true)
   }
+
+  useAccionPalette('nuevo-modalidad', openCreate)
 
   const openEdit = (row: Modalidad, view = false) => {
     setEditing(row)

@@ -7,9 +7,12 @@ Lectura rápida de qué hay y qué hace. Bitácora de cambios: [`EVOLUCION.md`](
 - `src/routes/` — pantallas (TanStack Router). `_app` exige sesión.
 - `src/services/` — llamadas al API (`/api` → backend en local).
 - `src/components/` — UI reutilizable y wizards.
-- `src/helpers/` — menú (`nav.ts`) y matriz de permisos (`permissions.ts`).
-- `src/lib/` — cliente HTTP, sesión en `localStorage`.
-- `src/styles/app.css` — tokens Sasha, BEM, sin degradados.
+- `src/helpers/` — menú (`nav.ts`), matriz de permisos (`permissions.ts`) y registro del buscador de comandos (`command-palette.ts`).
+- `src/lib/` — cliente HTTP, sesión en `localStorage` y bus de intención del buscador (`accion-palette.ts`).
+- `src/config/atajos-teclado.json` — atajos de teclado (`id`, `titulo`, `descripcion`, `atajo`, `activo`).
+- `src/styles.css` — hoja **principal**: contrato de estilos (catálogo de bloques) + elige el diseño activo con una línea `@import`. No describe detalles.
+- `src/styles/style1.css` — diseño 1 «Lumier Dark» (original; trae `tokens.css` y `neon.css`).
+- `src/styles/style2.css` — diseño 2 «Matte Dark» (**activo**): hereda `style1.css` y re-estiliza con los oscuros mate + el naranja corporativo. Cambiar de diseño = cambiar la línea del import en `styles.css`. Ver [`ESTILOS.md`](ESTILOS.md).
 
 Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API también valida. Un ítem de `nav.ts` con `hideForRoles` no sale en el menú de esos roles aunque tengan el permiso (consejería y director tienen `catalogos:get` para la matrícula, pero no ven Grados, Modalidades, Secciones, Cursos ni Periodos); la URL no se bloquea. **Director:** hoy ve y hace exactamente lo mismo que consejería (DEC-017), pero cada rol tiene su lista propia en `permissions.ts` y su entrada propia en `nav.ts`, `calificaciones.tsx` y `tareas.tsx`; cambiar uno no cambia el otro.
 
@@ -86,6 +89,15 @@ Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API tambié
 - Contexto: `src/lib/portal-context.ts` (hijo elegido + clase activa en `sessionStorage`; se limpia al cerrar sesión) y `src/hooks/use-portal.ts` (`usePortal`, `usePortalInicio`).
 - Páginas en modo clase envueltas en `RequirePortalClase`: sin clase elegida vuelven a `/alumno`. Pagos (responsable) no depende de la clase.
 - Servicio: `src/services/portal.ts`.
+
+## Buscador de comandos (Ctrl+K)
+
+`Ctrl+K` (y `Cmd+K` en Mac) abre el buscador de comandos desde cualquier vista autenticada (lo monta `AppShell`). Fondo oscuro y desenfocado; se filtra al escribir, se navega con ↑/↓ y se ejecuta con Enter; `Escape` o clic en el fondo cierran. Muestra solo lo que el rol activo puede ver (mismas reglas que el sidebar). Los resultados van en dos grupos: **Ir a** (páginas, derivadas de `NAV_ITEMS`) y **Agregar** (acciones).
+
+- **Atajos:** `src/config/atajos-teclado.json` (`id`, `titulo`, `descripcion`, `atajo`, `activo`); `activo: false` desactiva el atajo.
+- **Registro:** `src/helpers/command-palette.ts` (descripciones cortas, **sinónimos** por ruta y las acciones). Sinónimos: `clase`→Cursos, `estudiante`/`niños`→Alumnos, `profesor`→Maestros, `deber`→Tareas, etc.
+- **UI:** `src/components/layout/CommandPalette.tsx`; iconos compartidos en `src/components/layout/nav-icons.tsx` (los usa el sidebar y el buscador).
+- **«Agregar X»:** navega a su página **y abre su modal de creación** (bus de intención en `src/lib/accion-palette.ts` + `src/hooks/use-accion-palette.ts`). Acciones v1: tarea, curso, grado, sección, modalidad, periodo, usuario, excusa, ficha disciplinaria y matrícula.
 
 ## Componentes que importan
 

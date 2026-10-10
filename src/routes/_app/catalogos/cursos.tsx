@@ -22,6 +22,7 @@ import {
   type CursoCreate,
   type CursoTextoItem,
 } from '#/services/catalogos'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/catalogos/cursos')({ component: CursosPage })
 
@@ -116,6 +117,8 @@ function CursosPage() {
     setForm(defaultForm)
     setModalOpen(true)
   }
+
+  useAccionPalette('nuevo-curso', openCreate)
 
   const openEdit = async (row: Curso) => {
     closeCtx()

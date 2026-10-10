@@ -20,6 +20,7 @@ import {
   type Seccion,
   type SeccionCreate,
 } from '#/services/catalogos'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/catalogos/secciones')({ component: SeccionesPage })
 
@@ -66,6 +67,8 @@ function SeccionesPage() {
     setForm(defaultForm)
     setModalOpen(true)
   }
+
+  useAccionPalette('nuevo-seccion', openCreate)
 
   const openEdit = (row: Seccion, view = false) => {
     setEditing(row)

@@ -8,6 +8,7 @@ import { RequirePermission, useCan } from '#/components/gates/Can'
 import { DataTable } from '#/components/ui/DataTable'
 import { fechaLarga, listAlumnosConFichas } from '#/services/disciplina'
 import type { AlumnoConFichas } from '#/services/disciplina'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/disciplina/')({ component: DisciplinaPage })
 
@@ -36,6 +37,8 @@ function DisciplinaPage() {
     window.addEventListener('click', closeCtx)
     return () => window.removeEventListener('click', closeCtx)
   }, [ctx, closeCtx])
+
+  useAccionPalette('nuevo-ficha', () => setNueva(true))
 
   const columns = useMemo(
     () => [

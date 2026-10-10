@@ -10,6 +10,7 @@ import { DataTable } from '#/components/ui/DataTable'
 import { userMessageFromError } from '#/lib/api'
 import { desactivarExcusa, estadoExcusaLabel, listExcusas, rangoExcusa } from '#/services/excusas'
 import type { Excusa } from '#/services/excusas'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/excusas/')({ component: ExcusasPage })
 
@@ -29,6 +30,8 @@ function ExcusasPage() {
     window.addEventListener('click', closeCtx)
     return () => window.removeEventListener('click', closeCtx)
   }, [ctx, closeCtx])
+
+  useAccionPalette('nuevo-excusa', () => setModal({ excusa: null, soloVer: false }))
 
   const quitarMut = useMutation({
     mutationFn: (e: Excusa) => desactivarExcusa(e.id),

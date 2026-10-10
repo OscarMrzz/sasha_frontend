@@ -1,0 +1,376 @@
+/* =============================================================================
+   DISEÑO 2 — "Matte Dark"
+   -----------------------------------------------------------------------------
+   Capa de RE-ESTILIZADO. Hereda toda la implementación de componentes del
+   diseño 1 (style1.css) y solo cambia la piel:
+     - Colores oscuros MATE (se conservan del ejemplo dado).
+     - Esquinas redondeadas, sombras suaves e inset (look mate).
+     - Acento = NARANJA CORPORATIVO de Sasha (reemplaza el azul/índigo del
+       ejemplo). El resto de semánticos usa los colores corporativos.
+   Sin degradados (REG-UI-01): el fondo radial del ejemplo se resuelve con un
+   color sólido oscuro.
+
+   Para activarlo, en src/styles.css:
+     @import './styles/style2.css';
+   ============================================================================= */
+
+@import './style1.css';
+
+/* -----------------------------------------------------------------------------
+   Tokens del diseño — oscuros mate + acento corporativo
+   ----------------------------------------------------------------------------- */
+:root {
+  /* Neutros oscuros (del ejemplo, sin cambios) */
+  --sasha-bg-base: #1b1d22;
+  --sasha-bg-raised: #21242b;
+  --sasha-bg-overlay: #21242b;
+  --sasha-bg-muted: #181a1f;
+  --sasha-bg-hover: #262a33;
+
+  --sasha-border-suave: rgba(255, 255, 255, 0.04);
+  --sasha-border-fuerte: rgba(255, 255, 255, 0.09);
+
+  --sasha-texto-primary: #f1f5f9;
+  --sasha-texto-muted: #8e95a5;
+  --sasha-texto-emphasis: #f1f5f9;
+  --sasha-texto-title: #f1f5f9;
+  --sasha-texto-inverse: #141519;
+
+  /* Acento corporativo (naranja Sasha) — reemplaza el azul del ejemplo */
+  --sasha-accent: #ff5023;
+  --sasha-accent-hover: #e04218;
+  --sasha-accent-muted: rgba(255, 80, 35, 0.14);
+
+  /* Semánticos corporativos */
+  --sasha-success: #3d9a6a;
+  --sasha-warning: #c9a227;
+  --sasha-danger: #d64545;
+  --sasha-danger-muted: #3a1f1f;
+
+  /* Filas de tabla planas (el ejemplo no usa rayas) */
+  --sasha-table-row: transparent;
+  --sasha-table-row-alt: transparent;
+  --sasha-table-row-hover: rgba(255, 255, 255, 0.025);
+
+  --sasha-backdrop: rgba(16, 17, 20, 0.72);
+  --sasha-bg-glass: rgba(33, 36, 43, 0.85);
+  --sasha-shadow-modal: 0 24px 48px -12px rgba(0, 0, 0, 0.55);
+
+  --sasha-radius: 14px;
+  --sasha-control-h: 2.6rem;
+  --sasha-control-h-sm: 2.1rem;
+
+  /* Sombras mate reutilizables (del ejemplo) */
+  --matte-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.35),
+    0 4px 10px -2px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+  --matte-shadow-pressed:
+    inset 0 2px 4px 0 rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px 0 rgba(0, 0, 0, 0.2),
+    0 1px 2px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* Tema claro del diseño (para que el botón de tema siga funcionando) */
+[data-theme='light'] {
+  --sasha-bg-base: #eef1f5;
+  --sasha-bg-raised: #ffffff;
+  --sasha-bg-overlay: #ffffff;
+  --sasha-bg-muted: #e7ebf0;
+  --sasha-bg-hover: #dde3ea;
+
+  --sasha-border-suave: rgba(20, 24, 30, 0.08);
+  --sasha-border-fuerte: rgba(20, 24, 30, 0.16);
+
+  --sasha-texto-primary: #1a2230;
+  --sasha-texto-muted: #5c6270;
+  --sasha-texto-emphasis: #13171c;
+  --sasha-texto-title: #13171c;
+
+  --sasha-table-row: transparent;
+  --sasha-table-row-alt: transparent;
+  --sasha-table-row-hover: rgba(20, 24, 30, 0.04);
+
+  --sasha-backdrop: rgba(26, 34, 48, 0.45);
+  --sasha-shadow-modal: 0 24px 48px -12px rgba(26, 34, 48, 0.25);
+
+  --matte-shadow:
+    0 10px 25px -5px rgba(26, 34, 48, 0.12),
+    0 4px 10px -2px rgba(26, 34, 48, 0.08),
+    inset 0 1px 1px rgba(255, 255, 255, 0.7);
+  --matte-shadow-pressed:
+    inset 0 2px 4px rgba(26, 34, 48, 0.12),
+    inset 0 1px 1px rgba(26, 34, 48, 0.06);
+}
+
+/* -----------------------------------------------------------------------------
+   Fondo (sin degradados: sólido)
+   ----------------------------------------------------------------------------- */
+body {
+  background: var(--sasha-bg-base);
+}
+
+body::before {
+  display: none;
+}
+
+/* -----------------------------------------------------------------------------
+   Scrollbar
+   ----------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sasha-bg-muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sasha-bg-hover);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #323743;
+}
+
+/* -----------------------------------------------------------------------------
+   Botones
+   ----------------------------------------------------------------------------- */
+.btn {
+  border-radius: var(--sasha-radius);
+  border: 1px solid var(--sasha-border-suave);
+  box-shadow: var(--matte-shadow);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+.btn:active:not(:disabled) {
+  box-shadow: var(--matte-shadow-pressed);
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  background: var(--sasha-accent);
+  border-color: rgba(255, 80, 35, 0.4);
+  color: #ffffff;
+  box-shadow:
+    0 8px 20px -8px rgba(255, 80, 35, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--sasha-accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn--ghost {
+  background: var(--sasha-bg-raised);
+  border-color: var(--sasha-border-suave);
+  box-shadow: var(--matte-shadow);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--sasha-bg-hover);
+}
+
+.btn--danger {
+  color: #ffffff;
+  box-shadow:
+    0 8px 20px -8px rgba(214, 69, 69, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+/* -----------------------------------------------------------------------------
+   Campos de formulario (input mate con sombra inset)
+   ----------------------------------------------------------------------------- */
+.field__input,
+.field__select,
+.field__textarea {
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+  box-shadow: var(--matte-shadow-pressed);
+}
+
+.field__input:focus,
+.field__select:focus,
+.field__textarea:focus {
+  outline: none;
+  border-color: rgba(255, 80, 35, 0.35);
+  box-shadow:
+    var(--matte-shadow-pressed),
+    0 0 0 2px rgba(255, 80, 35, 0.12);
+}
+
+.field__label {
+  color: var(--sasha-texto-muted);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+
+/* -----------------------------------------------------------------------------
+   Tarjetas / superficies
+   ----------------------------------------------------------------------------- */
+.mdash__tile,
+.wizard-card,
+.clase-card,
+.hijo-card,
+.tarea-card,
+.card-left,
+.card-right,
+.login-card,
+.neon-surface,
+.analisis-tile,
+.analisis-card,
+.ap-tile,
+.ap-hero,
+.pagos-card {
+  background: var(--sasha-bg-raised);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 18px;
+  box-shadow: var(--matte-shadow);
+}
+
+.clase-card:hover,
+.hijo-card:hover {
+  border-color: var(--sasha-accent);
+  background: var(--sasha-bg-hover);
+}
+
+/* -----------------------------------------------------------------------------
+   Tabla de registros
+   ----------------------------------------------------------------------------- */
+.data-table-wrap {
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+  box-shadow: var(--matte-shadow-pressed);
+}
+
+.data-table th {
+  background: var(--sasha-bg-raised);
+  color: var(--sasha-texto-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--sasha-border-suave);
+}
+
+.data-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.data-table tbody tr:hover {
+  background: var(--sasha-table-row-hover);
+}
+
+/* -----------------------------------------------------------------------------
+   Modales y menús flotantes
+   ----------------------------------------------------------------------------- */
+.modal-backdrop {
+  background: var(--sasha-backdrop);
+  backdrop-filter: blur(8px);
+}
+
+.modal {
+  background: var(--sasha-bg-overlay);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 18px;
+  box-shadow: var(--sasha-shadow-modal);
+}
+
+.ctx-menu,
+.combobox__list,
+.user-menu,
+.cmdk {
+  background: var(--sasha-bg-overlay);
+  border: 1px solid var(--sasha-border-fuerte);
+  border-radius: var(--sasha-radius);
+  box-shadow: var(--sasha-shadow-modal);
+}
+
+.ctx-menu__item,
+.combobox__option,
+.user-menu__item {
+  border-radius: 10px;
+}
+
+/* -----------------------------------------------------------------------------
+   Sidebar / navbar
+   ----------------------------------------------------------------------------- */
+.app-shell__sidebar {
+  background: var(--sasha-bg-raised);
+  border-right: 1px solid var(--sasha-border-suave);
+  box-shadow: var(--matte-shadow);
+}
+
+.app-shell__top {
+  background: var(--sasha-bg-raised);
+  border-bottom: 1px solid var(--sasha-border-suave);
+}
+
+.sidebar-nav__item {
+  border-radius: 12px;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.sidebar-nav__item--active {
+  background: var(--sasha-bg-hover);
+  color: var(--sasha-texto-emphasis);
+  box-shadow:
+    inset 3px 0 0 var(--sasha-accent),
+    var(--matte-shadow);
+}
+
+.sidebar-nav__item--active .sidebar-nav__icon {
+  color: var(--sasha-accent);
+}
+
+.user-panel {
+  border-radius: 12px;
+}
+
+/* -----------------------------------------------------------------------------
+   Badges
+   ----------------------------------------------------------------------------- */
+.badge {
+  border-radius: 8px;
+  background: var(--sasha-bg-muted);
+}
+
+.badge--ok {
+  background: rgba(61, 154, 106, 0.14);
+}
+
+.badge--warn {
+  background: rgba(201, 162, 39, 0.14);
+}
+
+.badge--danger {
+  background: rgba(214, 69, 69, 0.14);
+}
+
+/* -----------------------------------------------------------------------------
+   Títulos de página
+   ----------------------------------------------------------------------------- */
+.page-title {
+  color: var(--sasha-texto-title);
+  letter-spacing: -0.01em;
+}
+
+/* -----------------------------------------------------------------------------
+   Estado vacío
+   ----------------------------------------------------------------------------- */
+.empty-state {
+  color: var(--sasha-texto-muted);
+}
