@@ -1,8 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Modal } from '#/components/ui/Modal'
-import { FichaClaseActual } from '#/components/usuarios/FichaClaseActual'
-import { FichaHorarioSemanaModal } from '#/components/usuarios/FichaHorarioSemanaModal'
 import { FichaPlanPeriodoModal } from '#/components/usuarios/FichaPlanPeriodoModal'
 import { FichaTareasModal } from '#/components/usuarios/FichaTareasModal'
 import { formatHoras, minutosSemana } from '#/helpers/horas'
@@ -12,7 +10,6 @@ import { userMessageFromError } from '#/lib/api'
 import { downloadFichaPdf } from '#/lib/fichaPdf'
 import {
   getFicha,
-  labelAsistencia,
   localConsulta,
   type FichaOperativo,
   type UserFicha,
@@ -119,70 +116,11 @@ function OperativoSections({
   isMaestro: boolean
   isAlumno: boolean
 }) {
-  const [semanaOpen, setSemanaOpen] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
   const [tareasOpen, setTareasOpen] = useState(false)
 
   return (
     <>
-      <FichaClaseActual
-        hora={operativo.consulta.hora}
-        slots={operativo.clase_actual}
-        mensaje={operativo.mensaje}
-      />
-
-      {(isMaestro || isAlumno) && (
-        <Section title={`Horario de hoy · ${DIAS[operativo.consulta.dia_semana] ?? ''}`}>
-          {operativo.horario_dia.length === 0 ? (
-            <p className="texto-muted">{operativo.mensaje || 'Sin clases programadas para hoy.'}</p>
-          ) : (
-            <table className="ficha-table" data-testid="ficha-horario-dia">
-              <thead>
-                <tr>
-                  <th>Hora</th>
-                  <th>Curso</th>
-                  {isMaestro ? <th>Grado / sección</th> : null}
-                  {isAlumno ? <th>Maestro</th> : null}
-                  {isAlumno ? <th>Asistencia</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {operativo.horario_dia.map((s) => (
-                  <tr key={`${s.asignacion_docente_id}-${s.hora_inicio}`}>
-                    <td>
-                      {s.hora_inicio}–{s.hora_fin}
-                    </td>
-                    <td>{s.curso_nombre}</td>
-                    {isMaestro ? (
-                      <td>
-                        {s.grado_nombre} sec {s.seccion_nombre}
-                      </td>
-                    ) : null}
-                    {isAlumno ? <td>{s.maestro_nombre}</td> : null}
-                    {isAlumno ? (
-                      <td>
-                        <span className="badge">
-                          {s.asistencia_nombre || labelAsistencia(s.asistencia_codigo)}
-                        </span>
-                      </td>
-                    ) : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            style={{ marginTop: '0.65rem' }}
-            data-testid="ficha-ver-horario-semana"
-            onClick={() => setSemanaOpen(true)}
-          >
-            Ver todo
-          </button>
-        </Section>
-      )}
-
       {isMaestro ? (
         <Section title="Plan de estudio · hoy">
           {(operativo.plan_dia ?? []).length === 0 ? (
@@ -261,13 +199,6 @@ function OperativoSections({
         </Section>
       ) : null}
 
-      <FichaHorarioSemanaModal
-        open={semanaOpen}
-        title="Horario de la semana"
-        slots={operativo.horario_semana}
-        mode={isMaestro ? 'maestro' : 'alumno'}
-        onClose={() => setSemanaOpen(false)}
-      />
       <FichaPlanPeriodoModal
         open={planOpen}
         parciales={operativo.plan_periodo ?? []}

@@ -3,7 +3,6 @@ import autoTable from 'jspdf-autotable'
 import type { UserOptions } from 'jspdf-autotable'
 import { formatHoras, minutosSemana } from '#/helpers/horas'
 import { roleLabel } from '#/helpers/permissions'
-import { labelAsistencia } from '#/services/personas'
 import type { UserFicha } from '#/services/personas'
 
 type RGB = [number, number, number]
@@ -270,41 +269,6 @@ export function buildFichaPdfDoc(ficha: UserFicha, opts: FichaPdfOpts = {}): jsP
       : []),
   ])
 
-  const op = ficha.operativo
-  const isMaestro = Boolean(ficha.maestro)
-  const isAlumno = Boolean(ficha.alumno)
-  if (op) {
-    const clase =
-      op.clase_actual.length > 0
-        ? op.clase_actual
-            .map((s) => `${s.curso_nombre} (${s.hora_inicio}-${s.hora_fin})`)
-            .join('; ')
-        : 'Sin clase en este horario'
-    y = kvTable(doc, ensureSpace(doc, y + GAP), 'Operativo', [
-      ['Consulta', `${op.consulta.fecha} ${op.consulta.hora}`],
-      ['Clase actual', clase],
-    ])
-    if (op.horario_dia.length) {
-      const head = ['Hora', 'Curso']
-      if (isMaestro) head.push('Grado / sección')
-      if (isAlumno) head.push('Maestro', 'Asistencia')
-      y = dataTable(
-        doc,
-        ensureSpace(doc, y + GAP),
-        'Horario del día',
-        head,
-        op.horario_dia.map((s) => {
-          const row = [`${s.hora_inicio}-${s.hora_fin}`, s.curso_nombre]
-          if (isMaestro) row.push(`${s.grado_nombre} sec ${s.seccion_nombre}`)
-          if (isAlumno) {
-            row.push(dash(s.maestro_nombre), s.asistencia_nombre || labelAsistencia(s.asistencia_codigo))
-          }
-          return row
-        }),
-      )
-    }
-  }
-
   if (p) {
     y = kvTable(doc, ensureSpace(doc, y + GAP), 'Perfil', [
       ['Nombre', joinName(p)],
@@ -319,7 +283,7 @@ export function buildFichaPdfDoc(ficha: UserFicha, opts: FichaPdfOpts = {}): jsP
   const a = ficha.alumno
   if (a) {
     y = kvTable(doc, ensureSpace(doc, y + GAP), 'Alumno · historial', [
-      ['Otra institución', yn(a.procede_otra_institucion)],
+      ['Primer ingreso', yn(a.procede_otra_institucion)],
       ['Institución de origen', dash(a.nombre_institucion_origen)],
       ['Religión', dash(a.religion)],
       ['Condición de aprendizaje', yn(a.presenta_condicion_aprendizaje)],

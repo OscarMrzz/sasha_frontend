@@ -72,7 +72,7 @@ test.describe('consejería: alumnos, maestros, horarios y matrícula', () => {
     await page.getByTestId('matricula-fecha-nacimiento').fill('2015-03-10')
     await page.getByTestId('matricula-telefono').fill('88721992')
     await page.getByTestId('matricula-wizard-next').click()
-    await expect(page.getByText('¿De dónde proviene el alumno?')).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByTestId('matricula-otra-inst-no')).toBeVisible({ timeout: 8_000 })
     await expect(page.getByText('No tienes permiso')).toHaveCount(0)
   })
 

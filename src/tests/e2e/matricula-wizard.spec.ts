@@ -22,7 +22,7 @@ test.describe('matricula wizard @critical', () => {
     await page.getByTestId('matricula-wizard-next').click()
     await expect(page.getByText(/8 dígitos/i)).toBeVisible({ timeout: 8_000 })
     await expect(page.getByText('Datos del alumno')).toBeVisible()
-    await expect(page.getByText('¿De dónde proviene el alumno?')).toHaveCount(0)
+    await expect(page.getByTestId('matricula-otra-inst-no')).toHaveCount(0)
 
     await page.getByTestId('matricula-telefono').fill('88721992')
     await page.getByTestId('matricula-identidad').fill('0000000000000999')
@@ -32,7 +32,7 @@ test.describe('matricula wizard @critical', () => {
     await page.mouse.move(0, 0)
     await expect(page.locator('[data-sonner-toast]')).toHaveCount(0, { timeout: 10_000 })
     await page.getByTestId('matricula-wizard-next').click()
-    await expect(page.getByText('¿De dónde proviene el alumno?')).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByTestId('matricula-otra-inst-no')).toBeVisible({ timeout: 8_000 })
 
     await page.getByTestId('matricula-otra-inst-no').click()
     const alergia = page.getByTestId('matricula-alergia')

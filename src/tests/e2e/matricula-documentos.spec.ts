@@ -48,7 +48,7 @@ test.describe('matrícula · carpeta de documentos', () => {
     await page.getByTestId('matricula-wizard-next').click()
 
     // Paso 2 · Historial
-    await expect(page.getByText('¿De dónde proviene el alumno?')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByTestId('matricula-otra-inst-no')).toBeVisible({ timeout: 10_000 })
     await page.getByTestId('matricula-otra-inst-no').click()
     await page.getByTestId('matricula-wizard-next').click()
 

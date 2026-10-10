@@ -130,11 +130,11 @@ Es el mismo modal para todos los roles que lo abren (Usuarios, Maestros de conse
 
 **Hero.** Nombre, código, username, roles y estado. Si es alumno, también grado · sección de la matrícula ACTIVE.
 
-**Operativo (maestro / alumno).** Banner de clase actual según hora local; horario del día con «Ver todo» (semana + PDF). Columnas del día: alumno → Hora, Curso, Maestro, Asistencia; maestro → Hora, Curso, Grado / sección. Maestro: plan de hoy + «Ver todo» del periodo. Alumno: tareas de hoy + «Ver todo» ordenadas.
+**Operativo (maestro / alumno).** Sin banner de clase actual ni horario del día: el maestro ve el **plan de hoy** con «Ver todo» del periodo; el alumno, las **tareas de hoy** con «Ver todo» ordenadas.
 
 **Bloques por rol.** Datos personales siempre. Alumno: historial de matrícula, matrículas, responsables, documentos. Maestro: **Cursos** (curso, grado, sección, periodo, horarios del horario activo, estado) y disponibilidad. Responsable: domicilio / trabajo / alumnos a cargo.
 
-**PDF.** Misma información que la ficha, incluida la sección Cursos del maestro.
+**PDF.** Misma información que la ficha, incluida la sección Cursos del maestro. Ya **no** incluye la sección Operativo (consulta, clase actual ni horario del día).
 
 ## Wizard de matrícula
 
@@ -144,7 +144,7 @@ Pasos: Alumno → Historial → Académico → Responsables → Foto → Confirm
 
 **Alumno.** Nombres, sexo, nacimiento, teléfono (8 dígitos HN si se llena), identidad (13 dígitos si se llena). No hay campo tipo de documento; al guardar se manda `tipo_documento_identidad: 'HND'` para SACE.
 
-**Historial.** Procedencia; alergias y condiciones con Combobox `allowCustom` (listas `GET /catalogos/alergias` y `/condiciones-aprendizaje`); grados repetidos.
+**Historial.** Ingreso con dos botones: **Reingreso** (ya estuvo en la institución) y **Primer ingreso** (viene de otra institución; al elegirlo pide el **nombre de la institución anterior**); alergias y condiciones con Combobox `allowCustom` (listas `GET /catalogos/alergias` y `/condiciones-aprendizaje`); grados repetidos.
 
 **Académico.** Periodo, grado, modalidad, sección o asignación automática, y cursos retrasados. Ya no hay casilla de mensualidad: un aviso indica que la cuota de matrícula y las mensualidades se crean solas al matricular.
 

@@ -420,13 +420,13 @@ export function MatriculaWizard({
     }
     if (i === 1) {
       if (historial.procede_otra_institucion === null) {
-        return 'Indica si procede de otra institución'
+        return 'Indica si es reingreso o primer ingreso'
       }
       if (
         historial.procede_otra_institucion &&
         !historial.nombre_institucion_origen.trim()
       ) {
-        return 'Indica el nombre de la institución de origen'
+        return 'Indica el nombre de la institución anterior'
       }
       if (historial.ha_repetido_grado) {
         const ok = historial.grados_repetidos.some((g) => g.grado_id)
@@ -899,10 +899,9 @@ export function MatriculaWizard({
         {!done && step === 1 ? (
           <div className="wizard-pane" key="historial">
             <p className="wizard-pane__title">Historial</p>
-            <p className="wizard-pane__hint">Procedencia, alergias, condiciones y grados repetidos.</p>
+            <p className="wizard-pane__hint">Ingreso, alergias, condiciones y grados repetidos.</p>
 
-            <p className="wizard-choice__question">¿De dónde proviene el alumno?</p>
-            <div className="wizard-choice" role="group" aria-label="Procedencia institucional">
+            <div className="wizard-choice" role="group" aria-label="Tipo de ingreso">
               <button
                 type="button"
                 data-testid="matricula-otra-inst-no"
@@ -915,7 +914,7 @@ export function MatriculaWizard({
                   }))
                 }
               >
-                Esta institución
+                Reingreso
               </button>
               <button
                 type="button"
@@ -925,7 +924,7 @@ export function MatriculaWizard({
                   setHistorial((f) => ({ ...f, procede_otra_institucion: true }))
                 }
               >
-                Otra institución
+                Primer ingreso
               </button>
             </div>
 
@@ -1700,11 +1699,13 @@ export function MatriculaWizard({
                 </div>
               ) : null}
               <div className="wizard-summary__row">
-                <span className="wizard-summary__label">Otra institución</span>
+                <span className="wizard-summary__label">Ingreso</span>
                 <span className="wizard-summary__value">
                   {historial.procede_otra_institucion
-                    ? historial.nombre_institucion_origen || 'Sí'
-                    : 'No'}
+                    ? historial.nombre_institucion_origen
+                      ? `Primer ingreso · ${historial.nombre_institucion_origen}`
+                      : 'Primer ingreso'
+                    : 'Reingreso'}
                 </span>
               </div>
               <div className="wizard-summary__row">

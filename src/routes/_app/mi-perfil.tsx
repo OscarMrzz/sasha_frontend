@@ -283,7 +283,7 @@ function BloquesAlumno(alumno: Alumno): ReactNode[] {
             <Dato label="Periodo">
               {actual.periodo} · {actual.anio_lectivo}
             </Dato>
-            <Dato label="Ingreso">{actual.es_reingreso ? 'Reingreso' : 'Nuevo ingreso'}</Dato>
+            <Dato label="Ingreso">{actual.es_reingreso ? 'Reingreso' : 'Primer ingreso'}</Dato>
             {alumno.procede_otra_institucion ? (
               <Dato label="Institución anterior">{alumno.nombre_institucion_origen || '—'}</Dato>
             ) : null}
