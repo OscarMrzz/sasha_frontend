@@ -75,6 +75,7 @@ const adminPerms: Permission[] = [
   'tipos_ficha:post',
   'tipos_ficha:put',
   'expediente:get',
+  'carnets:get',
   'coordinaciones:get',
   'coordinaciones:post',
   'coordinaciones:put',
@@ -84,6 +85,10 @@ const adminPerms: Permission[] = [
   'tipos_excusa:post',
   'recuperaciones:get',
   'recuperaciones:post',
+  'contratos:get',
+  'contratos:post',
+  'contratos:put',
+  'contratos:delete',
 ]
 
 export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
@@ -101,6 +106,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'notificaciones:get',
     'sace:get',
     'expediente:get',
+    'carnets:get',
     'matricula:get',
     'matricula:post',
     'matricula:put',
@@ -110,6 +116,10 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'catalogos:get',
     'fichas:get',
     'fichas:post',
+    'contratos:get',
+    'contratos:post',
+    'contratos:put',
+    'contratos:delete',
   ],
   // Lista propia: hoy coincide con la de consejería por decisión (DEC-017), pero no se comparte.
   director: [
@@ -123,6 +133,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'notificaciones:get',
     'sace:get',
     'expediente:get',
+    'carnets:get',
     'matricula:get',
     'matricula:post',
     'matricula:put',
@@ -132,6 +143,10 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'catalogos:get',
     'fichas:get',
     'fichas:post',
+    'contratos:get',
+    'contratos:post',
+    'contratos:put',
+    'contratos:delete',
   ],
   consejeria: [
     'planestudio:get',
@@ -144,6 +159,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'notificaciones:get',
     'sace:get',
     'expediente:get',
+    'carnets:get',
     'matricula:get',
     'matricula:post',
     'matricula:put',
@@ -184,6 +200,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'boveda:post',
     'catalogos:get',
     'notificaciones:get',
+    'carnets:get',
   ],
   contabilidad: [
     'pagos:get',
@@ -237,7 +254,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'planestudio:get',
     'notificaciones:get',
   ],
-  developer: ['auditoria:get', 'notificaciones:get'],
+  developer: ['auditoria:get', 'notificaciones:get', 'contratos:get'],
 }
 
 export function roleHasPermission(role: string | null | undefined, permission: Permission): boolean {

@@ -47,6 +47,8 @@ type DataTableProps<T extends RowData> = {
   addLabel?: string
   onAdd?: () => void
   canAdd?: boolean
+  /** `data-testid` del botón Agregar (por defecto `data-table-add-button`). */
+  addTestId?: string
   onExport?: () => void
   /** Filas para Descargar (Excel + PDF). Si se pasa, se ignora onExport. */
   exportFilename?: string
@@ -74,6 +76,7 @@ export function DataTable<T extends RowData>({
   addLabel = 'Agregar',
   onAdd,
   canAdd,
+  addTestId = 'data-table-add-button',
   onExport,
   exportFilename,
   exportRows,
@@ -260,7 +263,7 @@ export function DataTable<T extends RowData>({
             </details>
           ) : null}
           {canAdd && onAdd ? (
-            <button type="button" className="btn btn--primary" data-testid="data-table-add-button" onClick={onAdd}>
+            <button type="button" className="btn btn--primary" data-testid={addTestId} onClick={onAdd}>
               {addLabel}
             </button>
           ) : null}

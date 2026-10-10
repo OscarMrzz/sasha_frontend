@@ -49,6 +49,11 @@
   --sasha-sidebar-collapsed: 64px;
   --sasha-topbar-height: 52px;
 
+  /* Hoja blanca de contratos — mismo tono en dark y light (REG-UI-14) */
+  --contrato-hoja-bg: #ffffff;
+  --contrato-hoja-texto: #1a2230;
+  --contrato-hoja-borde: #d4cdc2;
+
   color-scheme: dark;
 }
 
@@ -83,5 +88,11 @@
 
   --sasha-backdrop: rgba(26, 34, 48, 0.45);
   --sasha-shadow-modal: 0 16px 48px rgba(26, 34, 48, 0.18);
+
+  /* Hoja blanca de contratos — mismo tono en dark y light (REG-UI-14) */
+  --contrato-hoja-bg: #ffffff;
+  --contrato-hoja-texto: #1a2230;
+  --contrato-hoja-borde: #d4cdc2;
+
   color-scheme: light;
 }

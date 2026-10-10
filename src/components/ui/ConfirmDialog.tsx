@@ -7,6 +7,8 @@ type ConfirmDialogProps = {
   confirmLabel?: string
   cancelLabel?: string
   danger?: boolean
+  /** Deshabilita el botón de confirmar (p. ej. mientras hay un envío en curso). */
+  confirmDisabled?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -18,6 +20,7 @@ export function ConfirmDialog({
   confirmLabel = 'Confirmar',
   cancelLabel = 'Cancelar',
   danger,
+  confirmDisabled,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -34,6 +37,7 @@ export function ConfirmDialog({
           <button
             type="button"
             className={`btn ${danger ? 'btn--danger' : 'btn--primary'}`}
+            disabled={confirmDisabled}
             onClick={onConfirm}
           >
             {confirmLabel}

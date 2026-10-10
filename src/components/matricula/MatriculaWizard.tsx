@@ -10,15 +10,29 @@ import { WizardSteps } from '#/components/ui/WizardSteps'
 import { userMessageFromError } from '#/lib/api'
 import { upload } from '#/services/boveda'
 import { periodoSelectOptions } from '#/helpers/periodos'
-import type { Curso, Grado, ListaItem, Modalidad, Periodo, Seccion } from '#/services/catalogos'
+import { generarDocumentosMatricula } from '#/helpers/documentos-matricula'
+import type { ContratoArchivoZip } from '#/helpers/documentos-matricula'
+import type { CarnetAlumno } from '#/components/carnets/CarnetEstudiantil'
+import type {
+  Curso,
+  Grado,
+  ListaItem,
+  Modalidad,
+  Periodo,
+  Seccion,
+} from '#/services/catalogos'
 import {
+  getContratoPeriodo,
+  getContratoPeriodoArchivo,
   listAlergias,
   listCondicionesAprendizaje,
   listParentescos,
   listProfesiones,
 } from '#/services/catalogos'
+import { getInstitucion } from '#/services/carnets'
 import { createMatricula, linkResponsable } from '#/services/matricula'
-import { createAlumno, createResponsable, getResponsableByCode } from '#/services/personas'
+import { createAlumno, createResponsable, getFicha, getResponsableByCode } from '#/services/personas'
+import type { UserFicha } from '#/services/personas'
 import { createUser } from '#/services/users'
 
 const STEPS = [
@@ -170,8 +184,34 @@ function downloadPdf(blob: Blob, filename: string) {
   const a = document.createElement('a')
   a.href = url
   a.download = filename
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  a.remove()
+  // El ZIP es la única entrega de documentos: revocamos tarde para no cortar la
+  // descarga en navegadores que la inician de forma asíncrona.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+/** Datos del carnet a partir de la ficha completa del alumno recién creado. */
+function mapCarnetAlumno(ficha: UserFicha): CarnetAlumno {
+  const p = ficha.perfil
+  const nombre = fullName({
+    primer_nombre: p?.primer_nombre ?? '',
+    segundo_nombre: p?.segundo_nombre,
+    primer_apellido: p?.primer_apellido ?? '',
+    segundo_apellido: p?.segundo_apellido,
+  }).toUpperCase()
+  const m =
+    ficha.alumno?.matriculas.find((x) => x.status === 'ACTIVE') ??
+    ficha.alumno?.matriculas[0]
+  return {
+    nombre: nombre || ficha.user.username,
+    codigo: ficha.user.code,
+    dni: p?.numero_identidad ?? '',
+    grado: m ? [m.grado, m.seccion].filter(Boolean).join(' ') : '',
+    jornada: m?.modalidad ? m.modalidad.toUpperCase() : '',
+    vigencia: m ? `${m.anio_lectivo} - ${m.anio_lectivo + 1}` : '',
+  }
 }
 
 function calcEdad(fecha: string): number | null {
@@ -245,6 +285,8 @@ export function MatriculaWizard({
   const [createdCode, setCreatedCode] = useState<string | null>(null)
   const [buscandoRespId, setBuscandoRespId] = useState<string | null>(null)
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
+  const [generandoDocs, setGenerandoDocs] = useState(false)
+  const [zipDescargado, setZipDescargado] = useState(false)
 
   const { data: alergiasCat = [] } = useQuery({
     queryKey: ['catalogo-alergias'],
@@ -350,6 +392,8 @@ export function MatriculaWizard({
     setConfirmCancel(false)
     setCreatedCode(null)
     setBuscandoRespId(null)
+    setGenerandoDocs(false)
+    setZipDescargado(false)
   }
 
   const requestClose = () => {
@@ -527,6 +571,7 @@ export function MatriculaWizard({
           : { seccion_id: academico.seccion_id }),
       })
 
+      const credencialesResponsables: { code: string; blob: Blob }[] = []
       for (const r of responsables) {
         if (r.mode === 'existente') {
           await linkResponsable(mat.id, {
@@ -573,12 +618,59 @@ export function MatriculaWizard({
             parentesco: r.parentesco.trim(),
             es_principal: r.es_principal,
           })
-          downloadPdf(respUser.pdfBlob, `responsable-${respUser.code}.pdf`)
+          credencialesResponsables.push({ code: respUser.code, blob: respUser.pdfBlob })
         }
       }
 
-      downloadPdf(alumnoUser.pdfBlob, `alumno-${alumnoUser.code}.pdf`)
-      return alumnoUser.code
+      const code = alumnoUser.code
+      setGenerandoDocs(true)
+      try {
+        const ficha = await getFicha(code).catch(() => null)
+
+        let institucion = 'INSTITUCIÓN EDUCATIVA'
+        try {
+          const inst = await getInstitucion()
+          if (inst.nombre_institucion.trim()) institucion = inst.nombre_institucion.trim()
+        } catch {
+          /* fallback a «INSTITUCIÓN EDUCATIVA» */
+        }
+
+        let contratoArchivo: ContratoArchivoZip | null = null
+        if (selectedPeriodo?.contrato_matricula_id) {
+          try {
+            const meta = await getContratoPeriodo(selectedPeriodo.id)
+            const data = await getContratoPeriodoArchivo(selectedPeriodo.id)
+            contratoArchivo = { nombre: meta.archivo_nombre, mime: meta.archivo_mime, data }
+          } catch {
+            contratoArchivo = null
+          }
+        }
+
+        const carnetAlumno = ficha ? mapCarnetAlumno(ficha) : null
+
+        const { blob, filename, avisos } = await generarDocumentosMatricula({
+          nombreAlumno: fullName(alumno),
+          codigoAlumno: code,
+          credencialAlumno: alumnoUser.pdfBlob,
+          credencialesResponsables,
+          contratoArchivo,
+          carnet: carnetAlumno ? { alumno: carnetAlumno, institucion } : null,
+          institucion,
+          ficha,
+        })
+
+        downloadPdf(blob, filename)
+        setZipDescargado(true)
+        toast.success('Documentos descargados')
+        for (const aviso of avisos) toast.warning(aviso)
+      } catch (e) {
+        // La matrícula ya quedó guardada: un fallo del ZIP no se revierte.
+        toast.error(userMessageFromError(e))
+      } finally {
+        setGenerandoDocs(false)
+      }
+
+      return code
     },
     onSuccess: (code) => {
       setCreatedCode(code)
@@ -661,7 +753,7 @@ export function MatriculaWizard({
                   type="button"
                   className="btn btn--primary"
                   data-testid="matricula-wizard-finish"
-                  disabled={saveMut.isPending}
+                  disabled={saveMut.isPending || generandoDocs}
                   onClick={() => {
                     const err = validateStep(3)
                     if (err) {
@@ -671,7 +763,11 @@ export function MatriculaWizard({
                     setConfirmSave(true)
                   }}
                 >
-                  {saveMut.isPending ? 'Guardando…' : 'Confirmar y guardar'}
+                  {generandoDocs
+                    ? 'Generando documentos…'
+                    : saveMut.isPending
+                      ? 'Guardando…'
+                      : 'Confirmar y guardar'}
                 </button>
               )}
             </>
@@ -684,9 +780,19 @@ export function MatriculaWizard({
           <div className="wizard-success wizard-pane">
             <p className="wizard-pane__title">Alumno matriculado</p>
             <p className="wizard-pane__hint">
-              Se descargó el PDF con el código y la contraseña temporal. Entrégalo al titular; la
-              contraseña no se vuelve a mostrar.
+              Se descargó la carpeta ZIP con los documentos (credenciales, contrato, carnet y
+              ficha). Las credenciales contienen la contraseña temporal: la contraseña no se
+              vuelve a mostrar.
             </p>
+            {zipDescargado ? (
+              <p
+                className="docs-listo"
+                data-testid="matricula-zip"
+                style={{ margin: '0 0 0.75rem' }}
+              >
+                Documentos descargados
+              </p>
+            ) : null}
             <div className="wizard-success__code" data-testid="matricula-created-code">
               {createdCode}
             </div>
@@ -1535,9 +1641,18 @@ export function MatriculaWizard({
           <div className="wizard-pane" key="confirm">
             <p className="wizard-pane__title">Revisión final</p>
             <p className="wizard-pane__hint">
-              Al confirmar se creará el usuario, el perfil, la matrícula y se descargarán los PDF con
-              código y contraseña.
+              Al confirmar se crearán el usuario, el perfil, la matrícula y se descargará una
+              carpeta ZIP con las credenciales, el contrato, el carnet y la ficha.
             </p>
+            <p className="texto-muted" style={{ fontSize: '0.8rem', margin: '0 0 0.75rem' }}>
+              Los documentos se descargan una sola vez al confirmar; las credenciales contienen la
+              contraseña temporal y no se pueden volver a generar.
+            </p>
+            {generandoDocs ? (
+              <p className="docs-progreso" data-testid="matricula-generando-docs">
+                Generando documentos…
+              </p>
+            ) : null}
             <div className="wizard-summary">
               {fotoUrl ? (
                 <div className="wizard-summary__photo">
@@ -1658,7 +1773,8 @@ export function MatriculaWizard({
       <ConfirmDialog
         open={confirmSave}
         title="Confirmar matrícula"
-        message={`¿Registrar a ${fullName(alumno)}? Se generará el PDF con código y contraseña.`}
+        message={`¿Registrar a ${fullName(alumno)}? Se descargará la carpeta ZIP con los documentos de la matrícula.`}
+        confirmDisabled={saveMut.isPending || generandoDocs}
         onConfirm={() => saveMut.mutate()}
         onCancel={() => setConfirmSave(false)}
       />

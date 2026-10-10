@@ -18,6 +18,7 @@ import { Route as AppAsignacionRouteImport } from './routes/_app/asignacion'
 import { Route as AppAsistenciaRouteImport } from './routes/_app/asistencia'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppCalificacionesRouteImport } from './routes/_app/calificaciones'
+import { Route as AppCarnetsRouteImport } from './routes/_app/carnets'
 import { Route as AppConfiguracionRouteImport } from './routes/_app/configuracion'
 import { Route as AppControladoresRouteImport } from './routes/_app/controladores'
 import { Route as AppCoordinacionesRouteImport } from './routes/_app/coordinaciones'
@@ -47,6 +48,7 @@ import { Route as AppCatalogosSeccionesRouteImport } from './routes/_app/catalog
 import { Route as AppConsejeriaAlumnosRouteImport } from './routes/_app/consejeria/alumnos'
 import { Route as AppConsejeriaHorariosRouteImport } from './routes/_app/consejeria/horarios'
 import { Route as AppConsejeriaMaestrosRouteImport } from './routes/_app/consejeria/maestros'
+import { Route as AppContratosIndexRouteImport } from './routes/_app/contratos/index'
 import { Route as AppDisciplinaIndexRouteImport } from './routes/_app/disciplina/index'
 import { Route as AppDisciplinaTiposRouteImport } from './routes/_app/disciplina/tipos'
 import { Route as AppExcusasIndexRouteImport } from './routes/_app/excusas/index'
@@ -104,6 +106,11 @@ const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
 const AppCalificacionesRoute = AppCalificacionesRouteImport.update({
   id: '/calificaciones',
   path: '/calificaciones',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCarnetsRoute = AppCarnetsRouteImport.update({
+  id: '/carnets',
+  path: '/carnets',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConfiguracionRoute = AppConfiguracionRouteImport.update({
@@ -251,6 +258,11 @@ const AppConsejeriaMaestrosRoute = AppConsejeriaMaestrosRouteImport.update({
   path: '/consejeria/maestros',
   getParentRoute: () => AppRoute,
 } as any)
+const AppContratosIndexRoute = AppContratosIndexRouteImport.update({
+  id: '/contratos/',
+  path: '/contratos/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDisciplinaIndexRoute = AppDisciplinaIndexRouteImport.update({
   id: '/disciplina/',
   path: '/disciplina/',
@@ -332,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/asistencia': typeof AppAsistenciaRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/calificaciones': typeof AppCalificacionesRoute
+  '/carnets': typeof AppCarnetsRoute
   '/configuracion': typeof AppConfiguracionRoute
   '/controladores': typeof AppControladoresRoute
   '/coordinaciones': typeof AppCoordinacionesRoute
@@ -368,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
   '/maestro/sace': typeof AppMaestroSaceRoute
   '/alumno/': typeof AppAlumnoIndexRoute
+  '/contratos/': typeof AppContratosIndexRoute
   '/disciplina/': typeof AppDisciplinaIndexRoute
   '/excusas/': typeof AppExcusasIndexRoute
   '/maestro/': typeof AppMaestroIndexRoute
@@ -385,6 +399,7 @@ export interface FileRoutesByTo {
   '/asistencia': typeof AppAsistenciaRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/calificaciones': typeof AppCalificacionesRoute
+  '/carnets': typeof AppCarnetsRoute
   '/configuracion': typeof AppConfiguracionRoute
   '/controladores': typeof AppControladoresRoute
   '/coordinaciones': typeof AppCoordinacionesRoute
@@ -421,6 +436,7 @@ export interface FileRoutesByTo {
   '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
   '/maestro/sace': typeof AppMaestroSaceRoute
   '/alumno': typeof AppAlumnoIndexRoute
+  '/contratos': typeof AppContratosIndexRoute
   '/disciplina': typeof AppDisciplinaIndexRoute
   '/excusas': typeof AppExcusasIndexRoute
   '/maestro': typeof AppMaestroIndexRoute
@@ -440,6 +456,7 @@ export interface FileRoutesById {
   '/_app/asistencia': typeof AppAsistenciaRoute
   '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/calificaciones': typeof AppCalificacionesRoute
+  '/_app/carnets': typeof AppCarnetsRoute
   '/_app/configuracion': typeof AppConfiguracionRoute
   '/_app/controladores': typeof AppControladoresRoute
   '/_app/coordinaciones': typeof AppCoordinacionesRoute
@@ -476,6 +493,7 @@ export interface FileRoutesById {
   '/_app/maestro/analiticas': typeof AppMaestroAnaliticasRoute
   '/_app/maestro/sace': typeof AppMaestroSaceRoute
   '/_app/alumno/': typeof AppAlumnoIndexRoute
+  '/_app/contratos/': typeof AppContratosIndexRoute
   '/_app/disciplina/': typeof AppDisciplinaIndexRoute
   '/_app/excusas/': typeof AppExcusasIndexRoute
   '/_app/maestro/': typeof AppMaestroIndexRoute
@@ -495,6 +513,7 @@ export interface FileRouteTypes {
     | '/asistencia'
     | '/auditoria'
     | '/calificaciones'
+    | '/carnets'
     | '/configuracion'
     | '/controladores'
     | '/coordinaciones'
@@ -531,6 +550,7 @@ export interface FileRouteTypes {
     | '/maestro/analiticas'
     | '/maestro/sace'
     | '/alumno/'
+    | '/contratos/'
     | '/disciplina/'
     | '/excusas/'
     | '/maestro/'
@@ -548,6 +568,7 @@ export interface FileRouteTypes {
     | '/asistencia'
     | '/auditoria'
     | '/calificaciones'
+    | '/carnets'
     | '/configuracion'
     | '/controladores'
     | '/coordinaciones'
@@ -584,6 +605,7 @@ export interface FileRouteTypes {
     | '/maestro/analiticas'
     | '/maestro/sace'
     | '/alumno'
+    | '/contratos'
     | '/disciplina'
     | '/excusas'
     | '/maestro'
@@ -602,6 +624,7 @@ export interface FileRouteTypes {
     | '/_app/asistencia'
     | '/_app/auditoria'
     | '/_app/calificaciones'
+    | '/_app/carnets'
     | '/_app/configuracion'
     | '/_app/controladores'
     | '/_app/coordinaciones'
@@ -638,6 +661,7 @@ export interface FileRouteTypes {
     | '/_app/maestro/analiticas'
     | '/_app/maestro/sace'
     | '/_app/alumno/'
+    | '/_app/contratos/'
     | '/_app/disciplina/'
     | '/_app/excusas/'
     | '/_app/maestro/'
@@ -716,6 +740,13 @@ declare module '@tanstack/react-router' {
       path: '/calificaciones'
       fullPath: '/calificaciones'
       preLoaderRoute: typeof AppCalificacionesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/carnets': {
+      id: '/_app/carnets'
+      path: '/carnets'
+      fullPath: '/carnets'
+      preLoaderRoute: typeof AppCarnetsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/configuracion': {
@@ -921,6 +952,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConsejeriaMaestrosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/contratos/': {
+      id: '/_app/contratos/'
+      path: '/contratos'
+      fullPath: '/contratos/'
+      preLoaderRoute: typeof AppContratosIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/disciplina/': {
       id: '/_app/disciplina/'
       path: '/disciplina'
@@ -1029,6 +1067,7 @@ interface AppRouteChildren {
   AppAsistenciaRoute: typeof AppAsistenciaRoute
   AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppCalificacionesRoute: typeof AppCalificacionesRoute
+  AppCarnetsRoute: typeof AppCarnetsRoute
   AppConfiguracionRoute: typeof AppConfiguracionRoute
   AppControladoresRoute: typeof AppControladoresRoute
   AppCoordinacionesRoute: typeof AppCoordinacionesRoute
@@ -1065,6 +1104,7 @@ interface AppRouteChildren {
   AppMaestroAnaliticasRoute: typeof AppMaestroAnaliticasRoute
   AppMaestroSaceRoute: typeof AppMaestroSaceRoute
   AppAlumnoIndexRoute: typeof AppAlumnoIndexRoute
+  AppContratosIndexRoute: typeof AppContratosIndexRoute
   AppDisciplinaIndexRoute: typeof AppDisciplinaIndexRoute
   AppExcusasIndexRoute: typeof AppExcusasIndexRoute
   AppMaestroIndexRoute: typeof AppMaestroIndexRoute
@@ -1081,6 +1121,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAsistenciaRoute: AppAsistenciaRoute,
   AppAuditoriaRoute: AppAuditoriaRoute,
   AppCalificacionesRoute: AppCalificacionesRoute,
+  AppCarnetsRoute: AppCarnetsRoute,
   AppConfiguracionRoute: AppConfiguracionRoute,
   AppControladoresRoute: AppControladoresRoute,
   AppCoordinacionesRoute: AppCoordinacionesRoute,
@@ -1117,6 +1158,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMaestroAnaliticasRoute: AppMaestroAnaliticasRoute,
   AppMaestroSaceRoute: AppMaestroSaceRoute,
   AppAlumnoIndexRoute: AppAlumnoIndexRoute,
+  AppContratosIndexRoute: AppContratosIndexRoute,
   AppDisciplinaIndexRoute: AppDisciplinaIndexRoute,
   AppExcusasIndexRoute: AppExcusasIndexRoute,
   AppMaestroIndexRoute: AppMaestroIndexRoute,

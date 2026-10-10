@@ -16,9 +16,9 @@ import {
   deletePeriodo,
   listPeriodos,
   updatePeriodo,
-  type Periodo,
-  type PeriodoCreate,
 } from '#/services/catalogos'
+import type { Periodo, PeriodoCreate } from '#/services/catalogos'
+import { listContratos } from '#/services/contratos'
 import { periodoEstadoPalabra } from '#/helpers/periodos'
 
 export const Route = createFileRoute('/_app/catalogos/periodos')({ component: PeriodosPage })
@@ -35,6 +35,7 @@ const defaultForm: PeriodoCreate = {
   recuperaciones_periodo: 2,
   tope_recuperacion_parcial: 100,
   tope_recuperacion_periodo: 100,
+  contrato_matricula_id: undefined,
 }
 
 const STATUS_OPTIONS = [
@@ -55,6 +56,23 @@ function PeriodosPage() {
   const qc = useQueryClient()
   const { can } = useCan()
   const { data = [], isLoading } = useQuery({ queryKey: ['periodos'], queryFn: listPeriodos })
+  const puedeVerContratos = can('contratos:get')
+  const { data: contratos = [] } = useQuery({
+    queryKey: ['contratos', 'matricula'],
+    queryFn: () => listContratos({ tipo: 'matricula' }),
+    enabled: puedeVerContratos,
+  })
+  const contratoOptions = useMemo(
+    () => [
+      { value: '', label: 'Sin contrato' },
+      ...contratos.map((c) => ({
+        value: c.id,
+        label: c.titulo,
+        keywords: c.titulo,
+      })),
+    ],
+    [contratos],
+  )
 
   const [modalOpen, setModalOpen] = useState(false)
   const [viewOnly, setViewOnly] = useState(false)
@@ -94,6 +112,7 @@ function PeriodosPage() {
       recuperaciones_periodo: row.recuperaciones_periodo,
       tope_recuperacion_parcial: row.tope_recuperacion_parcial,
       tope_recuperacion_periodo: row.tope_recuperacion_periodo,
+      contrato_matricula_id: row.contrato_matricula_id ?? '',
     })
     setModalOpen(true)
     closeCtx()
@@ -101,8 +120,14 @@ function PeriodosPage() {
 
   const saveMut = useMutation({
     mutationFn: async () => {
-      if (editing) return updatePeriodo(editing.id, form)
-      return createPeriodo(form)
+      const payload: PeriodoCreate = {
+        ...form,
+        contrato_matricula_id: form.contrato_matricula_id
+          ? form.contrato_matricula_id
+          : undefined,
+      }
+      if (editing) return updatePeriodo(editing.id, payload)
+      return createPeriodo(payload)
     },
     onSuccess: () => {
       toast.success(editing ? 'Periodo actualizado' : 'Periodo creado')
@@ -146,6 +171,10 @@ function PeriodosPage() {
             </span>
           )
         },
+      }),
+      col.accessor('contrato_matricula_titulo', {
+        header: 'Contrato',
+        cell: (i) => i.getValue() ?? '—',
       }),
     ],
     [],
@@ -295,6 +324,20 @@ function PeriodosPage() {
             placeholder="Buscar estado…"
           />
         </Field>
+        <Can permission="contratos:get">
+          <Field label="Contrato de matrícula" htmlFor="periodo-contrato-matricula">
+            <Combobox
+              id="periodo-contrato-matricula"
+              data-testid="periodo-contrato-matricula"
+              disabled={viewOnly}
+              value={form.contrato_matricula_id ?? ''}
+              onChange={(v) => setForm((f) => ({ ...f, contrato_matricula_id: v }))}
+              options={contratoOptions}
+              placeholder="Seleccionar contrato…"
+              emptyLabel="No hay contratos de matrícula"
+            />
+          </Field>
+        </Can>
         <fieldset className="periodo-reglas" data-testid="periodo-reglas">
           <legend className="periodo-reglas__titulo">Promoción y recuperaciones</legend>
           <div className="periodo-reglas__grid">
@@ -328,6 +371,7 @@ function PeriodosPage() {
               ? '¿Guardar el periodo como activo? Si había otro activo, pasará a inactivo.'
               : '¿Guardar los datos del periodo?'
         }
+        confirmDisabled={saveMut.isPending}
         onConfirm={() => saveMut.mutate()}
         onCancel={() => setConfirmSave(false)}
       />

@@ -161,6 +161,8 @@ export interface Periodo {
   recuperaciones_periodo: number
   tope_recuperacion_parcial: number
   tope_recuperacion_periodo: number
+  contrato_matricula_id?: string | null
+  contrato_matricula_titulo?: string | null
 }
 
 export interface PeriodoCreate {
@@ -174,6 +176,14 @@ export interface PeriodoCreate {
   recuperaciones_periodo?: number
   tope_recuperacion_parcial?: number
   tope_recuperacion_periodo?: number
+  contrato_matricula_id?: string | null
+}
+
+/** Contrato de matrícula del periodo, en solo lectura (`GET /catalogos/periodos/{id}/contrato`). */
+export interface ContratoPeriodo {
+  titulo: string
+  archivo_nombre: string
+  archivo_mime: string
 }
 
 export async function listGrados() {
@@ -246,6 +256,22 @@ export async function deleteCurso(id: string) {
 
 export async function listPeriodos() {
   return apiRequest<Periodo[]>('/catalogos/periodos')
+}
+
+/** Contrato de matrícula asociado al periodo (`404` si el periodo no tiene contrato). */
+export async function getContratoPeriodo(periodoId: string) {
+  return apiRequest<ContratoPeriodo>(
+    `/catalogos/periodos/${encodeURIComponent(periodoId)}/contrato`,
+  )
+}
+
+/** Descarga el binario del contrato del periodo (`raw` → `Blob`), con la sesión activa. */
+export async function getContratoPeriodoArchivo(periodoId: string) {
+  const res = await apiRequest<Response>(
+    `/catalogos/periodos/${encodeURIComponent(periodoId)}/contrato/archivo`,
+    { raw: true },
+  )
+  return res.blob()
 }
 
 export async function listParciales(periodoAcademicoId: string) {
