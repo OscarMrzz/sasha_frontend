@@ -130,7 +130,7 @@ Es el mismo modal para todos los roles que lo abren (Usuarios, Maestros de conse
 
 **Hero.** Nombre, código, username, roles y estado. Si es alumno, también grado · sección de la matrícula ACTIVE.
 
-**Operativo (maestro / alumno).** Sin banner de clase actual ni horario del día: el maestro ve el **plan de hoy** con «Ver todo» del periodo; el alumno, las **tareas de hoy** con «Ver todo» ordenadas.
+**Operativo.** Se quitó por completo: la ficha no muestra clase actual, horario del día/semana ni plan/tareas de hoy (tampoco en el PDF).
 
 **Bloques por rol.** Datos personales siempre. Alumno: historial de matrícula, matrículas, responsables, documentos. Maestro: **Cursos** (curso, grado, sección, periodo, horarios del horario activo, estado) y disponibilidad. Responsable: domicilio / trabajo / alumnos a cargo.
 

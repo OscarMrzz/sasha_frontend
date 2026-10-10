@@ -1,19 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { Modal } from '#/components/ui/Modal'
-import { FichaPlanPeriodoModal } from '#/components/usuarios/FichaPlanPeriodoModal'
-import { FichaTareasModal } from '#/components/usuarios/FichaTareasModal'
 import { formatHoras, minutosSemana } from '#/helpers/horas'
 import { roleLabel } from '#/helpers/permissions'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { userMessageFromError } from '#/lib/api'
 import { downloadFichaPdf } from '#/lib/fichaPdf'
-import {
-  getFicha,
-  localConsulta,
-  type FichaOperativo,
-  type UserFicha,
-} from '#/services/personas'
+import { getFicha, localConsulta, type UserFicha } from '#/services/personas'
 
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const yn = (v: boolean) => (v ? 'Sí' : 'No')
@@ -107,113 +100,6 @@ export function UserFichaModal({ code, onClose }: Props) {
   )
 }
 
-function OperativoSections({
-  operativo,
-  isMaestro,
-  isAlumno,
-}: {
-  operativo: FichaOperativo
-  isMaestro: boolean
-  isAlumno: boolean
-}) {
-  const [planOpen, setPlanOpen] = useState(false)
-  const [tareasOpen, setTareasOpen] = useState(false)
-
-  return (
-    <>
-      {isMaestro ? (
-        <Section title="Plan de estudio · hoy">
-          {(operativo.plan_dia ?? []).length === 0 ? (
-            <p className="texto-muted">Nada programado en el plan para hoy.</p>
-          ) : (
-            <table className="ficha-table" data-testid="ficha-plan-dia">
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Curso</th>
-                  <th>Tipo</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(operativo.plan_dia ?? []).map((it) => (
-                  <tr key={it.id}>
-                    <td>{it.titulo}</td>
-                    <td>{it.curso_nombre || '—'}</td>
-                    <td>{it.tipo_item}</td>
-                    <td>
-                      <span className="badge">{it.estado_cumplimiento}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            style={{ marginTop: '0.65rem' }}
-            data-testid="ficha-ver-plan-periodo"
-            onClick={() => setPlanOpen(true)}
-          >
-            Ver todo
-          </button>
-        </Section>
-      ) : null}
-
-      {isAlumno ? (
-        <Section title="Tareas · hoy">
-          {(operativo.tareas_hoy ?? []).length === 0 ? (
-            <p className="texto-muted">No hay tareas con entrega hoy.</p>
-          ) : (
-            <table className="ficha-table" data-testid="ficha-tareas-hoy">
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Curso</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(operativo.tareas_hoy ?? []).map((t) => (
-                  <tr key={t.tarea_id}>
-                    <td>{t.titulo}</td>
-                    <td>{t.curso_nombre || '—'}</td>
-                    <td>
-                      <span className="badge">{t.entregado ? 'Entregada' : 'Pendiente'}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            style={{ marginTop: '0.65rem' }}
-            data-testid="ficha-ver-tareas"
-            onClick={() => setTareasOpen(true)}
-          >
-            Ver todo
-          </button>
-        </Section>
-      ) : null}
-
-      <FichaPlanPeriodoModal
-        open={planOpen}
-        parciales={operativo.plan_periodo ?? []}
-        onClose={() => setPlanOpen(false)}
-      />
-      <FichaTareasModal
-        open={tareasOpen}
-        tareas={operativo.tareas_proximas ?? []}
-        fechaHoy={operativo.consulta.fecha}
-        onClose={() => setTareasOpen(false)}
-      />
-    </>
-  )
-}
-
 function matriculaActivaLabel(alumno: NonNullable<UserFicha['alumno']>) {
   const m = alumno.matriculas.find((x) => x.status === 'ACTIVE') ?? alumno.matriculas[0]
   if (!m) return null
@@ -221,7 +107,7 @@ function matriculaActivaLabel(alumno: NonNullable<UserFicha['alumno']>) {
 }
 
 function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null }) {
-  const { user, perfil, alumno, maestro, responsable, operativo } = ficha
+  const { user, perfil, alumno, maestro, responsable } = ficha
   const alumnoGradoSeccion = alumno ? matriculaActivaLabel(alumno) : null
   return (
     <div className="ficha" data-testid="user-ficha">
@@ -249,14 +135,6 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
           </span>
         </div>
       </div>
-
-      {operativo ? (
-        <OperativoSections
-          operativo={operativo}
-          isMaestro={Boolean(maestro)}
-          isAlumno={Boolean(alumno)}
-        />
-      ) : null}
 
       {perfil ? (
         <Section title="Datos personales">

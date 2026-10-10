@@ -37,7 +37,7 @@ test.describe('modulos @critical', () => {
     await expect(page.getByTestId('ficha-download-pdf')).toBeVisible()
   })
 
-  test('usuarios ficha operativa alumno y maestro', async ({ page }) => {
+  test('usuarios ficha de alumno y maestro', async ({ page }) => {
     await loginAs(page)
     await page.getByRole('link', { name: 'Usuarios' }).click()
     await expect(page.getByRole('heading', { name: 'Usuarios' })).toBeVisible({ timeout: 10_000 })
@@ -48,9 +48,6 @@ test.describe('modulos @critical', () => {
     await alumnoRow.click({ button: 'right' })
     await page.getByRole('button', { name: 'Ver' }).click()
     await expect(page.getByTestId('user-ficha')).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByTestId('ficha-clase-actual')).toBeVisible()
-    await expect(page.getByTestId('ficha-ver-horario-semana')).toBeVisible()
-    await expect(page.getByTestId('ficha-ver-tareas')).toBeVisible()
     await page.getByRole('button', { name: 'Cerrar' }).click()
 
     await page.getByTestId('data-table-filter-rol').selectOption('maestro')
@@ -59,9 +56,6 @@ test.describe('modulos @critical', () => {
     await maestroRow.click({ button: 'right' })
     await page.getByRole('button', { name: 'Ver' }).click()
     await expect(page.getByTestId('user-ficha')).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByTestId('ficha-clase-actual')).toBeVisible()
-    await expect(page.getByTestId('ficha-ver-horario-semana')).toBeVisible()
-    await expect(page.getByTestId('ficha-ver-plan-periodo')).toBeVisible()
     await expect(page.getByTestId('ficha-maestro-cursos')).toBeVisible()
   })
 
