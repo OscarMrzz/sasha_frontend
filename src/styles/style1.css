@@ -2195,6 +2195,7 @@ input.field__input,
   justify-content: center;
   z-index: 50;
   padding: 1rem;
+  overscroll-behavior: contain;
   animation: modal-in 0.18s ease;
 }
 
@@ -2620,6 +2621,7 @@ input.field__input,
 .modal__body {
   padding: 1.25rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
   flex: 1;
 }
 

@@ -3,6 +3,32 @@ import type {ReactNode} from 'react';
 
 const EXIT_MS = 280
 
+// Bloquea el scroll del documento mientras haya algún modal abierto. El contador
+// evita que un modal anidado (p. ej. un ConfirmDialog sobre otro modal) libere el
+// scroll antes de que se cierre el de abajo. Compensa el ancho de la barra para que
+// el contenido no dé un salto al aparecer/desaparecer.
+let scrollLock = 0
+let prevOverflow = ''
+let prevPaddingRight = ''
+function lockBodyScroll() {
+  if (typeof document === 'undefined') return
+  scrollLock += 1
+  if (scrollLock !== 1) return
+  const body = document.body
+  const gap = window.innerWidth - document.documentElement.clientWidth
+  prevOverflow = body.style.overflow
+  prevPaddingRight = body.style.paddingRight
+  body.style.overflow = 'hidden'
+  if (gap > 0) body.style.paddingRight = `${gap}px`
+}
+function unlockBodyScroll() {
+  if (typeof document === 'undefined') return
+  scrollLock = Math.max(0, scrollLock - 1)
+  if (scrollLock !== 0) return
+  document.body.style.overflow = prevOverflow
+  document.body.style.paddingRight = prevPaddingRight
+}
+
 function exitDuration() {
   if (typeof window === 'undefined') return EXIT_MS
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : EXIT_MS
@@ -76,6 +102,13 @@ export function Modal({ open, title, children, onClose, footer, wide, xl, board 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
+
+  // Mientras el modal está presente, bloquea el scroll de la página de abajo.
+  useEffect(() => {
+    if (!present) return
+    lockBodyScroll()
+    return () => unlockBodyScroll()
+  }, [present])
 
   if (!present) return null
 
