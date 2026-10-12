@@ -26,7 +26,8 @@ function LoginCardLeft({ mensaje }: { mensaje?: string }) {
       <div className="left-overlay" aria-hidden />
       <div className="left-top">
         <div className="logo">
-          <span className="logo-icon">⊙</span> SASHA
+          <img src="/images/logo/gato.svg" alt="" className="logo-cat" />
+          SASHA
         </div>
       </div>
 

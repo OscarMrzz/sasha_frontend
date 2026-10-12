@@ -267,6 +267,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             onClick={goInicio}
             title="Inicio"
           >
+            <img src="/images/logo/gato.svg" alt="" className="app-shell__top-brand-cat" />
             Sasha
           </button>
         </div>

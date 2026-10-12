@@ -81,6 +81,15 @@
   cursor: pointer;
   padding: 0;
   line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.app-shell__top-brand-cat {
+  height: 1.35rem;
+  width: auto;
+  display: block;
 }
 
 .app-shell__top-brand-name:hover {
@@ -2729,6 +2738,12 @@ input.field__input,
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.logo-cat {
+  height: 1.5rem;
+  width: auto;
+  display: block;
 }
 
 .logo-icon {
