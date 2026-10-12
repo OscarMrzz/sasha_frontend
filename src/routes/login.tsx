@@ -29,7 +29,7 @@ function LoginCardLeft({ mensaje, logoUrl, fondoUrl }: { mensaje?: string; logoU
       <div className="left-overlay" aria-hidden />
       <div className="left-top">
         <div className="logo">
-          <img src="/images/logo/gato.svg" alt="" className="logo-cat" />
+          <img src="/images/logo/gato.png" alt="" className="logo-cat" />
           SASHA
         </div>
       </div>
@@ -134,7 +134,7 @@ function LoginPage() {
 
         <div className="card-right">
           <div className="login-header">
-            <img src="/images/logo/gato.svg" alt="" className="login-header__cat" />
+            <img src="/images/logo/gato.png" alt="" className="login-header__cat" />
             <h2>Bienvenido a Sasha</h2>
           </div>
 

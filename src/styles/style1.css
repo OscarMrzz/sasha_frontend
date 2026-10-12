@@ -2751,7 +2751,7 @@ input.field__input,
 }
 
 .logo-cat {
-  height: 54px;
+  height: 1.35em;
   width: auto;
   display: block;
 }
@@ -2788,8 +2788,8 @@ input.field__input,
 .login-header__cat {
   display: block;
   margin: 0 auto 14px;
-  height: 96px;
-  width: auto;
+  width: min(120px, 33%);
+  height: auto;
 }
 
 .login-form {
