@@ -125,6 +125,12 @@ export async function apiRequest<T = unknown>(
   return data as T
 }
 
+/** Para endpoints de lista: garantiza un array aunque el backend devuelva null. */
+export async function apiRequestList<T>(path: string, options: RequestOptions = {}): Promise<T[]> {
+  const data = await apiRequest<T[] | null>(path, options)
+  return Array.isArray(data) ? data : []
+}
+
 /** Los mensajes del backend vienen en español en el JSON; las respuestas en texto plano (las del router de Go) traen inglés. */
 function mensajePorEstado(status: number): string {
   if (status === 400) return 'La solicitud no es válida.'

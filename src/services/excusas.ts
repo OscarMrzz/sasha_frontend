@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface TipoExcusa {
   id: string
@@ -47,7 +47,7 @@ export interface AlumnoExcusa {
 }
 
 export async function listTiposExcusa(todos = false) {
-  return apiRequest<TipoExcusa[]>(`/excusas/tipos${todos ? '?todos=1' : ''}`)
+  return apiRequestList<TipoExcusa>(`/excusas/tipos${todos ? '?todos=1' : ''}`)
 }
 
 export async function createTipoExcusa(body: TipoExcusaInput) {
@@ -59,7 +59,7 @@ export async function updateTipoExcusa(id: string, body: TipoExcusaInput) {
 }
 
 export async function listExcusas() {
-  return apiRequest<Excusa[]>('/excusas/')
+  return apiRequestList<Excusa>('/excusas/')
 }
 
 export async function createExcusa(body: ExcusaInput) {
@@ -75,7 +75,7 @@ export async function desactivarExcusa(id: string) {
 }
 
 export async function buscarAlumnosExcusa(q: string) {
-  return apiRequest<AlumnoExcusa[]>(`/excusas/alumnos/buscar?q=${encodeURIComponent(q)}`)
+  return apiRequestList<AlumnoExcusa>(`/excusas/alumnos/buscar?q=${encodeURIComponent(q)}`)
 }
 
 /** «02/10/2026». */

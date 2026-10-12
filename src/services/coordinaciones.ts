@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 /** Regla de alcance: un campo en null significa «todos». */
 export interface ReglaCoordinacion {
@@ -54,7 +54,7 @@ export function reglaLabel(r: Pick<ReglaCoordinacion, 'curso' | 'grado' | 'secci
 }
 
 export async function listCoordinaciones() {
-  return apiRequest<Coordinacion[]>('/coordinaciones/')
+  return apiRequestList<Coordinacion>('/coordinaciones/')
 }
 
 export async function createCoordinacion(body: CoordinacionInput) {
@@ -74,7 +74,7 @@ export async function previaCoordinacion(body: CoordinacionInput) {
 }
 
 export async function misCoordinaciones() {
-  return apiRequest<Coordinacion[]>('/coordinaciones/mias')
+  return apiRequestList<Coordinacion>('/coordinaciones/mias')
 }
 
 export async function coordinacionesDeUsuario(code: string) {

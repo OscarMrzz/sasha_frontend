@@ -1,4 +1,4 @@
-import { apiRequest, getApiBaseUrl } from '#/lib/api'
+import { apiRequest, apiRequestList, getApiBaseUrl } from '#/lib/api'
 import type { Curso } from '#/services/catalogos'
 
 export interface PlanItemCreate {
@@ -156,7 +156,7 @@ function listQuery(filters: PlanListFilters = {}) {
 }
 
 export async function listPlanes(filters: PlanListFilters = {}) {
-  return apiRequest<Plan[]>(`/planestudio/${listQuery(filters)}`)
+  return apiRequestList<Plan>(`/planestudio/${listQuery(filters)}`)
 }
 
 export async function createPlan(body: PlanCreate) {

@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface HorarioFixedBlock {
   asignacion_docente_id: string
@@ -140,7 +140,7 @@ export async function listHorarioVersiones(periodoAcademicoId?: string) {
   const qs = new URLSearchParams()
   if (periodoAcademicoId) qs.set('periodo_academico_id', periodoAcademicoId)
   const suffix = qs.toString() ? `?${qs}` : ''
-  return apiRequest<HorarioVersion[]>(`/horarios/versiones${suffix}`)
+  return apiRequestList<HorarioVersion>(`/horarios/versiones${suffix}`)
 }
 
 export async function getHorarioVersion(id: string) {

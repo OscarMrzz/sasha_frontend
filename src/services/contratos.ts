@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export type TipoContrato = 'maestro' | 'administracion' | 'matricula' | 'otros'
 export type VisibilidadContrato = 'privado' | 'publico'
@@ -85,7 +85,7 @@ export async function listContratos(params: ListContratosParams = {}) {
   if (params.tipo) search.set('tipo', params.tipo)
   if (params.visibilidad) search.set('visibilidad', params.visibilidad)
   const qs = search.toString()
-  return apiRequest<Contrato[]>(`/contratos/${qs ? `?${qs}` : ''}`)
+  return apiRequestList<Contrato>(`/contratos/${qs ? `?${qs}` : ''}`)
 }
 
 export async function getContrato(id: string) {

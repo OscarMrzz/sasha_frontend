@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface AsignacionCreate {
   maestro_id: string
@@ -22,7 +22,7 @@ export interface Asignacion {
 }
 
 export async function listAsignaciones() {
-  return apiRequest<Asignacion[]>('/asignacion/')
+  return apiRequestList<Asignacion>('/asignacion/')
 }
 
 export async function createAsignacion(body: AsignacionCreate) {

@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface AlumnoConsejeria {
   codigo: string
@@ -94,11 +94,11 @@ export interface HorariosConsejeria {
 export const DIAS_SEMANA = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 export async function listAlumnosConsejeria() {
-  return apiRequest<AlumnoConsejeria[]>('/consejeria/alumnos')
+  return apiRequestList<AlumnoConsejeria>('/consejeria/alumnos')
 }
 
 export async function listMaestrosConsejeria() {
-  return apiRequest<MaestroConsejeria[]>('/consejeria/maestros')
+  return apiRequestList<MaestroConsejeria>('/consejeria/maestros')
 }
 
 export async function getRendimientoAlumno(code: string, periodoId?: string) {

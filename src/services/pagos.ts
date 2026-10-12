@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface CobroRequest {
   alumno_code: string
@@ -138,7 +138,7 @@ export async function verificarPago(pagoId: string) {
 }
 
 export async function generarObligaciones(body: GenerarObligacionesRequest) {
-  return apiRequest<Obligacion[]>('/pagos/obligaciones/generar', { method: 'POST', body })
+  return apiRequestList<Obligacion>('/pagos/obligaciones/generar', { method: 'POST', body })
 }
 
 export async function cobrarMeses(alumnoCode: string, obligacionIds: string[], observaciones?: string) {
@@ -160,7 +160,7 @@ export async function generarMensualidades(periodoAcademicoId?: string) {
 }
 
 export async function listMora() {
-  return apiRequest<Obligacion[]>('/pagos/mora')
+  return apiRequestList<Obligacion>('/pagos/mora')
 }
 
 export async function listMensualidades(params: { periodoId?: string; estado?: EstadoMensualidad } = {}) {
@@ -168,11 +168,11 @@ export async function listMensualidades(params: { periodoId?: string; estado?: E
   if (params.periodoId) q.set('periodo_id', params.periodoId)
   if (params.estado) q.set('estado', params.estado)
   const qs = q.toString()
-  return apiRequest<MensualidadFila[]>(`/pagos/mensualidades${qs ? `?${qs}` : ''}`)
+  return apiRequestList<MensualidadFila>(`/pagos/mensualidades${qs ? `?${qs}` : ''}`)
 }
 
 export async function buscarAlumnosPago(q: string) {
-  return apiRequest<AlumnoBusqueda[]>(`/pagos/alumnos/buscar?q=${encodeURIComponent(q)}`)
+  return apiRequestList<AlumnoBusqueda>(`/pagos/alumnos/buscar?q=${encodeURIComponent(q)}`)
 }
 
 export async function anularMensualidad(obligacionId: string, motivo: string) {
@@ -222,7 +222,7 @@ export interface ValidarReciboRequest {
 }
 
 export async function listRecibos(estado?: EstadoRecibo) {
-  return apiRequest<Recibo[]>(`/pagos/recibos${estado ? `?estado=${estado}` : ''}`)
+  return apiRequestList<Recibo>(`/pagos/recibos${estado ? `?estado=${estado}` : ''}`)
 }
 
 export async function validarRecibo(id: string, body: ValidarReciboRequest) {
@@ -336,9 +336,9 @@ export async function getAnaliticaPagos() {
 }
 
 export async function listCarteraAlumnos() {
-  return apiRequest<CarteraAlumno[]>('/pagos/cartera/alumnos')
+  return apiRequestList<CarteraAlumno>('/pagos/cartera/alumnos')
 }
 
 export async function listCarteraPadres() {
-  return apiRequest<CarteraPadre[]>('/pagos/cartera/padres')
+  return apiRequestList<CarteraPadre>('/pagos/cartera/padres')
 }

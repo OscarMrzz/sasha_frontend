@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface Grado {
   id: string
@@ -187,7 +187,7 @@ export interface ContratoPeriodo {
 }
 
 export async function listGrados() {
-  return apiRequest<Grado[]>('/catalogos/grados')
+  return apiRequestList<Grado>('/catalogos/grados')
 }
 
 export async function createGrado(body: GradoCreate) {
@@ -203,7 +203,7 @@ export async function deleteGrado(id: string) {
 }
 
 export async function listModalidades() {
-  return apiRequest<Modalidad[]>('/catalogos/modalidades')
+  return apiRequestList<Modalidad>('/catalogos/modalidades')
 }
 
 export async function createModalidad(body: ModalidadCreate) {
@@ -219,7 +219,7 @@ export async function deleteModalidad(id: string) {
 }
 
 export async function listSecciones() {
-  return apiRequest<Seccion[]>('/catalogos/secciones')
+  return apiRequestList<Seccion>('/catalogos/secciones')
 }
 
 export async function createSeccion(body: SeccionCreate) {
@@ -235,7 +235,7 @@ export async function deleteSeccion(id: string) {
 }
 
 export async function listCursos() {
-  return apiRequest<Curso[]>('/catalogos/cursos')
+  return apiRequestList<Curso>('/catalogos/cursos')
 }
 
 export async function getCurso(id: string) {
@@ -255,7 +255,7 @@ export async function deleteCurso(id: string) {
 }
 
 export async function listPeriodos() {
-  return apiRequest<Periodo[]>('/catalogos/periodos')
+  return apiRequestList<Periodo>('/catalogos/periodos')
 }
 
 /** Contrato de matrícula asociado al periodo (`404` si el periodo no tiene contrato). */
@@ -275,7 +275,7 @@ export async function getContratoPeriodoArchivo(periodoId: string) {
 }
 
 export async function listParciales(periodoAcademicoId: string) {
-  return apiRequest<Parcial[]>(
+  return apiRequestList<Parcial>(
     `/catalogos/periodos/${periodoAcademicoId}/parciales`,
   )
 }
@@ -317,17 +317,17 @@ export interface ListaItem {
 }
 
 export async function listAlergias() {
-  return apiRequest<ListaItem[]>('/catalogos/alergias')
+  return apiRequestList<ListaItem>('/catalogos/alergias')
 }
 
 export async function listCondicionesAprendizaje() {
-  return apiRequest<ListaItem[]>('/catalogos/condiciones-aprendizaje')
+  return apiRequestList<ListaItem>('/catalogos/condiciones-aprendizaje')
 }
 
 export async function listParentescos() {
-  return apiRequest<ListaItem[]>('/catalogos/parentescos')
+  return apiRequestList<ListaItem>('/catalogos/parentescos')
 }
 
 export async function listProfesiones() {
-  return apiRequest<ListaItem[]>('/catalogos/profesiones')
+  return apiRequestList<ListaItem>('/catalogos/profesiones')
 }

@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface Nota {
   id: string
@@ -15,7 +15,7 @@ export async function listNotas(asignacionDocenteId?: string) {
   const qs = new URLSearchParams()
   if (asignacionDocenteId) qs.set('asignacion_docente_id', asignacionDocenteId)
   const q = qs.toString()
-  return apiRequest<Nota[]>(`/notas/${q ? `?${q}` : ''}`)
+  return apiRequestList<Nota>(`/notas/${q ? `?${q}` : ''}`)
 }
 
 export async function createNota(body: {

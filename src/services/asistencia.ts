@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface AsistenciaItem {
   alumno_id: string
@@ -128,7 +128,7 @@ export async function guardarLista(asignacionDocenteId: string, items: CeldaList
 }
 
 export async function listMateriasAsistencia() {
-  return apiRequest<AsistenciaMateria[]>('/asistencia/materias')
+  return apiRequestList<AsistenciaMateria>('/asistencia/materias')
 }
 
 export async function getSemanaAsistencia(asignacionDocenteId: string, fecha?: string) {
@@ -159,7 +159,7 @@ export async function putCeldaAsistencia(body: {
 
 export async function listInasistencias(asignacionDocenteId: string) {
   const qs = new URLSearchParams({ asignacion_docente_id: asignacionDocenteId })
-  return apiRequest<InasistenciaResumen[]>(`/asistencia/inasistencias?${qs}`)
+  return apiRequestList<InasistenciaResumen>(`/asistencia/inasistencias?${qs}`)
 }
 
 export async function getInasistenciaDetalle(asignacionDocenteId: string, alumnoId: string) {
@@ -183,14 +183,14 @@ export interface PuntosAsistenciaParcial {
 
 export async function getPuntosAsistencia(asignacionDocenteId: string) {
   const qs = new URLSearchParams({ asignacion_docente_id: asignacionDocenteId })
-  return apiRequest<PuntosAsistenciaParcial[]>(`/asistencia/puntos?${qs}`)
+  return apiRequestList<PuntosAsistenciaParcial>(`/asistencia/puntos?${qs}`)
 }
 
 export async function guardarPuntosAsistencia(
   asignacionDocenteId: string,
   items: { parcial_id: string; puntos: number }[],
 ) {
-  return apiRequest<PuntosAsistenciaParcial[]>('/asistencia/puntos', {
+  return apiRequestList<PuntosAsistenciaParcial>('/asistencia/puntos', {
     method: 'PUT',
     body: { asignacion_docente_id: asignacionDocenteId, items },
   })

@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface CreateUserRequest {
   username?: string
@@ -34,7 +34,7 @@ export interface PermisoUsuario {
 }
 
 export async function listUsers() {
-  return apiRequest<ResponseUser[]>('/users/')
+  return apiRequestList<ResponseUser>('/users/')
 }
 
 export async function createUser(body: CreateUserRequest): Promise<CreateUserResult> {
@@ -67,11 +67,11 @@ export async function setPassword(code: string, newPassword: string) {
 }
 
 export async function listPermisos(code: string) {
-  return apiRequest<PermisoUsuario[]>(`/users/${code}/permisos`)
+  return apiRequestList<PermisoUsuario>(`/users/${code}/permisos`)
 }
 
 export async function upsertPermisos(code: string, permisos: PermisoUsuario[]) {
-  return apiRequest<PermisoUsuario[]>(`/users/${code}/permisos`, {
+  return apiRequestList<PermisoUsuario>(`/users/${code}/permisos`, {
     method: 'PUT',
     body: { permisos },
   })

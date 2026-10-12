@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface LiberacionCreate {
   periodo_academico_id: string
@@ -139,7 +139,7 @@ export async function liberarParciales() {
 }
 
 export async function listAlumnosBloqueados() {
-  return apiRequest<AlumnoBloqueado[]>('/calificaciones/liberacion/bloqueados')
+  return apiRequestList<AlumnoBloqueado>('/calificaciones/liberacion/bloqueados')
 }
 
 export async function forzarLiberacion(alumnoId: string, codigoConfirmacion: string) {
@@ -154,7 +154,7 @@ export async function getNotas(alumnoId: string, periodoAcademicoId: string) {
     alumno_id: alumnoId,
     periodo_academico_id: periodoAcademicoId,
   })
-  return apiRequest<NotaView[]>(`/calificaciones/notas?${qs}`)
+  return apiRequestList<NotaView>(`/calificaciones/notas?${qs}`)
 }
 
 export interface ResumenOpcion {

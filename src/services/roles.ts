@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export type RoleStatus = 'ACTIVE' | 'INACTIVE'
 
@@ -8,7 +8,7 @@ export interface RoleItem {
 }
 
 export async function listRoles() {
-  return apiRequest<RoleItem[]>('/roles/')
+  return apiRequestList<RoleItem>('/roles/')
 }
 
 export async function updateRoleStatus(name: string, status: RoleStatus) {

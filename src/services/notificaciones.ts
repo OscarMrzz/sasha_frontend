@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface Notificacion {
   id: string
@@ -46,7 +46,7 @@ export async function listNotificaciones(filters: ListNotificacionesFilters = {}
   if (filters.grado_id) qs.set('grado_id', filters.grado_id)
   if (filters.seccion_id) qs.set('seccion_id', filters.seccion_id)
   const query = qs.toString()
-  return apiRequest<Notificacion[]>(`/notificaciones/${query ? `?${query}` : ''}`)
+  return apiRequestList<Notificacion>(`/notificaciones/${query ? `?${query}` : ''}`)
 }
 
 export async function createNotificacion(body: NotificacionCreate) {

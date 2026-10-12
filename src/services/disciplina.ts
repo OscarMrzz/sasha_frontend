@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export type Acumulacion = 'mes' | 'parcial' | 'periodo' | 'indefinido'
 
@@ -124,7 +124,7 @@ export interface AplicarFichaInput {
 }
 
 export async function listTiposFicha(todos = false) {
-  return apiRequest<TipoFicha[]>(`/disciplina/tipos${todos ? '?todos=1' : ''}`)
+  return apiRequestList<TipoFicha>(`/disciplina/tipos${todos ? '?todos=1' : ''}`)
 }
 
 export async function createTipoFicha(body: TipoFichaInput) {
@@ -136,15 +136,15 @@ export async function updateTipoFicha(id: string, body: TipoFichaInput) {
 }
 
 export async function listAlumnosConFichas() {
-  return apiRequest<AlumnoConFichas[]>('/disciplina/alumnos')
+  return apiRequestList<AlumnoConFichas>('/disciplina/alumnos')
 }
 
 export async function listFichasAlumno(code: string) {
-  return apiRequest<FichaDisciplinaria[]>(`/disciplina/alumnos/${encodeURIComponent(code)}/fichas`)
+  return apiRequestList<FichaDisciplinaria>(`/disciplina/alumnos/${encodeURIComponent(code)}/fichas`)
 }
 
 export async function buscarAlumnosFicha(q: string) {
-  return apiRequest<AlumnoBusqueda[]>(`/disciplina/alumnos/buscar?q=${encodeURIComponent(q)}`)
+  return apiRequestList<AlumnoBusqueda>(`/disciplina/alumnos/buscar?q=${encodeURIComponent(q)}`)
 }
 
 export async function getPreviaFicha(alumno: string, tipo: string, fecha: string) {

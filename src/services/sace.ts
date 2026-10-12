@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface SaceExportQuery {
   periodo_academico_id: string
@@ -86,7 +86,7 @@ export interface DocumentoMaestroSace {
 }
 
 export async function listMaestrosSace() {
-  return apiRequest<MaestroSaceResumen[]>('/sace/maestros')
+  return apiRequestList<MaestroSaceResumen>('/sace/maestros')
 }
 
 export async function getDocumentoMaestro(maestroId: string) {

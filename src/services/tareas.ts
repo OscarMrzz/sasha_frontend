@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 /** Modo de calificación / revisión. */
 export type TareaCriterioModo = 'simple' | 'manual' | 'criterio'
@@ -124,7 +124,7 @@ export interface ClaseTareas {
 }
 
 export async function listClasesTareas() {
-  return apiRequest<ClaseResumen[]>('/tareas/clases')
+  return apiRequestList<ClaseResumen>('/tareas/clases')
 }
 
 export async function getClaseTareas(asignacionId: string) {
@@ -132,7 +132,7 @@ export async function getClaseTareas(asignacionId: string) {
 }
 
 export async function listTareas() {
-  return apiRequest<Tarea[]>('/tareas/')
+  return apiRequestList<Tarea>('/tareas/')
 }
 
 export async function createTarea(body: TareaCreate) {
@@ -147,7 +147,7 @@ export async function calificarTarea(body: CalificacionTareaCreate) {
 }
 
 export async function listTareasByAlumno(alumnoId: string) {
-  return apiRequest<TareaAlumnoView[]>(`/tareas/alumno/${alumnoId}`)
+  return apiRequestList<TareaAlumnoView>(`/tareas/alumno/${alumnoId}`)
 }
 
 export async function getTareaRevision(tareaId: string) {
@@ -156,12 +156,12 @@ export async function getTareaRevision(tareaId: string) {
 
 export async function listCriteriosEvaluacion(all = false) {
   const q = all ? '?all=1' : ''
-  return apiRequest<CriterioEvaluacion[]>(`/tareas/criterios${q}`)
+  return apiRequestList<CriterioEvaluacion>(`/tareas/criterios${q}`)
 }
 
 export async function listTiposTarea(all = false) {
   const q = all ? '?all=1' : ''
-  return apiRequest<TipoTarea[]>(`/tareas/tipos${q}`)
+  return apiRequestList<TipoTarea>(`/tareas/tipos${q}`)
 }
 
 /** Parciales del periodo (permiso tareas:get; para crear/filtrar tareas). */

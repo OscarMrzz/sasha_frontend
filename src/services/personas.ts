@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface GradoRepetidoInput {
   grado_id: string
@@ -63,7 +63,7 @@ export interface Responsable {
 }
 
 export async function listAlumnos() {
-  return apiRequest<Alumno[]>('/personas/alumnos')
+  return apiRequestList<Alumno>('/personas/alumnos')
 }
 
 export async function createAlumno(body: PersonaCreate) {
@@ -71,7 +71,7 @@ export async function createAlumno(body: PersonaCreate) {
 }
 
 export async function listMaestros() {
-  return apiRequest<Maestro[]>('/personas/maestros')
+  return apiRequestList<Maestro>('/personas/maestros')
 }
 
 export async function createMaestro(body: PersonaCreate) {
@@ -79,7 +79,7 @@ export async function createMaestro(body: PersonaCreate) {
 }
 
 export async function listResponsables() {
-  return apiRequest<Responsable[]>('/personas/responsables')
+  return apiRequestList<Responsable>('/personas/responsables')
 }
 
 export async function createResponsable(body: PersonaCreate) {

@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 
 export interface MatriculaCreate {
   alumno_id: string
@@ -89,7 +89,7 @@ export interface DocumentoMatricula {
 }
 
 export async function listMatriculas() {
-  return apiRequest<Matricula[]>('/matricula/')
+  return apiRequestList<Matricula>('/matricula/')
 }
 
 export async function createMatricula(body: MatriculaCreate) {

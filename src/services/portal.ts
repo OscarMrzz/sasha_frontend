@@ -1,4 +1,4 @@
-import { apiRequest } from '#/lib/api'
+import { apiRequest, apiRequestList } from '#/lib/api'
 import type { Curso } from '#/services/catalogos'
 import type { EstadoRecibo, Recibo } from '#/services/pagos'
 import type { Plan } from '#/services/planestudio'
@@ -197,7 +197,7 @@ function alumnoQs(alumnoId?: string | null) {
 }
 
 export function listHijos() {
-  return apiRequest<PortalHijo[]>('/portal/hijos')
+  return apiRequestList<PortalHijo>('/portal/hijos')
 }
 
 export function getPortalInicio(alumnoId?: string | null) {
@@ -205,7 +205,7 @@ export function getPortalInicio(alumnoId?: string | null) {
 }
 
 export function listTareasClase(asignacionId: string, alumnoId?: string | null) {
-  return apiRequest<PortalTarea[]>(
+  return apiRequestList<PortalTarea>(
     `/portal/clases/${encodeURIComponent(asignacionId)}/tareas${alumnoQs(alumnoId)}`,
   )
 }
@@ -280,7 +280,7 @@ export function getResultadoPeriodo(alumnoId?: string | null) {
 }
 
 export function listTareasHijo(alumnoId?: string | null) {
-  return apiRequest<PortalTarea[]>(`/portal/tareas${alumnoQs(alumnoId)}`)
+  return apiRequestList<PortalTarea>(`/portal/tareas${alumnoQs(alumnoId)}`)
 }
 
 export interface PortalMesPago {
