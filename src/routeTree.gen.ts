@@ -20,6 +20,7 @@ import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppCalificacionesRouteImport } from './routes/_app/calificaciones'
 import { Route as AppCarnetsRouteImport } from './routes/_app/carnets'
 import { Route as AppConfiguracionRouteImport } from './routes/_app/configuracion'
+import { Route as AppConfiguracionPagosRouteImport } from './routes/_app/configuracion-pagos'
 import { Route as AppControladoresRouteImport } from './routes/_app/controladores'
 import { Route as AppCoordinacionesRouteImport } from './routes/_app/coordinaciones'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
@@ -119,6 +120,11 @@ const AppCarnetsRoute = AppCarnetsRouteImport.update({
 const AppConfiguracionRoute = AppConfiguracionRouteImport.update({
   id: '/configuracion',
   path: '/configuracion',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConfiguracionPagosRoute = AppConfiguracionPagosRouteImport.update({
+  id: '/configuracion-pagos',
+  path: '/configuracion-pagos',
   getParentRoute: () => AppRoute,
 } as any)
 const AppControladoresRoute = AppControladoresRouteImport.update({
@@ -364,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/calificaciones': typeof AppCalificacionesRoute
   '/carnets': typeof AppCarnetsRoute
   '/configuracion': typeof AppConfiguracionRoute
+  '/configuracion-pagos': typeof AppConfiguracionPagosRoute
   '/controladores': typeof AppControladoresRoute
   '/coordinaciones': typeof AppCoordinacionesRoute
   '/dashboard': typeof AppDashboardRoute
@@ -422,6 +429,7 @@ export interface FileRoutesByTo {
   '/calificaciones': typeof AppCalificacionesRoute
   '/carnets': typeof AppCarnetsRoute
   '/configuracion': typeof AppConfiguracionRoute
+  '/configuracion-pagos': typeof AppConfiguracionPagosRoute
   '/controladores': typeof AppControladoresRoute
   '/coordinaciones': typeof AppCoordinacionesRoute
   '/dashboard': typeof AppDashboardRoute
@@ -482,6 +490,7 @@ export interface FileRoutesById {
   '/_app/calificaciones': typeof AppCalificacionesRoute
   '/_app/carnets': typeof AppCarnetsRoute
   '/_app/configuracion': typeof AppConfiguracionRoute
+  '/_app/configuracion-pagos': typeof AppConfiguracionPagosRoute
   '/_app/controladores': typeof AppControladoresRoute
   '/_app/coordinaciones': typeof AppCoordinacionesRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -542,6 +551,7 @@ export interface FileRouteTypes {
     | '/calificaciones'
     | '/carnets'
     | '/configuracion'
+    | '/configuracion-pagos'
     | '/controladores'
     | '/coordinaciones'
     | '/dashboard'
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
     | '/calificaciones'
     | '/carnets'
     | '/configuracion'
+    | '/configuracion-pagos'
     | '/controladores'
     | '/coordinaciones'
     | '/dashboard'
@@ -659,6 +670,7 @@ export interface FileRouteTypes {
     | '/_app/calificaciones'
     | '/_app/carnets'
     | '/_app/configuracion'
+    | '/_app/configuracion-pagos'
     | '/_app/controladores'
     | '/_app/coordinaciones'
     | '/_app/dashboard'
@@ -790,6 +802,13 @@ declare module '@tanstack/react-router' {
       path: '/configuracion'
       fullPath: '/configuracion'
       preLoaderRoute: typeof AppConfiguracionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/configuracion-pagos': {
+      id: '/_app/configuracion-pagos'
+      path: '/configuracion-pagos'
+      fullPath: '/configuracion-pagos'
+      preLoaderRoute: typeof AppConfiguracionPagosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/controladores': {
@@ -1126,6 +1145,7 @@ interface AppRouteChildren {
   AppCalificacionesRoute: typeof AppCalificacionesRoute
   AppCarnetsRoute: typeof AppCarnetsRoute
   AppConfiguracionRoute: typeof AppConfiguracionRoute
+  AppConfiguracionPagosRoute: typeof AppConfiguracionPagosRoute
   AppControladoresRoute: typeof AppControladoresRoute
   AppCoordinacionesRoute: typeof AppCoordinacionesRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -1183,6 +1203,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalificacionesRoute: AppCalificacionesRoute,
   AppCarnetsRoute: AppCarnetsRoute,
   AppConfiguracionRoute: AppConfiguracionRoute,
+  AppConfiguracionPagosRoute: AppConfiguracionPagosRoute,
   AppControladoresRoute: AppControladoresRoute,
   AppCoordinacionesRoute: AppCoordinacionesRoute,
   AppDashboardRoute: AppDashboardRoute,

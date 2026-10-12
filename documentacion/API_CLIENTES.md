@@ -336,6 +336,47 @@ Permiso: `pagos:get|post|put`.
 | POST | `/pagos/obligaciones/generar` | Crear obligaciones (matrícula/mensualidad) |
 | GET | `/pagos/mora` | Listar en mora |
 
+### Configuración de pagos por periodo (permiso `pagos_config:get|put`)
+
+Define, por periodo académico, el **día de pago**, el **día de mora**, el **monto de mensualidad por grado** y las **reglas de mora aditivas por grado**. Roles: contabilidad, admin, admin_temporal.
+
+| Método | Ruta | Uso |
+|--------|------|-----|
+| GET | `/pagos/configuracion/periodos` | Periodos para el selector (`id`, `nombre`, `anio_lectivo`, `status`) |
+| GET | `/pagos/configuracion/{periodo_id}` | Config del periodo: días + **todos** los grados activos |
+| PUT | `/pagos/configuracion/{periodo_id}` | Guarda la config (reemplaza montos y reglas del periodo) |
+
+`GET /pagos/configuracion/{periodo_id}`:
+
+```json
+{
+  "periodo_id": "<uuid>",
+  "dia_pago": 10,
+  "dia_mora": 11,
+  "existe": true,
+  "grados": [
+    { "grado_id": "<uuid>", "grado_nombre": "7.º", "monto": 1500, "reglas_mora": [{ "dias": 1, "monto": 100 }] }
+  ]
+}
+```
+
+`PUT /pagos/configuracion/{periodo_id}` (body):
+
+```json
+{
+  "dia_pago": 10,
+  "dia_mora": 11,
+  "retroactivo": false,
+  "grados": [
+    { "grado_id": "<uuid>", "monto": 1500, "reglas_mora": [{ "dias": 1, "monto": 100 }] }
+  ]
+}
+```
+
+- `monto: 0` (o grado sin configurar) = usar `tipo_pago.monto_default` de la mensualidad.
+- La mora es **acumulativa**: se suman los montos de todas las reglas cuyo `dias` ya se alcanzó con el retraso (no es progresiva por tramos).
+- `retroactivo: true` recalcula las obligaciones pendientes/en mora del periodo (no toca las pagadas).
+
 ---
 
 ## 10. Notificaciones

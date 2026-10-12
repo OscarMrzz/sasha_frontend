@@ -20,6 +20,13 @@ Mapa de módulos y flujos: [`MAPA.md`](MAPA.md).
 
 ## 2. Bitácora
 
+### 2026-10-12 — Configuración de pagos por periodo
+
+- Ruta nueva `/configuracion-pagos` (permiso `pagos_config:get`, acciones con `pagos_config:put`): `DataTable` de periodos con acción y menú contextual «Configurar pagos» → modal.
+- Servicio `services/pagos-config.ts`: `GET /pagos/configuracion/periodos`, `GET|PUT /pagos/configuracion/{periodo_id}`.
+- Modal `ConfiguracionPagosModal` (día de pago, día de mora, `retroactivo`) + `ReglasMoraGrado` (montos por grado y reglas de mora aditivas).
+- Visible solo para contabilidad, admin y admin_temporal.
+
 ### 2026-09-05 — Controladores: roles y usuarios con switches
 
 - Sección activación de roles (GET/PUT `/roles/`) con interruptor verde.
@@ -122,6 +129,7 @@ Mapa de módulos y flujos: [`MAPA.md`](MAPA.md).
 | /tareas | tareas:get |
 | /calificaciones | calificaciones:get |
 | /pagos | pagos:get |
+| /configuracion-pagos | pagos_config:get (acciones con pagos_config:put) |
 | /notificaciones-admin | notificaciones:post |
 | /estadisticas | estadisticas:get |
 | /sace | sace:get |

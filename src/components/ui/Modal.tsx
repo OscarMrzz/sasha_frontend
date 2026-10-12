@@ -71,9 +71,11 @@ type ModalProps = {
   xl?: boolean
   /** ~90% viewport — tablero de horarios */
   board?: boolean
+  /** `data-testid` opcional del contenedor (backdrop) para e2e. */
+  testId?: string
 }
 
-export function Modal({ open, title, children, onClose, footer, wide, xl, board }: ModalProps) {
+export function Modal({ open, title, children, onClose, footer, wide, xl, board, testId }: ModalProps) {
   const titleId = useId()
   const ref = useRef<HTMLDivElement>(null)
   const [present, setPresent] = useState(open)
@@ -118,6 +120,7 @@ export function Modal({ open, title, children, onClose, footer, wide, xl, board 
     <div
       className={`modal-backdrop${closing ? ' modal-backdrop--closing' : ''}`}
       role="presentation"
+      data-testid={testId}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}

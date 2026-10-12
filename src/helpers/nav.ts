@@ -59,6 +59,12 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/padres', label: 'Padres', permission: 'cartera:get', icon: 'user' },
   { to: '/pagos', label: 'Pagos', permission: 'pagos:get', icon: 'wallet' },
   { to: '/recibos', label: 'Recibos', permission: 'pagos:put', icon: 'receipt' },
+  {
+    to: '/configuracion-pagos',
+    label: 'Configuración de pagos',
+    permission: 'pagos_config:get',
+    icon: 'settings',
+  },
   { to: '/analitica-pagos', label: 'Analítica de pagos', permission: 'analitica_pagos:get', icon: 'chart' },
   {
     to: '/notificaciones-admin',

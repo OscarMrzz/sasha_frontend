@@ -9,6 +9,8 @@ type ConfirmDialogProps = {
   danger?: boolean
   /** Deshabilita el botón de confirmar (p. ej. mientras hay un envío en curso). */
   confirmDisabled?: boolean
+  /** `data-testid` opcional del contenedor del diálogo (para e2e). */
+  testId?: string
   onConfirm: () => void
   onCancel: () => void
 }
@@ -21,6 +23,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancelar',
   danger,
   confirmDisabled,
+  testId,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -28,6 +31,7 @@ export function ConfirmDialog({
     <Modal
       open={open}
       title={title}
+      testId={testId}
       onClose={onCancel}
       footer={
         <>
