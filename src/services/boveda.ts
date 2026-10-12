@@ -5,6 +5,7 @@ export type BovedaTipo =
   | 'recibo_pago'
   | 'logo_app'
   | 'logo_institucion'
+  | 'login_fondo'
   | 'documento_matricula'
 
 export interface BovedaUploadResult {

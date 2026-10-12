@@ -2709,6 +2709,15 @@ input.field__input,
   display: block;
 }
 
+.card-left__logo-placeholder {
+  font-family: var(--sasha-font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--sasha-texto-muted);
+}
+
 .left-top,
 .left-bottom {
   position: relative;
@@ -3047,6 +3056,51 @@ input.field__input,
   justify-content: center;
   align-items: center;
   gap: 0.35rem;
+}
+
+/* Configuración: sección Imágenes (logo y fondo del login) */
+.imagen-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.imagen-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.imagen-field__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sasha-bg-muted);
+  border: 1px dashed var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+  overflow: hidden;
+}
+
+.imagen-field__preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.imagen-field__vacio {
+  color: var(--sasha-texto-muted);
+  font-size: 0.85rem;
+}
+
+.imagen-field__acciones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 720px) {
+  .imagen-field-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .parcial-fila {

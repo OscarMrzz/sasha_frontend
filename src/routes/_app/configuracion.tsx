@@ -5,7 +5,9 @@ import { toast } from 'sonner'
 import { RequirePermission, Can } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
+import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { userMessageFromError } from '#/lib/api'
+import { upload, type BovedaTipo } from '#/services/boveda'
 import {
   getConfiguracion,
   updateConfiguracion,
@@ -19,6 +21,8 @@ const emptyForm: ConfiguracionUpdate = {
   nombre_institucion: '',
   codigo_sace: '',
   mensaje_login: '',
+  logo_institucion_key: '',
+  login_fondo_key: '',
 }
 
 function configToForm(c: Configuracion): ConfiguracionUpdate {
@@ -27,8 +31,74 @@ function configToForm(c: Configuracion): ConfiguracionUpdate {
     codigo_sace: c.codigo_sace ?? '',
     mensaje_login: c.mensaje_login ?? '',
     logo_app_key: c.logo_app_key,
-    logo_institucion_key: c.logo_institucion_key,
+    logo_institucion_key: c.logo_institucion_key ?? '',
+    login_fondo_key: c.login_fondo_key ?? '',
   }
+}
+
+/** Sube una imagen a la bóveda y devuelve su object_key. */
+function ImagenField({
+  label,
+  tipo,
+  value,
+  onChange,
+  testid,
+  altura,
+}: {
+  label: string
+  tipo: BovedaTipo
+  value: string
+  onChange: (key: string) => void
+  testid: string
+  altura?: number
+}) {
+  const src = useBovedaImage(value || undefined)
+  const [busy, setBusy] = useState(false)
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setBusy(true)
+    try {
+      const r = await upload(file, tipo)
+      onChange(r.object_key)
+      toast.success('Imagen subida')
+    } catch (err) {
+      toast.error(userMessageFromError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="imagen-field" data-testid={testid}>
+      <span className="field__label">{label}</span>
+      <div className="imagen-field__preview" style={{ height: altura ?? 120 }}>
+        {src ? (
+          <img src={src} alt="" />
+        ) : (
+          <span className="imagen-field__vacio">Sin imagen</span>
+        )}
+      </div>
+      <div className="imagen-field__acciones">
+        <label className="btn btn--ghost btn--sm">
+          {busy ? 'Subiendo…' : value ? 'Cambiar' : 'Subir'}
+          <input type="file" accept="image/*" hidden onChange={onFile} disabled={busy} data-testid={`${testid}-input`} />
+        </label>
+        {value ? (
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => onChange('')}
+            data-testid={`${testid}-quitar`}
+          >
+            Quitar
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
 }
 
 function ConfiguracionPage() {
@@ -114,6 +184,37 @@ function ConfiguracionPage() {
             onChange={(e) => setStr('mensaje_login', e.target.value)}
           />
         </Field>
+        <fieldset className="periodo-reglas" data-testid="config-imagenes">
+          <legend className="periodo-reglas__titulo">Imágenes</legend>
+          <div className="imagen-field-grid">
+            <ImagenField
+              label="Logo de la institución"
+              tipo="logo_institucion"
+              value={form.logo_institucion_key ?? ''}
+              onChange={(v) => {
+                setForm((f) => ({ ...f, logo_institucion_key: v }))
+                setDirty(true)
+              }}
+              testid="config-logo"
+              altura={140}
+            />
+            <ImagenField
+              label="Fondo de la pantalla de login"
+              tipo="login_fondo"
+              value={form.login_fondo_key ?? ''}
+              onChange={(v) => {
+                setForm((f) => ({ ...f, login_fondo_key: v }))
+                setDirty(true)
+              }}
+              testid="config-fondo"
+              altura={140}
+            />
+          </div>
+          <p className="texto-muted" style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
+            El logo se muestra centrado en el login; el fondo es la imagen de la tarjeta del login. Los cambios se
+            guardan con «Guardar cambios».
+          </p>
+        </fieldset>
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
           <button
             type="button"

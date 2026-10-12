@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { type RoleName } from '#/helpers/permissions'
 import { useSession, isRoleName } from '#/hooks/use-session'
-import { userMessageFromError } from '#/lib/api'
+import { getApiBaseUrl, userMessageFromError } from '#/lib/api'
 import { homePathForRoles, homePathFromStoredSession } from '#/lib/home-path'
 import { hasPersistedSession } from '#/lib/session-storage'
 import { login } from '#/services/auth'
@@ -20,9 +20,12 @@ export const Route = createFileRoute('/login')({
   component: LoginPage,
 })
 
-function LoginCardLeft({ mensaje }: { mensaje?: string }) {
+function LoginCardLeft({ mensaje, logoUrl, fondoUrl }: { mensaje?: string; logoUrl?: string; fondoUrl?: string }) {
   return (
-    <div className="card-left">
+    <div
+      className="card-left"
+      style={fondoUrl ? { backgroundImage: `url("${fondoUrl}")` } : undefined}
+    >
       <div className="left-overlay" aria-hidden />
       <div className="left-top">
         <div className="logo">
@@ -32,11 +35,11 @@ function LoginCardLeft({ mensaje }: { mensaje?: string }) {
       </div>
 
       <div className="card-left__center">
-        <img
-          src="/images/logo/logo_principal.png"
-          alt="Instituto Evangélico Profa. Delfina Mejía"
-          className="card-left__logo"
-        />
+        {logoUrl ? (
+          <img src={logoUrl} alt="" className="card-left__logo" />
+        ) : (
+          <span className="card-left__logo-placeholder">LOGO</span>
+        )}
       </div>
 
       <div className="left-bottom">
@@ -55,10 +58,17 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [mensaje, setMensaje] = useState('')
+  const [logoUrl, setLogoUrl] = useState('')
+  const [fondoUrl, setFondoUrl] = useState('')
 
   useEffect(() => {
+    const base = getApiBaseUrl()
     getLoginConfig()
-      .then((res) => setMensaje((res.mensaje_login ?? '').trim()))
+      .then((res) => {
+        setMensaje((res.mensaje_login ?? '').trim())
+        setLogoUrl(res.logo_url ? `${base}${res.logo_url}` : '')
+        setFondoUrl(res.fondo_url ? `${base}${res.fondo_url}` : '')
+      })
       .catch(() => {})
   }, [])
 
@@ -106,7 +116,7 @@ function LoginPage() {
     return (
       <div className="login-page" data-theme="dark" data-testid="login-booting">
         <div className="login-card" data-testid="login-form" data-ready="0">
-          <LoginCardLeft mensaje={mensaje} />
+          <LoginCardLeft mensaje={mensaje} logoUrl={logoUrl} fondoUrl={fondoUrl} />
           <div className="card-right">
             <div className="login-header">
               <h2>Cargando…</h2>

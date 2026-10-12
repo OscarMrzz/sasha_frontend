@@ -7,6 +7,7 @@ export interface Configuracion {
   mensaje_login?: string
   logo_app_key?: string
   logo_institucion_key?: string
+  login_fondo_key?: string
 }
 
 export interface ConfiguracionUpdate {
@@ -15,12 +16,17 @@ export interface ConfiguracionUpdate {
   mensaje_login?: string
   logo_app_key?: string
   logo_institucion_key?: string
+  login_fondo_key?: string
 }
 
 /** Datos públicos para la pantalla de login (`GET /configuracion/login`, sin sesión). */
 export interface LoginPublico {
   nombre_institucion: string
   mensaje_login?: string
+  /** URL relativa al API (`/configuracion/login/logo`), vacía si no hay logo. */
+  logo_url?: string
+  /** URL relativa al API (`/configuracion/login/fondo`), vacía si no hay fondo. */
+  fondo_url?: string
 }
 
 export async function getConfiguracion() {
