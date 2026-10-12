@@ -38,7 +38,7 @@ export default defineConfig({
       command: BACKEND_CMD,
       cwd: BACKEND_DIR,
       url: `http://localhost:${API_PORT}/health`,
-      env: { DB_NAME: 'molde_test', SERVER_PORT: String(API_PORT), MINIO_BUCKET: 'sasha-docs-test' },
+      env: { DB_NAME: 'molde_test', SERVER_PORT: String(API_PORT), STORAGE_BUCKET: 'sasha-docs-test' },
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
     },

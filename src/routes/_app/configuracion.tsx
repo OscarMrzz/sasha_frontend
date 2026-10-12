@@ -7,13 +7,10 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { userMessageFromError } from '#/lib/api'
-import { upload, type BovedaTipo } from '#/services/boveda'
-import {
-  getConfiguracion,
-  updateConfiguracion,
-  type Configuracion,
-  type ConfiguracionUpdate,
-} from '#/services/configuracion'
+import { upload, uploadErrorMessage } from '#/services/boveda'
+import type { BovedaTipo } from '#/services/boveda'
+import { getConfiguracion, updateConfiguracion } from '#/services/configuracion'
+import type { Configuracion, ConfiguracionUpdate } from '#/services/configuracion'
 
 export const Route = createFileRoute('/_app/configuracion')({ component: ConfiguracionPage })
 
@@ -65,7 +62,7 @@ function ImagenField({
       onChange(r.object_key)
       toast.success('Imagen subida')
     } catch (err) {
-      toast.error(userMessageFromError(err))
+      toast.error(uploadErrorMessage(err, tipo))
     } finally {
       setBusy(false)
     }

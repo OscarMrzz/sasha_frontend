@@ -97,13 +97,18 @@ export async function apiRequest<T = unknown>(
     if (!res.ok) {
       const text = await res.text()
       let message = mensajePorEstado(res.status)
+      let code: string | number | undefined
       try {
         const parsed = apiErrorSchema.safeParse(JSON.parse(text))
-        if (parsed.success && parsed.data.message) message = parsed.data.message
+        if (parsed.success) {
+          if (parsed.data.message) message = parsed.data.message
+          code = parsed.data.code
+        }
       } catch {
         /* keep text */
       }
-      throw new ApiError(message, res.status, undefined, text)
+      logApiFailure(method, path, res.status, code, message, text)
+      throw new ApiError(message, res.status, code, text)
     }
     return res as unknown as T
   }
@@ -118,11 +123,30 @@ export async function apiRequest<T = unknown>(
 
   if (!res.ok) {
     const parsed = apiErrorSchema.safeParse(data)
+    const code = parsed.success ? parsed.data.code : undefined
     const message = (parsed.success && parsed.data.message) || mensajePorEstado(res.status)
-    throw new ApiError(message, res.status, parsed.success ? parsed.data.code : undefined, data)
+    logApiFailure(method, path, res.status, code, message, data)
+    throw new ApiError(message, res.status, code, data)
   }
 
   return data as T
+}
+
+/**
+ * Detalle en consola de cada respuesta fallida del API. Sirve para saber de un
+ * vistazo si el problema es del front, del backend (status/code) o de la red
+ * (cuando no llega a haber respuesta, lo que lanza un TypeError aparte).
+ */
+function logApiFailure(
+  method: string,
+  path: string,
+  status: number,
+  code: string | number | undefined,
+  message: string,
+  body: unknown,
+) {
+  const etiqueta = `[api] ${method} ${getApiBaseUrl()}${path} → ${status}${code ? ` ${code}` : ''}`
+  console.error(`${etiqueta} · ${message}`, { status, code, body })
 }
 
 /** Para endpoints de lista: garantiza un array aunque el backend devuelva null. */

@@ -12,7 +12,7 @@ import { useMiFoto } from '#/hooks/use-mi-foto'
 import { useSession } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
 import { changeOwnPassword } from '#/services/auth'
-import { upload } from '#/services/boveda'
+import { upload, uploadErrorMessage } from '#/services/boveda'
 import { getMiFicha, guardarMiFoto } from '#/services/personas'
 import type { UserFicha } from '#/services/personas'
 
@@ -81,7 +81,7 @@ function MiPerfilPage() {
       await queryClient.invalidateQueries({ queryKey: ['mi-ficha'] })
       toast.success('Foto de perfil actualizada')
     } catch (err) {
-      toast.error(userMessageFromError(err))
+      toast.error(uploadErrorMessage(err, 'perfil_foto'))
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ''

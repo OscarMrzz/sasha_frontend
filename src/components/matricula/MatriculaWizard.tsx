@@ -8,7 +8,7 @@ import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
 import { WizardSteps } from '#/components/ui/WizardSteps'
 import { userMessageFromError } from '#/lib/api'
-import { upload } from '#/services/boveda'
+import { upload, uploadErrorMessage } from '#/services/boveda'
 import { periodoSelectOptions } from '#/helpers/periodos'
 import { generarDocumentosMatricula } from '#/helpers/documentos-matricula'
 import type { ContratoArchivoZip } from '#/helpers/documentos-matricula'
@@ -492,8 +492,12 @@ export function MatriculaWizard({
     mutationFn: async () => {
       let pathImagen: string | undefined
       if (foto) {
-        const up = await upload(foto, 'perfil_foto')
-        pathImagen = up.object_key
+        try {
+          const up = await upload(foto, 'perfil_foto')
+          pathImagen = up.object_key
+        } catch (err) {
+          throw new Error(uploadErrorMessage(err, 'perfil_foto'))
+        }
       }
 
       const alumnoUser = await createUser({

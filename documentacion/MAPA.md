@@ -8,13 +8,15 @@ Lectura rápida de qué hay y qué hace. Bitácora de cambios: [`EVOLUCION.md`](
 - `src/services/` — llamadas al API (`/api` → backend en local).
 - `src/components/` — UI reutilizable y wizards.
 - `src/helpers/` — menú (`nav.ts`), matriz de permisos (`permissions.ts`) y registro del buscador de comandos (`command-palette.ts`).
-- `src/lib/` — cliente HTTP, sesión en `localStorage` y bus de intención del buscador (`accion-palette.ts`).
+- `src/lib/` — cliente HTTP (`apiRequest` imprime en consola cada respuesta fallida: `[api] MÉTODO url → status code · mensaje`), sesión en `localStorage` y bus de intención del buscador (`accion-palette.ts`).
 - `src/config/atajos-teclado.json` — atajos de teclado (`id`, `titulo`, `descripcion`, `atajo`, `activo`).
 - `src/styles.css` — hoja **principal**: contrato de estilos (catálogo de bloques) + elige el diseño activo con una línea `@import`. No describe detalles.
 - `src/styles/style1.css` — diseño 1 «Lumier Dark» (original; trae `tokens.css` y `neon.css`).
 - `src/styles/style2.css` — diseño 2 «Matte Dark» (**activo**): hereda `style1.css` y re-estiliza con los oscuros mate + el naranja corporativo. Cambiar de diseño = cambiar la línea del import en `styles.css`. Ver [`ESTILOS.md`](ESTILOS.md).
 
 Permisos: el menú y `Can` / `RequirePermission` filtran por rol. El API también valida. Un ítem de `nav.ts` con `hideForRoles` no sale en el menú de esos roles aunque tengan el permiso (consejería y director tienen `catalogos:get` para la matrícula, pero no ven Grados, Modalidades, Secciones, Cursos ni Periodos); la URL no se bloquea. **Director:** hoy ve y hace exactamente lo mismo que consejería (DEC-017), pero cada rol tiene su lista propia en `permissions.ts` y su entrada propia en `nav.ts`, `calificaciones.tsx` y `tareas.tsx`; cambiar uno no cambia el otro.
+
+Subidas a la bóveda (`POST /boveda/upload`): el error se muestra con **contexto por tipo** vía `uploadErrorMessage(err, tipo)` de `src/services/boveda.ts` («No se pudo cargar el logo de la institución», «…la foto de perfil», «…el fondo de la pantalla de login», «…el recibo», «…el documento de matrícula»), y añade el motivo cuando el backend devuelve un código `STORAGE_*`.
 
 ## Rutas
 
