@@ -101,10 +101,10 @@ export function ParcialesPeriodoForm({ value, onChange, disabled = false }: Prop
           )
         })}
       </div>
-      <div className="niveles__pie">
+      <div className="periodo-parciales__pie">
         <button
           type="button"
-          className="btn btn--ghost"
+          className="btn btn--ghost periodo-parciales__agregar"
           data-testid="periodo-parcial-agregar"
           disabled={disabled}
           onClick={agregar}

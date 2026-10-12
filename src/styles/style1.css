@@ -3004,6 +3004,18 @@ input.field__input,
   gap: 0.75rem;
 }
 
+.periodo-parciales__pie {
+  margin-top: 0.75rem;
+}
+
+.periodo-parciales__agregar {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .parcial-fila {
   display: grid;
   grid-template-columns: 7.5rem minmax(0, 1fr) minmax(0, 1fr) 7.5rem auto;
