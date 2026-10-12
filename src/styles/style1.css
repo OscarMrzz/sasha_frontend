@@ -87,7 +87,7 @@
 }
 
 .app-shell__top-brand-cat {
-  height: 1.35rem;
+  height: 2rem;
   width: auto;
   display: block;
 }
@@ -2741,7 +2741,7 @@ input.field__input,
 }
 
 .logo-cat {
-  height: 1.5rem;
+  height: 2.25rem;
   width: auto;
   display: block;
 }
