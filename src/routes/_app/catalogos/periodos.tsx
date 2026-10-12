@@ -366,16 +366,6 @@ function PeriodosPage() {
           </Field>
         </Can>
         </section>
-        <ParcialesPeriodoForm
-          value={form.parciales}
-          onChange={(parciales) => setForm((f) => ({ ...f, parciales }))}
-          disabled={viewOnly}
-        />
-        {error ? (
-          <p className="field__error" data-testid="periodo-form-error">
-            {error}
-          </p>
-        ) : null}
         <fieldset className="periodo-reglas" data-testid="periodo-reglas">
           <legend className="periodo-reglas__titulo">Promoción y recuperaciones</legend>
           <div className="periodo-reglas__grid">
@@ -397,6 +387,16 @@ function PeriodosPage() {
             ))}
           </div>
         </fieldset>
+        <ParcialesPeriodoForm
+          value={form.parciales}
+          onChange={(parciales) => setForm((f) => ({ ...f, parciales }))}
+          disabled={viewOnly}
+        />
+        {error ? (
+          <p className="field__error" data-testid="periodo-form-error">
+            {error}
+          </p>
+        ) : null}
       </Modal>
 
       <ConfirmDialog
