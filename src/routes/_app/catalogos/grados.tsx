@@ -24,7 +24,7 @@ export const Route = createFileRoute('/_app/catalogos/grados')({ component: Grad
 
 const col = createColumnHelper<Grado>()
 
-const defaultForm: GradoCreate = { nombre: '', orden: 1, status: 'ACTIVE' }
+const defaultForm: GradoCreate = { nombre: '', orden: 1, status: 'ACTIVE', modalidad_sace: '' }
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE' },
@@ -89,6 +89,7 @@ function GradosPage() {
       orden: row.orden,
       status: row.status,
       codigo_sace: row.codigo_sace,
+      modalidad_sace: row.modalidad_sace,
       detalles: row.detalles,
     })
     setModalOpen(true)
@@ -271,6 +272,16 @@ function GradosPage() {
             disabled={viewOnly}
             value={form.codigo_sace ?? ''}
             onChange={(e) => setForm((f) => ({ ...f, codigo_sace: e.target.value }))}
+          />
+        </Field>
+        <Field label="Programa académico SACE">
+          <input
+            className="field__input"
+            data-testid="grado-modalidad-sace"
+            disabled={viewOnly}
+            placeholder="Ej. BACHILLERATO TÉCNICO PROFESIONAL EN INFORMÁTICA"
+            value={form.modalidad_sace ?? ''}
+            onChange={(e) => setForm((f) => ({ ...f, modalidad_sace: e.target.value }))}
           />
         </Field>
         <Field label="Detalles">

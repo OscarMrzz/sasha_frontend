@@ -18,22 +18,12 @@ export const Route = createFileRoute('/_app/configuracion')({ component: Configu
 const emptyForm: ConfiguracionUpdate = {
   nombre_institucion: '',
   codigo_sace: '',
-  modalidad_sace: '',
-  calificacion_minima_aprobacion: 70,
-  calificacion_honor_merito: 90,
-  calificacion_excelencia: 95,
-  calificacion_rango_bajo: 50,
 }
 
 function configToForm(c: Configuracion): ConfiguracionUpdate {
   return {
     nombre_institucion: c.nombre_institucion,
     codigo_sace: c.codigo_sace ?? '',
-    modalidad_sace: c.modalidad_sace ?? '',
-    calificacion_minima_aprobacion: c.calificacion_minima_aprobacion,
-    calificacion_honor_merito: c.calificacion_honor_merito,
-    calificacion_excelencia: c.calificacion_excelencia,
-    calificacion_rango_bajo: c.calificacion_rango_bajo,
     logo_app_key: c.logo_app_key,
     logo_institucion_key: c.logo_institucion_key,
   }
@@ -65,11 +55,6 @@ function ConfiguracionPage() {
     onError: (e) => toast.error(userMessageFromError(e)),
   })
 
-  const setNum = (key: keyof ConfiguracionUpdate, value: string) => {
-    setForm((f) => ({ ...f, [key]: value === '' ? undefined : Number(value) }))
-    setDirty(true)
-  }
-
   const setStr = (key: keyof ConfiguracionUpdate, value: string) => {
     setForm((f) => ({ ...f, [key]: value }))
     setDirty(true)
@@ -87,8 +72,9 @@ function ConfiguracionPage() {
     <RequirePermission permission="configuracion:get">
       <h1 className="page-title">Configuración institucional</h1>
       <p className="texto-muted" style={{ marginTop: '-0.5rem', marginBottom: '1rem', maxWidth: 720 }}>
-        Datos de la institución. Duración de clase, recreos, parciales y programa SACE se definen en cada{' '}
-        <strong>modalidad</strong> del catálogo.
+        Datos de la institución. Los umbrales de calificación (mínima aprobación, honor al mérito y excelencia) se
+        definen en cada <strong>periodo</strong> y el programa académico SACE en cada <strong>grado</strong> del
+        catálogo.
       </p>
       <form
         className="panel-form"
@@ -115,37 +101,6 @@ function ConfiguracionPage() {
             onChange={(e) => setStr('codigo_sace', e.target.value)}
           />
         </Field>
-        <Field label="Programa académico SACE" htmlFor="cfg-modalidad-sace">
-          <input
-            id="cfg-modalidad-sace"
-            className="field__input"
-            placeholder="Ej. BACHILLERATO TÉCNICO PROFESIONAL EN INFORMÁTICA"
-            value={form.modalidad_sace ?? ''}
-            onChange={(e) => setStr('modalidad_sace', e.target.value)}
-          />
-        </Field>
-        <h3 className="texto-muted" style={{ fontSize: '0.9rem' }}>
-          Umbrales de calificación
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
-          {(
-            [
-              ['calificacion_minima_aprobacion', 'Mínima aprobación'],
-              ['calificacion_honor_merito', 'Honor al mérito'],
-              ['calificacion_excelencia', 'Excelencia'],
-              ['calificacion_rango_bajo', 'Rango bajo'],
-            ] as const
-          ).map(([key, label]) => (
-            <Field key={key} label={label}>
-              <input
-                type="number"
-                className="field__input"
-                value={form[key] ?? ''}
-                onChange={(e) => setNum(key, e.target.value)}
-              />
-            </Field>
-          ))}
-        </div>
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
           <button
             type="button"

@@ -110,19 +110,4 @@ test.describe('liberación de notas por parcial', () => {
     await page.getByTestId('pago-mes-2026-8').locator('input').check()
     await expect(page.getByTestId('pago-meses-cobrar')).toContainText('2 mes(es) · L 3000.00')
   })
-
-  test('periodos: modal de parciales muestra los meses que abarca', async ({ page }) => {
-    await loginAs(page)
-    await page.goto('/catalogos/periodos')
-    const fila = page.locator('table.data-table tbody tr').first()
-    await expect(fila).toBeVisible({ timeout: 15_000 })
-    await fila.click({ button: 'right' })
-    await page.getByTestId('periodo-ctx-parciales').click()
-    await expect(page.getByTestId('parciales-tabla')).toBeVisible()
-
-    await page.getByTestId('parcial-nuevo').click()
-    await page.getByTestId('parcial-inicio-input').fill('2026-03-20')
-    await page.getByTestId('parcial-fin-input').fill('2026-05-05')
-    await expect(page.getByTestId('parcial-meses-preview')).toContainText(/marzo 2026, abril 2026, mayo 2026/i)
-  })
 })

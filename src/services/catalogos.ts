@@ -7,6 +7,8 @@ export interface Grado {
   orden: number
   status: string
   codigo_sace?: string
+  /** Programa académico SACE del grado/plan de estudios. */
+  modalidad_sace?: string
   detalles?: string
 }
 
@@ -15,6 +17,8 @@ export interface GradoCreate {
   orden: number
   status: string
   codigo_sace?: string
+  /** Programa académico SACE del grado/plan de estudios. */
+  modalidad_sace?: string
   detalles?: string
 }
 
@@ -139,6 +143,7 @@ export interface CursoCreate {
   bibliografia?: CursoBibliografia[]
 }
 
+/** Parcial dentro de un periodo. `nombre` lo autogenera el backend a partir del `numero` ("I parcial"). */
 export interface Parcial {
   id: string
   periodo_academico_id: string
@@ -146,37 +151,59 @@ export interface Parcial {
   nombre: string
   fecha_inicio: string
   fecha_fin: string
+  nota_maxima: number
   status: string
+}
+
+/** Parcial tal como lo envía el formulario (sin `nombre`; el backend lo deriva del `numero`). */
+export interface ParcialForm {
+  numero: number
+  fecha_inicio: string
+  fecha_fin: string
+  nota_maxima: number
 }
 
 export interface Periodo {
   id: string
   nombre: string
   anio_lectivo: number
+  /** Derivada del primer parcial (solo lectura en UI). */
   fecha_inicio: string
+  /** Derivada del último parcial (solo lectura en UI). */
   fecha_fin: string
   status: string
+  /** = "Mínima aprobación". */
   nota_minima: number
+  /** = "Honor al mérito". */
+  honor_merito: number
+  /** = "Excelencia". */
+  excelencia: number
   max_clases_reprobadas: number
   recuperaciones_periodo: number
   tope_recuperacion_parcial: number
   tope_recuperacion_periodo: number
   contrato_matricula_id?: string | null
   contrato_matricula_titulo?: string | null
+  parciales: Parcial[]
 }
 
 export interface PeriodoCreate {
   nombre: string
   anio_lectivo: number
-  fecha_inicio: string
-  fecha_fin: string
   status: string
+  /** = "Mínima aprobación". */
   nota_minima?: number
+  /** = "Honor al mérito". */
+  honor_merito?: number
+  /** = "Excelencia". */
+  excelencia?: number
   max_clases_reprobadas?: number
   recuperaciones_periodo?: number
   tope_recuperacion_parcial?: number
   tope_recuperacion_periodo?: number
   contrato_matricula_id?: string | null
+  /** Arreglo anidado obligatorio (>= 1). Las fechas del periodo se derivan de aquí. */
+  parciales: ParcialForm[]
 }
 
 /** Contrato de matrícula del periodo, en solo lectura (`GET /catalogos/periodos/{id}/contrato`). */
@@ -278,25 +305,6 @@ export async function listParciales(periodoAcademicoId: string) {
   return apiRequestList<Parcial>(
     `/catalogos/periodos/${periodoAcademicoId}/parciales`,
   )
-}
-
-export interface ParcialInput {
-  periodo_academico_id: string
-  numero: number
-  nombre: string
-  fecha_inicio: string
-  fecha_fin: string
-}
-
-export async function createParcial(body: ParcialInput) {
-  return apiRequest<Parcial>(`/catalogos/periodos/${body.periodo_academico_id}/parciales`, {
-    method: 'POST',
-    body,
-  })
-}
-
-export async function updateParcial(id: string, body: ParcialInput) {
-  return apiRequest<Parcial>(`/catalogos/parciales/${id}`, { method: 'PUT', body })
 }
 
 export async function createPeriodo(body: PeriodoCreate) {

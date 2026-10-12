@@ -4,7 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
-import { ParcialesPeriodoModal } from '#/components/catalogos/ParcialesPeriodoModal'
+import { ParcialesPeriodoForm } from '#/components/catalogos/ParcialesPeriodoForm'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
@@ -17,26 +17,36 @@ import {
   listPeriodos,
   updatePeriodo,
 } from '#/services/catalogos'
-import type { Periodo, PeriodoCreate } from '#/services/catalogos'
+import type { ParcialForm, Periodo, PeriodoCreate } from '#/services/catalogos'
 import { listContratos } from '#/services/contratos'
 import { periodoEstadoPalabra } from '#/helpers/periodos'
+import { derivarFechasPeriodo, validarParciales } from '#/helpers/parciales'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/catalogos/periodos')({ component: PeriodosPage })
 
 const col = createColumnHelper<Periodo>()
+
+const parcialVacio = (numero: number): ParcialForm => ({
+  numero,
+  fecha_inicio: '',
+  fecha_fin: '',
+  nota_maxima: 100,
+})
+
 const defaultForm: PeriodoCreate = {
   nombre: '',
   anio_lectivo: new Date().getFullYear(),
-  fecha_inicio: '',
-  fecha_fin: '',
   status: 'INACTIVE',
   nota_minima: 70,
+  honor_merito: 90,
+  excelencia: 95,
   max_clases_reprobadas: 1,
   recuperaciones_periodo: 2,
   tope_recuperacion_parcial: 100,
   tope_recuperacion_periodo: 100,
   contrato_matricula_id: undefined,
+  parciales: [parcialVacio(1)],
 }
 
 const STATUS_OPTIONS = [
@@ -46,12 +56,16 @@ const STATUS_OPTIONS = [
 ]
 
 const REGLAS: { key: keyof PeriodoCreate; label: string; testid: string; min: number; max: number }[] = [
-  { key: 'nota_minima', label: 'Nota mínima para aprobar', testid: 'periodo-nota-minima', min: 0, max: 100 },
+  { key: 'nota_minima', label: 'Mínima aprobación', testid: 'periodo-nota-minima', min: 0, max: 100 },
+  { key: 'honor_merito', label: 'Honor al mérito', testid: 'periodo-umbral-honor', min: 0, max: 100 },
+  { key: 'excelencia', label: 'Excelencia', testid: 'periodo-umbral-excelencia', min: 0, max: 100 },
   { key: 'max_clases_reprobadas', label: 'Máximo de clases reprobadas para pasar', testid: 'periodo-max-reprobadas', min: 0, max: 50 },
   { key: 'recuperaciones_periodo', label: 'Recuperaciones de periodo', testid: 'periodo-recuperaciones', min: 0, max: 10 },
   { key: 'tope_recuperacion_parcial', label: 'Tope de nota en recuperación de parcial', testid: 'periodo-tope-parcial', min: 0, max: 100 },
   { key: 'tope_recuperacion_periodo', label: 'Tope de nota en recuperación de periodo', testid: 'periodo-tope-periodo', min: 0, max: 100 },
 ]
+
+const snapshot = (form: PeriodoCreate) => JSON.stringify(form)
 
 function PeriodosPage() {
   const qc = useQueryClient()
@@ -82,7 +96,7 @@ function PeriodosPage() {
   const [confirmDelete, setConfirmDelete] = useState<Periodo | null>(null)
   const [confirmSave, setConfirmSave] = useState(false)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Periodo } | null>(null)
-  const [parcialesDe, setParcialesDe] = useState<Periodo | null>(null)
+  const [baseline, setBaseline] = useState('')
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -92,11 +106,16 @@ function PeriodosPage() {
     return () => window.removeEventListener('click', h)
   }, [ctx, closeCtx])
 
+  const abrirForm = (next: PeriodoCreate) => {
+    setForm(next)
+    setBaseline(snapshot(next))
+    setModalOpen(true)
+  }
+
   const openCreate = () => {
     setEditing(null)
     setViewOnly(false)
-    setForm(defaultForm)
-    setModalOpen(true)
+    abrirForm({ ...defaultForm, parciales: [parcialVacio(1)] })
   }
 
   useAccionPalette('nuevo-periodo', openCreate)
@@ -104,20 +123,32 @@ function PeriodosPage() {
   const openEdit = (row: Periodo, view = false) => {
     setEditing(row)
     setViewOnly(view)
-    setForm({
+    const parciales: ParcialForm[] =
+      row.parciales.length > 0
+        ? row.parciales
+            .slice()
+            .sort((a, b) => a.numero - b.numero)
+            .map((p) => ({
+              numero: p.numero,
+              fecha_inicio: p.fecha_inicio.slice(0, 10),
+              fecha_fin: p.fecha_fin.slice(0, 10),
+              nota_maxima: p.nota_maxima,
+            }))
+        : [parcialVacio(1)]
+    abrirForm({
       nombre: row.nombre,
       anio_lectivo: row.anio_lectivo,
-      fecha_inicio: row.fecha_inicio.slice(0, 10),
-      fecha_fin: row.fecha_fin.slice(0, 10),
       status: row.status,
       nota_minima: row.nota_minima,
+      honor_merito: row.honor_merito,
+      excelencia: row.excelencia,
       max_clases_reprobadas: row.max_clases_reprobadas,
       recuperaciones_periodo: row.recuperaciones_periodo,
       tope_recuperacion_parcial: row.tope_recuperacion_parcial,
       tope_recuperacion_periodo: row.tope_recuperacion_periodo,
       contrato_matricula_id: row.contrato_matricula_id ?? '',
+      parciales,
     })
-    setModalOpen(true)
     closeCtx()
   }
 
@@ -150,6 +181,11 @@ function PeriodosPage() {
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
+
+  const nombreError = form.nombre.trim() ? '' : 'Escribe el nombre del periodo.'
+  const error = nombreError || validarParciales(form.parciales)
+  const fechas = derivarFechasPeriodo(form.parciales)
+  const dirty = snapshot(form) !== baseline
 
   const columns = useMemo(
     () => [
@@ -225,17 +261,6 @@ function PeriodosPage() {
           <button type="button" className="ctx-menu__item" onClick={() => openEdit(ctx.row, true)}>
             Ver
           </button>
-          <button
-            type="button"
-            className="ctx-menu__item"
-            data-testid="periodo-ctx-parciales"
-            onClick={() => {
-              setParcialesDe(ctx.row)
-              closeCtx()
-            }}
-          >
-            Parciales
-          </button>
           <Can permission="catalogos:put">
             <button type="button" className="ctx-menu__item" onClick={() => openEdit(ctx.row)}>
               Editar
@@ -258,6 +283,7 @@ function PeriodosPage() {
 
       <Modal
         open={modalOpen}
+        xl
         title={viewOnly ? 'Ver periodo' : editing ? 'Editar periodo' : 'Nuevo periodo'}
         onClose={() => setModalOpen(false)}
         footer={
@@ -271,7 +297,13 @@ function PeriodosPage() {
                 Cancelar
               </button>
               <Can permission={editing ? 'catalogos:put' : 'catalogos:post'}>
-                <button type="button" className="btn btn--primary" onClick={() => setConfirmSave(true)}>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  data-testid="periodo-save-button"
+                  disabled={Boolean(error) || !dirty || saveMut.isPending}
+                  onClick={() => setConfirmSave(true)}
+                >
                   Guardar
                 </button>
               </Can>
@@ -298,25 +330,15 @@ function PeriodosPage() {
             onChange={(e) => setForm((f) => ({ ...f, anio_lectivo: Number(e.target.value) }))}
           />
         </Field>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <Field label="Fecha inicio">
-            <input
-              type="date"
-              className="field__input"
-              disabled={viewOnly}
-              value={form.fecha_inicio}
-              onChange={(e) => setForm((f) => ({ ...f, fecha_inicio: e.target.value }))}
-            />
-          </Field>
-          <Field label="Fecha fin">
-            <input
-              type="date"
-              className="field__input"
-              disabled={viewOnly}
-              value={form.fecha_fin}
-              onChange={(e) => setForm((f) => ({ ...f, fecha_fin: e.target.value }))}
-            />
-          </Field>
+        <div className="periodo-fechas-derivadas" data-testid="periodo-fechas-derivadas">
+          <div className="periodo-fechas-derivadas__item">
+            <span className="field__label">Inicio del primer parcial</span>
+            <p className="periodo-fechas-derivadas__valor">{fechas.fecha_inicio || '—'}</p>
+          </div>
+          <div className="periodo-fechas-derivadas__item">
+            <span className="field__label">Fin del último parcial</span>
+            <p className="periodo-fechas-derivadas__valor">{fechas.fecha_fin || '—'}</p>
+          </div>
         </div>
         <Field label="Estado">
           <Combobox
@@ -341,6 +363,16 @@ function PeriodosPage() {
             />
           </Field>
         </Can>
+        <ParcialesPeriodoForm
+          value={form.parciales}
+          onChange={(parciales) => setForm((f) => ({ ...f, parciales }))}
+          disabled={viewOnly}
+        />
+        {error ? (
+          <p className="field__error" data-testid="periodo-form-error">
+            {error}
+          </p>
+        ) : null}
         <fieldset className="periodo-reglas" data-testid="periodo-reglas">
           <legend className="periodo-reglas__titulo">Promoción y recuperaciones</legend>
           <div className="periodo-reglas__grid">
@@ -387,7 +419,6 @@ function PeriodosPage() {
         onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.id)}
         onCancel={() => setConfirmDelete(null)}
       />
-      <ParcialesPeriodoModal periodo={parcialesDe} onClose={() => setParcialesDe(null)} />
     </RequirePermission>
   )
 }
