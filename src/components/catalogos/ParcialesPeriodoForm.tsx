@@ -111,9 +111,6 @@ export function ParcialesPeriodoForm({ value, onChange, disabled = false }: Prop
         >
           <Plus size={16} /> Agregar
         </button>
-        <p className="texto-muted ficha-form__nota" style={{ margin: 0 }}>
-          El nombre de cada parcial se asigna automáticamente por su orden (I, II, III…).
-        </p>
       </div>
     </Seccion>
   )
