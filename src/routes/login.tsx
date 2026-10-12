@@ -130,7 +130,7 @@ function LoginPage() {
   return (
     <div className="login-page" data-theme="dark">
       <div className="login-card" data-testid="login-form" data-ready="1">
-        <LoginCardLeft />
+        <LoginCardLeft mensaje={mensaje} logoUrl={logoUrl} fondoUrl={fondoUrl} />
 
         <div className="card-right">
           <div className="login-header">
