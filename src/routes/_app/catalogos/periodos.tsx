@@ -311,7 +311,9 @@ function PeriodosPage() {
           )
         }
       >
-        <Field label="Nombre" htmlFor="periodo-nombre">
+        <section className="expediente__seccion">
+          <h3 className="expediente__titulo">Datos generales</h3>
+          <Field label="Nombre" htmlFor="periodo-nombre">
           <input
             id="periodo-nombre"
             className="field__input"
@@ -363,6 +365,7 @@ function PeriodosPage() {
             />
           </Field>
         </Can>
+        </section>
         <ParcialesPeriodoForm
           value={form.parciales}
           onChange={(parciales) => setForm((f) => ({ ...f, parciales }))}
