@@ -18,12 +18,14 @@ export const Route = createFileRoute('/_app/configuracion')({ component: Configu
 const emptyForm: ConfiguracionUpdate = {
   nombre_institucion: '',
   codigo_sace: '',
+  mensaje_login: '',
 }
 
 function configToForm(c: Configuracion): ConfiguracionUpdate {
   return {
     nombre_institucion: c.nombre_institucion,
     codigo_sace: c.codigo_sace ?? '',
+    mensaje_login: c.mensaje_login ?? '',
     logo_app_key: c.logo_app_key,
     logo_institucion_key: c.logo_institucion_key,
   }
@@ -99,6 +101,17 @@ function ConfiguracionPage() {
             className="field__input"
             value={form.codigo_sace ?? ''}
             onChange={(e) => setStr('codigo_sace', e.target.value)}
+          />
+        </Field>
+        <Field label="Mensaje de bienvenida (pantalla de login)" htmlFor="cfg-mensaje">
+          <textarea
+            id="cfg-mensaje"
+            className="field__textarea"
+            rows={3}
+            data-testid="config-mensaje-login"
+            placeholder="Ej. ¡Bienvenido a nuestra institución!"
+            value={form.mensaje_login ?? ''}
+            onChange={(e) => setStr('mensaje_login', e.target.value)}
           />
         </Field>
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>

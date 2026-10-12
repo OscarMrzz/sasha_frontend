@@ -7,6 +7,7 @@ import { userMessageFromError } from '#/lib/api'
 import { homePathForRoles, homePathFromStoredSession } from '#/lib/home-path'
 import { hasPersistedSession } from '#/lib/session-storage'
 import { login } from '#/services/auth'
+import { getLoginConfig } from '#/services/configuracion'
 
 export const Route = createFileRoute('/login')({
   ssr: false,
@@ -19,7 +20,7 @@ export const Route = createFileRoute('/login')({
   component: LoginPage,
 })
 
-function LoginCardLeft() {
+function LoginCardLeft({ mensaje }: { mensaje?: string }) {
   return (
     <div className="card-left">
       <div className="left-overlay" aria-hidden />
@@ -38,7 +39,7 @@ function LoginCardLeft() {
       </div>
 
       <div className="left-bottom">
-        <div className="author-info" />
+        {mensaje ? <p className="card-left__mensaje">{mensaje}</p> : <div className="author-info" />}
       </div>
     </div>
   )
@@ -52,6 +53,13 @@ function LoginPage() {
   const [errors, setErrors] = useState<{ user?: string; password?: string }>({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [mensaje, setMensaje] = useState('')
+
+  useEffect(() => {
+    getLoginConfig()
+      .then((res) => setMensaje((res.mensaje_login ?? '').trim()))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (sessionReady && isAuthenticated) {
@@ -97,7 +105,7 @@ function LoginPage() {
     return (
       <div className="login-page" data-theme="dark" data-testid="login-booting">
         <div className="login-card" data-testid="login-form" data-ready="0">
-          <LoginCardLeft />
+          <LoginCardLeft mensaje={mensaje} />
           <div className="card-right">
             <div className="login-header">
               <h2>Cargando…</h2>
