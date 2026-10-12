@@ -2645,6 +2645,7 @@ input.field__input,
 /* Login — card dividida (panel imagen + formulario) */
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2879,20 +2880,99 @@ input.field__input,
   cursor: not-allowed;
 }
 
+/* Login en móvil: una sola tarjeta, marca compacta arriba y formulario cómodo */
 @media (max-width: 768px) {
+  .login-page {
+    padding: 1rem;
+  }
+
   .login-card {
     grid-template-columns: 1fr;
     min-height: auto;
+    max-width: 28rem;
   }
 
+  /* Una sola tarjeta: los paneles internos pierden borde, radio y sombra propios */
+  .login-card .card-left,
+  .login-card .card-right {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* La columna de marca pasa a ser una cabecera centrada, sin recorte diagonal */
   .card-left {
     clip-path: none;
     margin-right: 0;
-    min-height: 180px;
+    min-height: 0;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1.5rem 1.5rem;
+  }
+
+  .left-top {
+    justify-content: center;
+  }
+
+  /* El logo configurado, si existe, fluye en la cabecera; sin el "LOGO" gigante */
+  .card-left__center {
+    position: static;
+    margin-top: 1.25rem;
+  }
+
+  .card-left__logo {
+    width: min(170px, 48%);
+  }
+
+  .card-left__logo-placeholder {
+    display: none;
+  }
+
+  .left-bottom {
+    margin-top: 1.25rem;
+  }
+
+  .card-left__mensaje {
+    max-width: none;
+    text-align: center;
+  }
+
+  /* Sin la capa oscura: la cabecera y el formulario comparten la misma superficie */
+  .left-overlay {
+    display: none;
+  }
+
+  /* Formulario: sin el gato duplicado y con campos a 16px (evita el zoom de iOS) */
+  .card-right {
+    padding: 1.5rem 1.5rem 2rem;
+  }
+
+  .login-header__cat {
+    display: none;
+  }
+
+  .login-header h2 {
+    margin-bottom: 1.75rem;
+  }
+
+  .input-group input {
+    font-size: 16px;
+    padding: 16px;
+  }
+
+  .btn-submit {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .card-left {
+    padding: 1.5rem 1.25rem 1.25rem;
   }
 
   .card-right {
-    padding: 30px 25px;
+    padding: 1.25rem 1.25rem 1.75rem;
   }
 }
 
