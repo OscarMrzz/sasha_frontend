@@ -85,8 +85,7 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
   const cargando = configQuery.isLoading
   const fallo = configQuery.isError
 
-  const setDia = (key: 'dia_pago' | 'dia_mora', value: string) =>
-    setForm((f) => ({ ...f, [key]: value }))
+  const setDia = (key: 'dia_pago', value: string) => setForm((f) => ({ ...f, [key]: value }))
 
   const setGradoMonto = (gradoId: string, monto: string) =>
     setForm((f) => ({
@@ -184,31 +183,19 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
                       ))}
                     </select>
                   </Field>
-                  <Field label="Día de mora" htmlFor="pagos-config-dia-mora">
-                    <select
-                      id="pagos-config-dia-mora"
-                      className="field__select"
-                      data-testid="pagos-config-dia-mora"
-                      disabled={saving}
-                      value={form.dia_mora}
-                      onChange={(e) => setDia('dia_mora', e.target.value)}
-                    >
-                      {DIAS.map((d) => (
-                        <option key={d.value} value={d.value}>
-                          {d.label}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
                 </div>
+                <p className="texto-muted ficha-form__nota">
+                  La mora se cuenta a partir del vencimiento (día de pago).
+                </p>
               </section>
 
               <section className="expediente__seccion">
                 <h3 className="expediente__titulo">Montos por grado y reglas de mora</h3>
                 <p className="texto-muted ficha-form__nota">
-                  El recargo por mora es acumulativo: se suman los montos de todas las reglas cuyo
-                  «N días» ya se alcanzó con el retraso. Una sola regla «1 día → L 100» cobra L 100
-                  aunque el retraso sea de 5 días.
+                  Las reglas de mora se numeran solas: la 1.ª fila es «1 día o más», la 2.ª «2 días
+                  o más», y así sucesivamente (solo eliges el monto). El recargo es acumulativo: se
+                  suman los montos de todas las reglas cuyo «N días» ya se alcanzó con el retraso.
+                  Una sola regla «1 día o más → L 100» cobra L 100 aunque el retraso sea de 5 días.
                 </p>
                 <div className="pagos-config">
                   {form.grados.length === 0 ? (

@@ -31,38 +31,40 @@ async function confirmarGuardado(page: Page) {
 }
 
 test.describe('configuracion-pagos @critical', () => {
-  test('lista, valida reglas duplicadas y crea la configuración del periodo', async ({ page }) => {
+  test('lista, valida montos y crea la configuración del periodo', async ({ page }) => {
     await abrirConfig(page)
 
     // Listado estilo registros: título con conteo y buscador «Buscar…».
     await expect(page.getByRole('heading', { name: 'Configuración de pagos' })).toBeVisible()
     await expect(page.getByTestId('data-table-search')).toHaveAttribute('placeholder', 'Buscar…')
 
-    // Días del mes y monto por grado.
+    // Solo día de pago (la mora se cuenta desde el vencimiento: ya no hay día de mora).
+    await expect(page.getByTestId('pagos-config-dia-mora')).toHaveCount(0)
     await page.getByTestId('pagos-config-dia-pago').selectOption('12')
-    await page.getByTestId('pagos-config-dia-mora').selectOption('15')
     await page.getByTestId(`pagos-config-monto-${GRADO_ID}`).fill('100')
 
-    // Dos reglas de mora y se quita una.
+    // Dos reglas de mora: los días se numeran solos (1 y 2); solo se rellenan montos.
     await page.getByTestId(`pagos-config-agregar-regla-${GRADO_ID}`).click()
     await page.getByTestId(`pagos-config-agregar-regla-${GRADO_ID}`).click()
     await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-1`)).toBeVisible()
-    await page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-dias`).fill('1')
+    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-dias`)).toHaveText('1 día o más')
+    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-1-dias`)).toHaveText('2 días o más')
     await page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-monto`).fill('100')
-    await page.getByTestId(`pagos-config-regla-${GRADO_ID}-1-dias`).fill('5')
     await page.getByTestId(`pagos-config-regla-${GRADO_ID}-1-monto`).fill('200')
-    await page.getByTestId(`pagos-config-regla-${GRADO_ID}-1-quitar`).click()
-    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-1`)).toHaveCount(0)
 
-    // Validación: dos reglas con el mismo `dias` → error y Guardar deshabilitado.
-    await page.getByTestId(`pagos-config-agregar-regla-${GRADO_ID}`).click()
-    await page.getByTestId(`pagos-config-regla-${GRADO_ID}-1-dias`).fill('1')
-    await page.getByTestId(`pagos-config-regla-${GRADO_ID}-1-monto`).fill('200')
+    // Quitar la primera fila renumera: la que queda conserva su monto y vuelve a ser «1».
+    await page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-quitar`).click()
+    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-1`)).toHaveCount(0)
+    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-dias`)).toHaveText('1 día o más')
+    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-monto`)).toHaveValue('200')
+
+    // Validación: monto negativo → error y Guardar deshabilitado.
+    await page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-monto`).fill('-50')
     await expect(page.getByTestId('pagos-config-error')).toBeVisible()
     await expect(page.getByTestId('pagos-config-save-button')).toBeDisabled()
 
-    // Corregir el duplicado → se habilita Guardar.
-    await page.getByTestId(`pagos-config-regla-${GRADO_ID}-1-dias`).fill('5')
+    // Corregir el monto → se habilita Guardar.
+    await page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-monto`).fill('200')
     await expect(page.getByTestId('pagos-config-error')).toHaveCount(0)
     await expect(page.getByTestId('pagos-config-save-button')).toBeEnabled()
 
@@ -74,15 +76,13 @@ test.describe('configuracion-pagos @critical', () => {
     await expect(page.getByText(TOAST).last()).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('pagos-config-modal')).toHaveCount(0)
 
-    // Persistencia al reabrir.
+    // Persistencia al reabrir: un solo renglón, con sus días renumerados.
     await page.getByTestId(`config-pagos-btn-${PERIODO_ID}`).click()
     await expect(page.getByTestId('pagos-config-dia-pago')).toHaveValue('12')
-    await expect(page.getByTestId('pagos-config-dia-mora')).toHaveValue('15')
     await expect(page.getByTestId(`pagos-config-monto-${GRADO_ID}`)).toHaveValue('100')
-    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-dias`)).toHaveValue('1')
-    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-monto`)).toHaveValue('100')
-    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-1-dias`)).toHaveValue('5')
-    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-1-monto`)).toHaveValue('200')
+    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-dias`)).toHaveText('1 día o más')
+    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-monto`)).toHaveValue('200')
+    await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-1`)).toHaveCount(0)
 
     // Dirty: sin cambios, Guardar deshabilitado.
     await expect(page.getByTestId('pagos-config-save-button')).toBeDisabled()

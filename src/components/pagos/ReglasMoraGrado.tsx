@@ -15,7 +15,8 @@ type Props = {
 
 /**
  * Sub-componente controlado de reglas de mora de un grado.
- * Cada fila es «N días o más → monto»; las reglas son acumulativas.
+ * Cada fila es «N días o más → monto»; los días se numeran solos (1.ª fila = 1,
+ * 2.ª = 2, …) y las reglas son acumulativas.
  */
 export function ReglasMoraGrado({ value, onChange, disabled = false, gradoId }: Props) {
   const setRow = (i: number, patch: Partial<ReglaMoraForm>) =>
@@ -34,18 +35,14 @@ export function ReglasMoraGrado({ value, onChange, disabled = false, gradoId }: 
             className="nivel-fila mora-regla"
             data-testid={`pagos-config-regla-${gradoId}-${i}`}
           >
-            <Field label="Días o más">
-              <input
-                type="number"
-                min={1}
-                className="field__input mora-regla__dias"
-                aria-label="Días de retraso o más"
+            <Field label="Días de retraso">
+              <span
+                className="mora-regla__dias"
                 data-testid={`pagos-config-regla-${gradoId}-${i}-dias`}
-                placeholder="Ej. 1"
-                disabled={disabled}
-                value={regla.dias}
-                onChange={(e) => setRow(i, { dias: e.target.value })}
-              />
+                aria-label="Días de retraso o más"
+              >
+                {i + 1} {i + 1 === 1 ? 'día' : 'días'} o más
+              </span>
             </Field>
             <Field label="Monto">
               <input

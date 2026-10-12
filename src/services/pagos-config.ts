@@ -20,8 +20,6 @@ export interface ConfiguracionPagos {
   periodo_id: string
   /** Día del mes (1–31) en que vence el pago. */
   dia_pago: number
-  /** Día del mes (1–31) a partir del cual aplica la mora. */
-  dia_mora: number
   /** `true` si el periodo ya tiene configuración guardada (fila en `periodo_config_pago`). */
   existe: boolean
   /** Todos los grados; sin config → `monto 0` y `reglas_mora []`. */
@@ -31,7 +29,6 @@ export interface ConfiguracionPagos {
 /** Cuerpo de `PUT /pagos/configuracion/{periodo_id}`. */
 export interface ConfiguracionPagosUpdate {
   dia_pago: number
-  dia_mora: number
   /** Si `true`, el cambio aplica a las obligaciones ya generadas del periodo. */
   retroactivo: boolean
   grados: { grado_id: string; monto: number; reglas_mora: ReglaMora[] }[]
