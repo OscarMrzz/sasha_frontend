@@ -2775,6 +2775,13 @@ input.field__input,
   color: var(--sasha-texto-primary);
 }
 
+.login-header__cat {
+  display: block;
+  margin: 0 auto 14px;
+  height: 96px;
+  width: auto;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;

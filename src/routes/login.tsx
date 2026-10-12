@@ -124,6 +124,7 @@ function LoginPage() {
 
         <div className="card-right">
           <div className="login-header">
+            <img src="/images/logo/gato.svg" alt="" className="login-header__cat" />
             <h2>Bienvenido a Sasha</h2>
           </div>
 
