@@ -6,8 +6,8 @@ async function elegirPrimeraOpcion(page: Page, testId: string) {
   await page.locator('.combobox__option').first().click()
 }
 
-/** Recorre el wizard (alumno → historial → académico → responsables → foto) hasta «Confirmar». */
-async function irAlPasoConfirmar(page: Page) {
+/** Recorre el wizard (alumno → historial → académico → responsables → foto) hasta el paso «Pago». */
+async function irAlPasoPago(page: Page) {
   await page.getByRole('link', { name: 'Matrícula' }).click()
   await expect(page).toHaveURL(/matricula/)
   await page.getByRole('button', { name: 'Nueva matrícula' }).click()
@@ -53,8 +53,10 @@ async function irAlPasoConfirmar(page: Page) {
   ).toBeVisible({ timeout: 10_000 })
   await page.getByTestId('matricula-wizard-next').click()
 
-  // Paso 6 · Confirmar
-  await expect(page.getByText('Revisión final')).toBeVisible({ timeout: 10_000 })
+  // Paso 6 · Pago
+  await expect(
+    page.locator('.wizard-pane__title').filter({ hasText: 'Pago' }),
+  ).toBeVisible({ timeout: 10_000 })
 }
 
 test.describe('matricula wizard @critical', () => {
@@ -117,26 +119,26 @@ test.describe('matricula wizard @critical', () => {
     await expect(page.getByRole('heading', { name: 'Editar alumno' })).toHaveCount(0)
   })
 
-  test('último paso: elige la beca y se refleja en el resumen', async ({ page }) => {
+  test('penúltimo paso: elige la beca inline y se refleja en el resumen', async ({ page }) => {
     await loginAs(page)
-    await irAlPasoConfirmar(page)
+    await irAlPasoPago(page)
 
-    // Por defecto la beca es normal y se muestra en el resumen.
+    // Por defecto la beca es normal y la opción aparece marcada.
+    const normal = page.getByTestId('beca-op-normal')
+    await expect(normal).toBeVisible()
+    await expect(normal).toHaveClass(/wizard-choice__btn--on/)
+
+    // La opción especial pide el monto por mes.
+    await page.getByTestId('beca-op-especial').click()
+    await expect(page.getByTestId('beca-monto-especial')).toBeVisible()
+
+    // Se elige media beca y el resumen (paso Confirmar) la refleja.
+    await page.getByTestId('beca-op-media').click()
+    await page.getByTestId('matricula-wizard-next').click()
+
+    await expect(page.getByText('Revisión final')).toBeVisible({ timeout: 10_000 })
     const resumen = page.getByTestId('beca-resumen')
     await expect(resumen).toBeVisible()
-    await expect(resumen).toContainText('Normal')
-
-    // El modal permite elegir entre las 4 opciones y la especial pide el monto.
-    await page.getByTestId('beca-btn').click()
-    const modal = page.getByTestId('beca-modal')
-    await expect(modal).toBeVisible()
-    await modal.getByTestId('beca-op-especial').click()
-    await expect(modal.getByTestId('beca-monto-especial')).toBeVisible()
-
-    // Se elige media beca y el resumen la refleja.
-    await modal.getByTestId('beca-op-media').click()
-    await modal.getByRole('button', { name: 'Listo' }).click()
-    await expect(modal).toHaveCount(0)
     await expect(resumen).toContainText('Media beca')
   })
 })

@@ -42,6 +42,7 @@ const STEPS = [
   { id: 'academico', label: 'Académico' },
   { id: 'responsables', label: 'Responsables' },
   { id: 'foto', label: 'Foto' },
+  { id: 'pago', label: 'Pago' },
   { id: 'confirmar', label: 'Confirmar' },
 ] as const
 
@@ -58,7 +59,7 @@ const BECA_OPTIONS: { value: TipoBeca; label: string; desc: string }[] = [
   { value: 'normal', label: 'Normal', desc: 'Paga la mensualidad completa del grado' },
   { value: 'media', label: 'Media beca', desc: 'Paga el 50% de la mensualidad' },
   { value: 'completa', label: 'Beca completa', desc: 'No paga mensualidades (L 0)' },
-  { value: 'especial', label: 'Beca especial', desc: 'Paga el monto que indiques por mes' },
+  { value: 'especial', label: 'Especial', desc: 'Paga el monto que indiques por mes' },
 ]
 
 type BoolChoice = boolean | null
@@ -300,7 +301,6 @@ export function MatriculaWizard({
   const [zipDescargado, setZipDescargado] = useState(false)
   const [tipoBeca, setTipoBeca] = useState<TipoBeca>('normal')
   const [montoEspecial, setMontoEspecial] = useState('')
-  const [becaOpen, setBecaOpen] = useState(false)
 
   const { data: alergiasCat = [] } = useQuery({
     queryKey: ['catalogo-alergias'],
@@ -418,7 +418,6 @@ export function MatriculaWizard({
     setZipDescargado(false)
     setTipoBeca('normal')
     setMontoEspecial('')
-    setBecaOpen(false)
   }
 
   const requestClose = () => {
@@ -507,6 +506,13 @@ export function MatriculaWizard({
     if (err) {
       toast.error(err)
       return
+    }
+    if (step === 5) {
+      const becaErr = validarBeca()
+      if (becaErr) {
+        toast.error(becaErr)
+        return
+      }
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
   }
@@ -1703,6 +1709,49 @@ export function MatriculaWizard({
         ) : null}
 
         {!done && step === 5 ? (
+          <div className="wizard-pane" key="pago">
+            <p className="wizard-pane__title">Pago</p>
+            <p className="wizard-pane__hint">
+              La beca aplica solo a las mensualidades del periodo. La cuota de matrícula siempre es
+              la del grado.
+            </p>
+            <div className="wizard-choice" role="group" aria-label="Tipo de beca">
+              {BECA_OPTIONS.map((op) => (
+                <button
+                  key={op.value}
+                  type="button"
+                  data-testid={`beca-op-${op.value}`}
+                  className={`wizard-choice__btn${tipoBeca === op.value ? ' wizard-choice__btn--on' : ''}`}
+                  onClick={() => setTipoBeca(op.value)}
+                >
+                  {op.label}
+                </button>
+              ))}
+            </div>
+            {tipoBeca === 'especial' ? (
+              <Field label="Monto por mes (L)" htmlFor="wiz-beca-monto">
+                <input
+                  id="wiz-beca-monto"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="field__input"
+                  data-testid="beca-monto-especial"
+                  value={montoEspecial}
+                  onChange={(e) => setMontoEspecial(e.target.value)}
+                />
+              </Field>
+            ) : null}
+            <p className="texto-muted" style={{ fontSize: '0.85rem', margin: '0.85rem 0 0' }}>
+              Pagará por mes: {becaMonto !== null ? `${lempiras(becaMonto)}/mes` : '—'}
+              {costoGrado
+                ? ` · Mensualidad normal del grado: ${lempiras(costoGrado.mensualidad)}`
+                : ''}
+            </p>
+          </div>
+        ) : null}
+
+        {!done && step === 6 ? (
           <div className="wizard-pane" key="confirm">
             <p className="wizard-pane__title">Revisión final</p>
             <p className="wizard-pane__hint">
@@ -1837,87 +1886,7 @@ export function MatriculaWizard({
                 </span>
               </div>
             </div>
-
-            <p className="wizard-pane__title" style={{ marginTop: '1.25rem' }}>
-              Pago / Beca
-            </p>
-            <p className="wizard-pane__hint">La beca aplica solo a las mensualidades del periodo.</p>
-            <div
-              className="wizard-choice-panel"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                flexWrap: 'wrap',
-              }}
-              data-testid="beca-seccion"
-            >
-              <div style={{ minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 600 }}>{becaOpcion.label}</p>
-                <p className="texto-muted" style={{ margin: '0.15rem 0 0', fontSize: '0.8rem' }}>
-                  {becaOpcion.desc}
-                </p>
-              </div>
-              <span
-                className="wizard-summary__value"
-                style={{ fontVariantNumeric: 'tabular-nums' }}
-              >
-                {becaMonto !== null ? `${lempiras(becaMonto)}/mes` : '—'}
-              </span>
-              <button
-                type="button"
-                className="btn btn--ghost btn--sm"
-                data-testid="beca-btn"
-                onClick={() => setBecaOpen(true)}
-              >
-                Cambiar
-              </button>
-            </div>
           </div>
-        ) : null}
-      </Modal>
-
-      <Modal
-        open={becaOpen}
-        title="Beca del alumno"
-        testId="beca-modal"
-        onClose={() => setBecaOpen(false)}
-        footer={
-          <button type="button" className="btn btn--primary" onClick={() => setBecaOpen(false)}>
-            Listo
-          </button>
-        }
-      >
-        <p className="wizard-pane__hint">
-          La beca aplica solo a las mensualidades. La cuota de matrícula siempre es la del grado.
-        </p>
-        <div className="wizard-choice" role="group" aria-label="Tipo de beca">
-          {BECA_OPTIONS.map((op) => (
-            <button
-              key={op.value}
-              type="button"
-              data-testid={`beca-op-${op.value}`}
-              className={`wizard-choice__btn${tipoBeca === op.value ? ' wizard-choice__btn--on' : ''}`}
-              onClick={() => setTipoBeca(op.value)}
-            >
-              {op.label}
-            </button>
-          ))}
-        </div>
-        {tipoBeca === 'especial' ? (
-          <Field label="Monto por mes (L)" htmlFor="wiz-beca-monto">
-            <input
-              id="wiz-beca-monto"
-              type="number"
-              min={0}
-              step="0.01"
-              className="field__input"
-              data-testid="beca-monto-especial"
-              value={montoEspecial}
-              onChange={(e) => setMontoEspecial(e.target.value)}
-            />
-          </Field>
         ) : null}
       </Modal>
 
