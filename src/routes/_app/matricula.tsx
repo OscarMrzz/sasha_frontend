@@ -372,6 +372,7 @@ function MatriculaPage() {
           grados={grados}
           modalidades={modalidades}
           secciones={secciones}
+          permitirRol={false}
           onClose={() => setEditRow(null)}
           onSaved={() => {
             qc.invalidateQueries({ queryKey: ['matriculas'] })

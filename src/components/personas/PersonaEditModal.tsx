@@ -27,7 +27,7 @@ import {
   type UserFicha,
 } from '#/services/personas'
 import { listRoles } from '#/services/roles'
-import { updateRoles } from '#/services/users'
+import { updateRoles, updateStatus } from '#/services/users'
 
 const SEXO_OPTIONS = [
   { value: 'M', label: 'Masculino', keywords: 'M masculino hombre' },
@@ -42,8 +42,8 @@ const TIPO_DOC_OPTIONS = [
 ]
 
 const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'Activa' },
-  { value: 'INACTIVE', label: 'Inactiva' },
+  { value: 'ACTIVE', label: 'Activo' },
+  { value: 'INACTIVE', label: 'Inactivo' },
 ]
 
 type GradoRow = { id: string; nombre: string; anio: string }
@@ -51,6 +51,8 @@ type GradoRow = { id: string; nombre: string; anio: string }
 type FormState = {
   // rol del usuario (uno solo por usuario, DEC-015)
   rol: string
+  // estado del usuario (ACTIVE/INACTIVE)
+  estado: string
   primer_nombre: string
   segundo_nombre: string
   primer_apellido: string
@@ -102,6 +104,7 @@ function buildSeed(ficha: UserFicha, grados: Grado[]): FormState {
   const responsable = ficha.responsable
   return {
     rol: rolPrincipal(ficha),
+    estado: ficha.user.statususer || 'ACTIVE',
     primer_nombre: p?.primer_nombre ?? '',
     segundo_nombre: p?.segundo_nombre ?? '',
     primer_apellido: p?.primer_apellido ?? '',
@@ -140,9 +143,11 @@ type Props = {
   grados?: Grado[]
   modalidades?: Modalidad[]
   secciones?: Seccion[]
+  /** Si es `false`, no se muestra ni se guarda el rol del usuario (p. ej. en matrícula). */
+  permitirRol?: boolean
 }
 
-/** Edita la ficha completa de una persona (perfil + datos del rol + foto + rol del usuario). */
+/** Edita la ficha completa de una persona (perfil + datos del rol + foto + rol/estado del usuario). */
 export function PersonaEditModal({
   code,
   onClose,
@@ -152,6 +157,7 @@ export function PersonaEditModal({
   grados: gradosProp,
   modalidades,
   secciones,
+  permitirRol = true,
 }: Props) {
   const { can, roles } = useCan()
   const { data, isLoading, isError, error } = useQuery({
@@ -167,7 +173,7 @@ export function PersonaEditModal({
   const { data: rolesData = [] } = useQuery({
     queryKey: ['roles'],
     queryFn: listRoles,
-    enabled: puedeEditarRol,
+    enabled: permitirRol && puedeEditarRol,
   })
 
   const [form, setForm] = useState<FormState | null>(null)
@@ -287,12 +293,17 @@ export function PersonaEditModal({
           throw new Error(uploadErrorMessage(e, 'perfil_foto'))
         }
       }
-      // 1) datos de la persona; 2) rol solo si cambió (un usuario = un rol, DEC-015).
+      // 1) datos de la persona; 2) rol/estado solo si cambió (un usuario = un rol, DEC-015).
       await updatePersona(code, payload)
       const nuevoRol = form?.rol ?? ''
       const original = rolPrincipal(data)
-      if (puedeEditarRol && nuevoRol && nuevoRol !== original) {
+      if (permitirRol && puedeEditarRol && nuevoRol && nuevoRol !== original) {
         await updateRoles(code, [nuevoRol])
+      }
+      const nuevoEstado = form?.estado ?? ''
+      const estadoOriginal = data?.user.statususer ?? ''
+      if (permitirRol && puedeEditarRol && nuevoEstado && nuevoEstado !== estadoOriginal) {
+        await updateStatus(code, nuevoEstado)
       }
       // 3) matrícula, solo en el uso combinado.
       if (matricula) {
@@ -464,19 +475,30 @@ export function PersonaEditModal({
             </Field>
           </div>
 
-          <Can permission="users:put">
-            <div style={{ marginTop: '1.25rem', maxWidth: 320 }}>
-              <Field label="Rol">
-                <Combobox
-                  value={form.rol}
-                  onChange={(v) => update({ rol: v })}
-                  options={rolOptions}
-                  placeholder="Buscar rol…"
-                  data-testid="persona-edit-rol"
-                />
-              </Field>
-            </div>
-          </Can>
+          {permitirRol ? (
+            <Can permission="users:put">
+              <div className="wizard-grid" style={{ marginTop: '1.25rem', maxWidth: 700 }}>
+                <Field label="Rol">
+                  <Combobox
+                    value={form.rol}
+                    onChange={(v) => update({ rol: v })}
+                    options={rolOptions}
+                    placeholder="Buscar rol…"
+                    data-testid="persona-edit-rol"
+                  />
+                </Field>
+                <Field label="Estado">
+                  <Combobox
+                    value={form.estado}
+                    onChange={(v) => update({ estado: v })}
+                    options={STATUS_OPTIONS}
+                    placeholder="Buscar estado…"
+                    data-testid="persona-edit-estado"
+                  />
+                </Field>
+              </div>
+            </Can>
+          ) : null}
 
           {esAlumno ? (
             <>

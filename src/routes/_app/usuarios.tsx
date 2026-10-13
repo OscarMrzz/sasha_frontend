@@ -17,19 +17,17 @@ import {
   createUser,
   listUsers,
   softDelete,
-  updateRoles,
-  updateStatus,
   type CreateUserRequest,
   type ResponseUser,
 } from '#/services/users'
 import { createAlumno, createMaestro, createResponsable } from '#/services/personas'
-import { asignarCoordinaciones, coordinacionesDeUsuario, listCoordinaciones } from '#/services/coordinaciones'
+import { asignarCoordinaciones, listCoordinaciones } from '#/services/coordinaciones'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/usuarios')({ component: UsuariosPage })
 
 const col = createColumnHelper<ResponseUser>()
-/** Roles asignables en create/edit. Alumno va por matrículas; Admin solo por seed. */
+/** Roles asignables al crear. Alumno va por matrículas; Admin solo por seed. */
 const ASSIGNABLE = ROLES.filter((r) => r !== 'developer' && r !== 'admin' && r !== 'alumno')
 /** Filtro de tabla: incluye admin/alumno para listar existentes. */
 const FILTERABLE_ROLES = ROLES.filter((r) => r !== 'developer')
@@ -82,11 +80,6 @@ function CoordinacionesSelect({ value, onChange }: { value: string[]; onChange: 
   )
 }
 
-type EditForm = {
-  roles: string[]
-  statususer: string
-}
-
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE' },
   { value: 'INACTIVE', label: 'INACTIVE' },
@@ -101,10 +94,7 @@ function UsuariosPage() {
   })
 
   const [modalOpen, setModalOpen] = useState(false)
-  const [mode, setMode] = useState<'create' | 'edit'>('create')
-  const [editing, setEditing] = useState<ResponseUser | null>(null)
   const [createForm, setCreateForm] = useState<CreateUserRequest>(defaultForm)
-  const [editForm, setEditForm] = useState<EditForm>({ roles: [], statususer: 'ACTIVE' })
   const [confirmSave, setConfirmSave] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<ResponseUser | null>(null)
   const [createdCode, setCreatedCode] = useState<string | null>(null)
@@ -127,8 +117,6 @@ function UsuariosPage() {
   }, [ctx, closeCtx])
 
   const openCreate = () => {
-    setMode('create')
-    setEditing(null)
     setCreateForm(defaultForm)
     setCreatedCode(null)
     setCoordSel([])
@@ -137,26 +125,8 @@ function UsuariosPage() {
 
   useAccionPalette('nuevo-usuario', openCreate)
 
-  const openEdit = (row: ResponseUser) => {
-    setMode('edit')
-    setEditing(row)
-    setEditForm({ roles: row.roles.slice(0, 1), statususer: row.statususer })
-    setCoordSel([])
-    if (esCoordinador(row.roles) && can('coordinaciones:get')) {
-      coordinacionesDeUsuario(row.code)
-        .then((r) => setCoordSel(r.coordinaciones))
-        .catch((e) => toast.error(userMessageFromError(e)))
-    }
-    setModalOpen(true)
-    closeCtx()
-  }
-
   const setCreateRole = (role: RoleName) => {
     setCreateForm((f) => ({ ...f, roles: [role] }))
-  }
-
-  const setEditRole = (role: RoleName) => {
-    setEditForm((f) => ({ ...f, roles: [role] }))
   }
 
   const createMut = useMutation({
@@ -203,22 +173,6 @@ function UsuariosPage() {
     onError: (e) => toast.error(userMessageFromError(e)),
   })
 
-  const saveEditMut = useMutation({
-    mutationFn: async () => {
-      if (!editing) return
-      await updateRoles(editing.code, editForm.roles.slice(0, 1))
-      await updateStatus(editing.code, editForm.statususer)
-      if (esCoordinador(editForm.roles)) await asignarCoordinaciones(editing.code, coordSel)
-    },
-    onSuccess: () => {
-      toast.success('Usuario actualizado')
-      setConfirmSave(false)
-      setModalOpen(false)
-      qc.invalidateQueries({ queryKey: ['users'] })
-    },
-    onError: (e) => toast.error(userMessageFromError(e)),
-  })
-
   const deleteMut = useMutation({
     mutationFn: (code: string) => softDelete(code),
     onSuccess: () => {
@@ -261,8 +215,6 @@ function UsuariosPage() {
     ],
     [],
   )
-
-  const isCreate = mode === 'create'
 
   if (isLoading) return <div className="empty-state">Cargando usuarios…</div>
 
@@ -327,19 +279,6 @@ function UsuariosPage() {
                     closeCtx()
                   }}
                 >
-                  Editar datos
-                </button>
-              </Can>
-              <Can permission="users:put">
-                <button
-                  type="button"
-                  className="ctx-menu__item"
-                  data-testid="ctx-editar-roles"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    openEdit(ctx.row)
-                  }}
-                >
                   Editar
                 </button>
               </Can>
@@ -380,151 +319,102 @@ function UsuariosPage() {
 
       <Modal
         open={modalOpen}
-        title={isCreate ? 'Nuevo usuario' : `Editar usuario ${editing?.code ?? ''}`}
+        title="Nuevo usuario"
         onClose={() => setModalOpen(false)}
         footer={
           <>
             <button type="button" className="btn btn--ghost" onClick={() => setModalOpen(false)}>
               Cancelar
             </button>
-            <Can permission={isCreate ? 'users:post' : 'users:put'}>
+            <Can permission="users:post">
               <button
                 type="button"
                 className="btn btn--primary"
-                data-testid={isCreate ? 'create-user-button' : 'save-user-button'}
+                data-testid="create-user-button"
                 disabled={
-                  isCreate
-                    ? createMut.isPending ||
-                      createForm.roles.length === 0 ||
-                      (esCoordinador(createForm.roles) && coordSel.length === 0)
-                    : saveEditMut.isPending ||
-                      editForm.roles.length === 0 ||
-                      (esCoordinador(editForm.roles) && coordSel.length === 0)
+                  createMut.isPending ||
+                  createForm.roles.length === 0 ||
+                  (esCoordinador(createForm.roles) && coordSel.length === 0)
                 }
                 onClick={() => setConfirmSave(true)}
               >
-                {isCreate
-                  ? createMut.isPending
-                    ? 'Creando…'
-                    : 'Crear y descargar PDF'
-                  : saveEditMut.isPending
-                    ? 'Guardando…'
-                    : 'Guardar'}
+                {createMut.isPending ? 'Creando…' : 'Crear y descargar PDF'}
               </button>
             </Can>
           </>
         }
       >
-        {isCreate ? (
-          <>
-            {createdCode ? (
-              <div
-                className="badge badge--ok"
-                style={{ marginBottom: '1rem', padding: '0.75rem', display: 'block' }}
-                data-testid="user-code-display"
-              >
-                Último código generado: <strong>{createdCode}</strong>
-              </div>
-            ) : null}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <Field label="Primer nombre" htmlFor="user-pn">
-                <input
-                  id="user-pn"
-                  className="field__input"
-                  data-testid="user-primer-nombre-input"
-                  value={createForm.primer_nombre}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, primer_nombre: e.target.value }))}
-                  required
-                />
-              </Field>
-              <Field label="Segundo nombre">
-                <input
-                  className="field__input"
-                  value={createForm.segundo_nombre ?? ''}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, segundo_nombre: e.target.value }))}
-                />
-              </Field>
-              <Field label="Primer apellido" htmlFor="user-pa">
-                <input
-                  id="user-pa"
-                  className="field__input"
-                  data-testid="user-primer-apellido-input"
-                  value={createForm.primer_apellido}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, primer_apellido: e.target.value }))}
-                  required
-                />
-              </Field>
-              <Field label="Segundo apellido">
-                <input
-                  className="field__input"
-                  value={createForm.segundo_apellido ?? ''}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, segundo_apellido: e.target.value }))}
-                />
-              </Field>
-            </div>
-            <Field label="Rol">
-              <Combobox
-                data-testid="user-role-select"
-                value={createForm.roles[0] ?? ''}
-                onChange={(v) => setCreateRole(v as RoleName)}
-                options={assignable.map((role) => ({ value: role, label: roleLabel(role) }))}
-                placeholder="Elegir un rol…"
-                emptyLabel="Sin roles asignables."
-              />
-            </Field>
-            {esCoordinador(createForm.roles) ? <CoordinacionesSelect value={coordSel} onChange={setCoordSel} /> : null}
-            <Field label="Estado">
-              <Combobox
-                value={createForm.statususer}
-                onChange={(v) => setCreateForm((f) => ({ ...f, statususer: v }))}
-                options={STATUS_OPTIONS}
-                placeholder="Buscar estado…"
-              />
-            </Field>
-          </>
-        ) : (
-          <>
-            <p className="texto-muted" style={{ fontSize: '0.85rem', marginTop: 0 }}>
-              Código: <strong data-testid="user-view-code">{editing?.code}</strong>
-              {editing?.username ? (
-                <>
-                  {' '}
-                  · Username: <strong>{editing.username}</strong>
-                </>
-              ) : null}
-            </p>
-            <Field label="Rol">
-              <Combobox
-                data-testid="user-edit-role-select"
-                value={editForm.roles[0] ?? ''}
-                onChange={(v) => setEditRole(v as RoleName)}
-                options={assignable.map((role) => ({ value: role, label: roleLabel(role) }))}
-                placeholder="Elegir un rol…"
-                emptyLabel="Sin roles asignables."
-              />
-            </Field>
-            {esCoordinador(editForm.roles) ? <CoordinacionesSelect value={coordSel} onChange={setCoordSel} /> : null}
-            <Field label="Estado">
-              <Combobox
-                value={editForm.statususer}
-                onChange={(v) => setEditForm((f) => ({ ...f, statususer: v }))}
-                options={STATUS_OPTIONS}
-                placeholder="Buscar estado…"
-              />
-            </Field>
-          </>
-        )}
+        {createdCode ? (
+          <div
+            className="badge badge--ok"
+            style={{ marginBottom: '1rem', padding: '0.75rem', display: 'block' }}
+            data-testid="user-code-display"
+          >
+            Último código generado: <strong>{createdCode}</strong>
+          </div>
+        ) : null}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <Field label="Primer nombre" htmlFor="user-pn">
+            <input
+              id="user-pn"
+              className="field__input"
+              data-testid="user-primer-nombre-input"
+              value={createForm.primer_nombre}
+              onChange={(e) => setCreateForm((f) => ({ ...f, primer_nombre: e.target.value }))}
+              required
+            />
+          </Field>
+          <Field label="Segundo nombre">
+            <input
+              className="field__input"
+              value={createForm.segundo_nombre ?? ''}
+              onChange={(e) => setCreateForm((f) => ({ ...f, segundo_nombre: e.target.value }))}
+            />
+          </Field>
+          <Field label="Primer apellido" htmlFor="user-pa">
+            <input
+              id="user-pa"
+              className="field__input"
+              data-testid="user-primer-apellido-input"
+              value={createForm.primer_apellido}
+              onChange={(e) => setCreateForm((f) => ({ ...f, primer_apellido: e.target.value }))}
+              required
+            />
+          </Field>
+          <Field label="Segundo apellido">
+            <input
+              className="field__input"
+              value={createForm.segundo_apellido ?? ''}
+              onChange={(e) => setCreateForm((f) => ({ ...f, segundo_apellido: e.target.value }))}
+            />
+          </Field>
+        </div>
+        <Field label="Rol">
+          <Combobox
+            data-testid="user-role-select"
+            value={createForm.roles[0] ?? ''}
+            onChange={(v) => setCreateRole(v as RoleName)}
+            options={assignable.map((role) => ({ value: role, label: roleLabel(role) }))}
+            placeholder="Elegir un rol…"
+            emptyLabel="Sin roles asignables."
+          />
+        </Field>
+        {esCoordinador(createForm.roles) ? <CoordinacionesSelect value={coordSel} onChange={setCoordSel} /> : null}
+        <Field label="Estado">
+          <Combobox
+            value={createForm.statususer}
+            onChange={(v) => setCreateForm((f) => ({ ...f, statususer: v }))}
+            options={STATUS_OPTIONS}
+            placeholder="Buscar estado…"
+          />
+        </Field>
       </Modal>
 
       <ConfirmDialog
         open={confirmSave}
-        title={isCreate ? 'Crear usuario' : 'Guardar usuario'}
-        message={
-          isCreate
-            ? '¿Confirmas la creación? Se descargará el PDF y, si el rol es maestro/responsable, se creará también el perfil de persona.'
-            : '¿Guardar el rol y estado del usuario?'
-        }
-        onConfirm={() => (isCreate ? createMut.mutate() : saveEditMut.mutate())}
+        title="Crear usuario"
+        message="¿Confirmas la creación? Se descargará el PDF y, si el rol es maestro/responsable, se creará también el perfil de persona."
+        onConfirm={() => createMut.mutate()}
         onCancel={() => setConfirmSave(false)}
       />
       <ConfirmDialog
