@@ -29,6 +29,7 @@ import { Route as AppHorariosRouteImport } from './routes/_app/horarios'
 import { Route as AppLiberacionNotasRouteImport } from './routes/_app/liberacion-notas'
 import { Route as AppMatriculaRouteImport } from './routes/_app/matricula'
 import { Route as AppMiPerfilRouteImport } from './routes/_app/mi-perfil'
+import { Route as AppMonitoresRouteImport } from './routes/_app/monitores'
 import { Route as AppNotificacionesAdminRouteImport } from './routes/_app/notificaciones-admin'
 import { Route as AppPadresRouteImport } from './routes/_app/padres'
 import { Route as AppPagosRouteImport } from './routes/_app/pagos'
@@ -36,6 +37,7 @@ import { Route as AppPersonasRouteImport } from './routes/_app/personas'
 import { Route as AppPlanEstudioRouteImport } from './routes/_app/plan-estudio'
 import { Route as AppRecibosRouteImport } from './routes/_app/recibos'
 import { Route as AppRecuperacionesRouteImport } from './routes/_app/recuperaciones'
+import { Route as AppRestablecerPasswordRouteImport } from './routes/_app/restablecer-password'
 import { Route as AppSaceRouteImport } from './routes/_app/sace'
 import { Route as AppTareasRouteImport } from './routes/_app/tareas'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
@@ -167,6 +169,11 @@ const AppMiPerfilRoute = AppMiPerfilRouteImport.update({
   path: '/mi-perfil',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMonitoresRoute = AppMonitoresRouteImport.update({
+  id: '/monitores',
+  path: '/monitores',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificacionesAdminRoute = AppNotificacionesAdminRouteImport.update({
   id: '/notificaciones-admin',
   path: '/notificaciones-admin',
@@ -200,6 +207,11 @@ const AppRecibosRoute = AppRecibosRouteImport.update({
 const AppRecuperacionesRoute = AppRecuperacionesRouteImport.update({
   id: '/recuperaciones',
   path: '/recuperaciones',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRestablecerPasswordRoute = AppRestablecerPasswordRouteImport.update({
+  id: '/restablecer-password',
+  path: '/restablecer-password',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSaceRoute = AppSaceRouteImport.update({
@@ -379,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/liberacion-notas': typeof AppLiberacionNotasRoute
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
+  '/monitores': typeof AppMonitoresRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/padres': typeof AppPadresRoute
   '/pagos': typeof AppPagosRoute
@@ -386,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/plan-estudio': typeof AppPlanEstudioRoute
   '/recibos': typeof AppRecibosRoute
   '/recuperaciones': typeof AppRecuperacionesRoute
+  '/restablecer-password': typeof AppRestablecerPasswordRoute
   '/sace': typeof AppSaceRoute
   '/tareas': typeof AppTareasRoute
   '/usuarios': typeof AppUsuariosRoute
@@ -438,6 +452,7 @@ export interface FileRoutesByTo {
   '/liberacion-notas': typeof AppLiberacionNotasRoute
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
+  '/monitores': typeof AppMonitoresRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/padres': typeof AppPadresRoute
   '/pagos': typeof AppPagosRoute
@@ -445,6 +460,7 @@ export interface FileRoutesByTo {
   '/plan-estudio': typeof AppPlanEstudioRoute
   '/recibos': typeof AppRecibosRoute
   '/recuperaciones': typeof AppRecuperacionesRoute
+  '/restablecer-password': typeof AppRestablecerPasswordRoute
   '/sace': typeof AppSaceRoute
   '/tareas': typeof AppTareasRoute
   '/usuarios': typeof AppUsuariosRoute
@@ -499,6 +515,7 @@ export interface FileRoutesById {
   '/_app/liberacion-notas': typeof AppLiberacionNotasRoute
   '/_app/matricula': typeof AppMatriculaRoute
   '/_app/mi-perfil': typeof AppMiPerfilRoute
+  '/_app/monitores': typeof AppMonitoresRoute
   '/_app/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/_app/padres': typeof AppPadresRoute
   '/_app/pagos': typeof AppPagosRoute
@@ -506,6 +523,7 @@ export interface FileRoutesById {
   '/_app/plan-estudio': typeof AppPlanEstudioRoute
   '/_app/recibos': typeof AppRecibosRoute
   '/_app/recuperaciones': typeof AppRecuperacionesRoute
+  '/_app/restablecer-password': typeof AppRestablecerPasswordRoute
   '/_app/sace': typeof AppSaceRoute
   '/_app/tareas': typeof AppTareasRoute
   '/_app/usuarios': typeof AppUsuariosRoute
@@ -560,6 +578,7 @@ export interface FileRouteTypes {
     | '/liberacion-notas'
     | '/matricula'
     | '/mi-perfil'
+    | '/monitores'
     | '/notificaciones-admin'
     | '/padres'
     | '/pagos'
@@ -567,6 +586,7 @@ export interface FileRouteTypes {
     | '/plan-estudio'
     | '/recibos'
     | '/recuperaciones'
+    | '/restablecer-password'
     | '/sace'
     | '/tareas'
     | '/usuarios'
@@ -619,6 +639,7 @@ export interface FileRouteTypes {
     | '/liberacion-notas'
     | '/matricula'
     | '/mi-perfil'
+    | '/monitores'
     | '/notificaciones-admin'
     | '/padres'
     | '/pagos'
@@ -626,6 +647,7 @@ export interface FileRouteTypes {
     | '/plan-estudio'
     | '/recibos'
     | '/recuperaciones'
+    | '/restablecer-password'
     | '/sace'
     | '/tareas'
     | '/usuarios'
@@ -679,6 +701,7 @@ export interface FileRouteTypes {
     | '/_app/liberacion-notas'
     | '/_app/matricula'
     | '/_app/mi-perfil'
+    | '/_app/monitores'
     | '/_app/notificaciones-admin'
     | '/_app/padres'
     | '/_app/pagos'
@@ -686,6 +709,7 @@ export interface FileRouteTypes {
     | '/_app/plan-estudio'
     | '/_app/recibos'
     | '/_app/recuperaciones'
+    | '/_app/restablecer-password'
     | '/_app/sace'
     | '/_app/tareas'
     | '/_app/usuarios'
@@ -867,6 +891,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMiPerfilRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/monitores': {
+      id: '/_app/monitores'
+      path: '/monitores'
+      fullPath: '/monitores'
+      preLoaderRoute: typeof AppMonitoresRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notificaciones-admin': {
       id: '/_app/notificaciones-admin'
       path: '/notificaciones-admin'
@@ -914,6 +945,13 @@ declare module '@tanstack/react-router' {
       path: '/recuperaciones'
       fullPath: '/recuperaciones'
       preLoaderRoute: typeof AppRecuperacionesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/restablecer-password': {
+      id: '/_app/restablecer-password'
+      path: '/restablecer-password'
+      fullPath: '/restablecer-password'
+      preLoaderRoute: typeof AppRestablecerPasswordRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/sace': {
@@ -1154,6 +1192,7 @@ interface AppRouteChildren {
   AppLiberacionNotasRoute: typeof AppLiberacionNotasRoute
   AppMatriculaRoute: typeof AppMatriculaRoute
   AppMiPerfilRoute: typeof AppMiPerfilRoute
+  AppMonitoresRoute: typeof AppMonitoresRoute
   AppNotificacionesAdminRoute: typeof AppNotificacionesAdminRoute
   AppPadresRoute: typeof AppPadresRoute
   AppPagosRoute: typeof AppPagosRoute
@@ -1161,6 +1200,7 @@ interface AppRouteChildren {
   AppPlanEstudioRoute: typeof AppPlanEstudioRoute
   AppRecibosRoute: typeof AppRecibosRoute
   AppRecuperacionesRoute: typeof AppRecuperacionesRoute
+  AppRestablecerPasswordRoute: typeof AppRestablecerPasswordRoute
   AppSaceRoute: typeof AppSaceRoute
   AppTareasRoute: typeof AppTareasRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
@@ -1212,6 +1252,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLiberacionNotasRoute: AppLiberacionNotasRoute,
   AppMatriculaRoute: AppMatriculaRoute,
   AppMiPerfilRoute: AppMiPerfilRoute,
+  AppMonitoresRoute: AppMonitoresRoute,
   AppNotificacionesAdminRoute: AppNotificacionesAdminRoute,
   AppPadresRoute: AppPadresRoute,
   AppPagosRoute: AppPagosRoute,
@@ -1219,6 +1260,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPlanEstudioRoute: AppPlanEstudioRoute,
   AppRecibosRoute: AppRecibosRoute,
   AppRecuperacionesRoute: AppRecuperacionesRoute,
+  AppRestablecerPasswordRoute: AppRestablecerPasswordRoute,
   AppSaceRoute: AppSaceRoute,
   AppTareasRoute: AppTareasRoute,
   AppUsuariosRoute: AppUsuariosRoute,

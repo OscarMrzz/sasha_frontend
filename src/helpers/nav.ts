@@ -24,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/catalogos/cursos', label: 'Cursos', permission: 'catalogos:get', icon: 'book', hideForRoles: SIN_CATALOGOS },
   { to: '/catalogos/periodos', label: 'Periodos', permission: 'catalogos:get', icon: 'calendar', hideForRoles: SIN_CATALOGOS },
   { to: '/usuarios', label: 'Usuarios', permission: 'users:get', icon: 'users' },
+  { to: '/restablecer-password', label: 'Restablecer credenciales', permission: 'credenciales:get', icon: 'key' },
   { to: '/coordinaciones', label: 'Coordinaciones', permission: 'coordinaciones:get', icon: 'network' },
   { to: '/controladores', label: 'Controladores', permission: 'users:put', icon: 'shield' },
   { to: '/matricula', label: 'Matrícula', permission: 'matricula:get', icon: 'clipboard' },
@@ -33,6 +34,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/plan-estudio', label: 'Plan de estudio', permission: 'planestudio:get', icon: 'file' },
   { to: '/asistencia', label: 'Asistencia', permission: 'asistencia:get', icon: 'check' },
   { to: '/tareas', label: 'Tareas', permission: 'tareas:get', icon: 'list' },
+  { to: '/monitores', label: 'Monitores', permission: 'monitores:get', icon: 'radar' },
   { to: '/calificaciones', label: 'Calificaciones', permission: 'calificaciones:get', icon: 'award' },
   { to: '/recuperaciones', label: 'Recuperaciones', permission: 'recuperaciones:get', icon: 'refresh' },
   {

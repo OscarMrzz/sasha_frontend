@@ -37,6 +37,28 @@ export async function listUsers() {
   return apiRequestList<ResponseUser>('/users/')
 }
 
+export interface CredencialInfo {
+  code: string
+  username: string
+  roles: string[]
+  statususer: string
+  nombre_completo: string
+}
+
+/** Datos de un usuario (sin contraseña) para la pantalla de restablecer contraseña. */
+export async function getCredencial(code: string) {
+  return apiRequest<CredencialInfo>(`/users/${encodeURIComponent(code)}/credencial`)
+}
+
+/** Genera una contraseña temporal nueva y devuelve el PDF de credenciales. */
+export async function resetPassword(code: string): Promise<Blob> {
+  const res = await apiRequest<Response>(
+    `/users/${encodeURIComponent(code)}/reset-password`,
+    { method: 'POST', raw: true },
+  )
+  return res.blob()
+}
+
 export async function createUser(body: CreateUserRequest): Promise<CreateUserResult> {
   const res = await apiRequest<Response>('/users/', { method: 'POST', body, raw: true })
   const code = res.headers.get('X-User-Code') ?? ''
