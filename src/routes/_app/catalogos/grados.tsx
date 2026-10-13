@@ -31,24 +31,42 @@ const STATUS_OPTIONS = [
   { value: 'INACTIVE', label: 'INACTIVE' },
 ]
 
-/** Nivel académico 1.º–12.º; se persiste como `orden` en API. */
-const NIVELES_ACADEMICOS = [
-  { nivel: 1, label: 'Primer grado' },
-  { nivel: 2, label: 'Segundo grado' },
-  { nivel: 3, label: 'Tercer grado' },
-  { nivel: 4, label: 'Cuarto grado' },
-  { nivel: 5, label: 'Quinto grado' },
-  { nivel: 6, label: 'Sexto grado' },
-  { nivel: 7, label: 'Séptimo grado' },
-  { nivel: 8, label: 'Octavo grado' },
-  { nivel: 9, label: 'Noveno grado' },
-  { nivel: 10, label: 'Décimo grado' },
-  { nivel: 11, label: 'Undécimo grado' },
-  { nivel: 12, label: 'Duodécimo grado' },
-] as const
+/** Nivel académico: preescolar 0.1–0.9 (se muestra P1–P9) y 1–24 (se muestra N1–N24). Se persiste como `orden`. */
+const NOMBRES_GRADO = [
+  'Primer grado',
+  'Segundo grado',
+  'Tercer grado',
+  'Cuarto grado',
+  'Quinto grado',
+  'Sexto grado',
+  'Séptimo grado',
+  'Octavo grado',
+  'Noveno grado',
+  'Décimo grado',
+  'Undécimo grado',
+  'Duodécimo grado',
+]
 
+type NivelAcademico = { nivel: number; code: string; label: string }
+
+const NIVELES_ACADEMICOS: NivelAcademico[] = [
+  ...Array.from({ length: 9 }, (_, i) => ({
+    nivel: Number(`0.${i + 1}`),
+    code: `P${i + 1}`,
+    label: `Preescolar ${i + 1}`,
+  })),
+  ...Array.from({ length: 24 }, (_, i) => ({
+    nivel: i + 1,
+    code: `N${i + 1}`,
+    label: NOMBRES_GRADO[i] ?? `Grado ${i + 1}`,
+  })),
+]
+
+/** Etiqueta corta del nivel: P# = Preescolar (0.1–0.9), N# = Nivel (1–24). */
 function labelNivel(orden: number) {
-  return NIVELES_ACADEMICOS.find((n) => n.nivel === orden)?.label ?? `Nivel ${orden}`
+  const n = NIVELES_ACADEMICOS.find((x) => x.nivel === orden)
+  if (n) return n.code
+  return orden < 1 ? `P${Math.round(orden * 10)}` : `N${orden}`
 }
 
 function GradosPage() {
@@ -240,31 +258,35 @@ function GradosPage() {
                   className={`nivel-check__item${selected ? ' nivel-check__item--on' : ''}${
                     taken ? ' nivel-check__item--taken' : ''
                   }`}
-                  title={taken ? `${n.label} (ya registrado)` : n.label}
+                  title={taken ? `${n.code} · ${n.label} (ya registrado)` : `${n.code} · ${n.label}`}
                 >
                   <input
                     type="radio"
                     name="grado-nivel"
                     disabled={viewOnly || taken}
                     checked={selected}
-                    aria-label={n.label}
+                    aria-label={`${n.code} ${n.label}`}
                     onChange={() =>
                       setForm((f) => ({
                         ...f,
                         orden: n.nivel,
                         nombre:
-                          !f.nombre.trim() || NIVELES_ACADEMICOS.some((x) => x.label === f.nombre)
+                          !f.nombre.trim() ||
+                          NIVELES_ACADEMICOS.some((x) => x.label === f.nombre || x.code === f.nombre)
                             ? n.label
                             : f.nombre,
                       }))
                     }
                   />
                   <span className="nivel-check__mark" aria-hidden />
-                  <span className="nivel-check__num">{n.nivel}.º</span>
+                  <span className="nivel-check__num">{n.code}</span>
                 </label>
               )
             })}
           </div>
+          <p className="texto-muted" style={{ fontSize: '0.8rem', margin: '0.5rem 0 0' }}>
+            <strong>P</strong> = Preescolar (0.1–0.9) · <strong>N</strong> = Nivel (1–24)
+          </p>
         </Field>
         <Field label="Código SACE">
           <input
