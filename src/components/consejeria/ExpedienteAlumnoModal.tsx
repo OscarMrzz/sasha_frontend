@@ -306,7 +306,7 @@ function MatriculasSeccion({ alumno }: { alumno: NonNullable<UserFicha['alumno']
               <th>Sección</th>
               <th>Modalidad</th>
               <th>Reingreso</th>
-              <th>Cursos retrasados</th>
+              <th>Clases retrasadas</th>
               <th>Estado</th>
             </tr>
           </thead>

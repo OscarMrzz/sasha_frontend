@@ -4001,6 +4001,17 @@ input.field__input,
   color: var(--sasha-texto-muted);
 }
 
+.combobox__option--disabled {
+  opacity: 0.5;
+  color: var(--sasha-texto-muted);
+  cursor: not-allowed;
+}
+
+.combobox__option--disabled:hover,
+.combobox__option--disabled.combobox__option--active {
+  background: transparent;
+}
+
 /* Foto matrícula */
 .photo-capture {
   display: flex;

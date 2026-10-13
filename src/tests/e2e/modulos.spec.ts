@@ -59,10 +59,10 @@ test.describe('modulos @critical', () => {
     await expect(page.getByTestId('ficha-maestro-cursos')).toBeVisible()
   })
 
-  test('cursos ver lista maestros y asignar abre modal con curso fijo', async ({ page }) => {
+  test('clases ver lista maestros y asignar abre modal con clase fija', async ({ page }) => {
     await loginAs(page)
-    await page.getByRole('link', { name: 'Cursos' }).click()
-    await expect(page.getByRole('heading', { name: 'Cursos' })).toBeVisible({ timeout: 10_000 })
+    await page.getByRole('link', { name: 'Clases' }).click()
+    await expect(page.getByRole('heading', { name: 'Clases' })).toBeVisible({ timeout: 10_000 })
 
     const row = page.locator('table.data-table tbody tr').filter({ hasText: 'Español' }).first()
     await expect(row).toBeVisible({ timeout: 10_000 })
@@ -79,42 +79,30 @@ test.describe('modulos @critical', () => {
 
     await row.click({ button: 'right' })
     await page.getByRole('button', { name: 'Asignar maestro' }).click()
-    await expect(page.getByTestId('asignacion-periodo-select')).toBeVisible({ timeout: 10_000 })
+    const periodoBox = page.getByTestId('asignacion-periodo-select')
+    await expect(periodoBox).toBeVisible({ timeout: 10_000 })
     await expect(page.getByTestId('asignacion-curso-fijo')).toHaveValue('Español')
-    await expect(page.getByTestId('asignacion-periodo-select').getByRole('option').first()).toHaveAttribute(
-      'aria-selected',
-      'true',
-    )
-    await expect(page.getByTestId('asignacion-periodo-select').getByRole('option').first()).toContainText(/activo/i)
+
+    // Combobox: al abrir, el periodo activo aparece y se elige desde la lista
+    await periodoBox.click()
+    await expect(page.locator('.combobox__option', { hasText: /activo/i }).first()).toBeVisible()
+    await page.locator('.combobox__option', { hasText: /activo/i }).first().click()
+
     await expect(page.getByTestId('asignacion-maestro-select')).toBeVisible()
     await expect(page.getByTestId('asignacion-grado-select')).toBeVisible()
     await expect(page.getByTestId('asignacion-seccion-select')).toBeVisible()
 
-    // Periodo inactivo: la lista de grados se recalcula (libres o aviso de todo asignado)
-    const inactivo = page
-      .getByTestId('asignacion-periodo-select')
-      .getByRole('option')
-      .filter({ hasText: /inactivo/i })
-      .first()
-    if (await inactivo.count()) {
-      await inactivo.click()
-      await expect(inactivo).toHaveAttribute('aria-selected', 'true')
-      const gradoSelect = page.getByTestId('asignacion-grado-select')
-      await expect(
-        gradoSelect.getByRole('option').first().or(gradoSelect.getByText(/ya están asignadas/i)),
-      ).toBeVisible({ timeout: 10_000 })
-
-      // Volver al activo: la lista se recalcula de nuevo
-      await page
-        .getByTestId('asignacion-periodo-select')
-        .getByRole('option')
-        .filter({ hasText: /activo/i })
-        .first()
-        .click()
-      await expect(
-        gradoSelect.getByRole('option').first().or(gradoSelect.getByText(/ya están asignadas/i)),
-      ).toBeVisible({ timeout: 10_000 })
-    }
+    // Grado: muestra (libre)/(lleno); al elegir uno, la sección muestra (libre)/(asignado)
+    const gradoBox = page.getByTestId('asignacion-grado-select')
+    await gradoBox.click()
+    const gradoLibre = page.locator('.combobox__option', { hasText: /\(libre\)/i }).first()
+    await expect(gradoLibre).toBeVisible({ timeout: 10_000 })
+    await gradoLibre.click()
+    await page.getByTestId('asignacion-seccion-select').click()
+    await expect(
+      page.locator('.combobox__option', { hasText: /\(libre\)|\(asignado\)/i }).first(),
+    ).toBeVisible({ timeout: 10_000 })
+    await page.keyboard.press('Escape')
   })
 
   test('matricula, horarios, pagos, sace navegables', async ({ page }) => {

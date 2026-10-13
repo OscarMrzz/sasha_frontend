@@ -21,7 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/catalogos/grados', label: 'Grados', permission: 'catalogos:get', icon: 'layers', hideForRoles: SIN_CATALOGOS },
   { to: '/catalogos/modalidades', label: 'Modalidades', permission: 'catalogos:get', icon: 'clock', hideForRoles: SIN_CATALOGOS },
   { to: '/catalogos/secciones', label: 'Secciones', permission: 'catalogos:get', icon: 'grid', hideForRoles: SIN_CATALOGOS },
-  { to: '/catalogos/cursos', label: 'Cursos', permission: 'catalogos:get', icon: 'book', hideForRoles: SIN_CATALOGOS },
+  { to: '/catalogos/cursos', label: 'Clases', permission: 'catalogos:get', icon: 'book', hideForRoles: SIN_CATALOGOS },
   { to: '/catalogos/periodos', label: 'Periodos', permission: 'catalogos:get', icon: 'calendar', hideForRoles: SIN_CATALOGOS },
   { to: '/usuarios', label: 'Usuarios', permission: 'users:get', icon: 'users' },
   { to: '/restablecer-password', label: 'Restablecer credenciales', permission: 'credenciales:get', icon: 'key' },

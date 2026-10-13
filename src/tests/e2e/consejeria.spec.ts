@@ -35,7 +35,7 @@ test.describe('consejería: inicio, menú, perfil y campana', () => {
       'Grados',
       'Modalidades',
       'Secciones',
-      'Cursos',
+      'Clases',
       'Periodos',
       'Padres',
       'Tipos de ficha',

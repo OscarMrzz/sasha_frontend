@@ -200,7 +200,7 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
                     <th>Sección</th>
                     <th>Modalidad</th>
                     <th>Reingreso</th>
-                    <th>Cursos retrasados</th>
+                    <th>Clases retrasadas</th>
                     <th>Estado</th>
                   </tr>
                 </thead>
@@ -286,7 +286,7 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
       {maestro ? (
         <>
           <Section
-            title="Cursos"
+            title="Clases"
             extra={
               maestro.asignaciones.length ? (
                 <span data-testid="ficha-maestro-horas">
@@ -296,12 +296,12 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
             }
           >
             {maestro.asignaciones.length === 0 ? (
-              <p className="texto-muted">Sin cursos asignados.</p>
+              <p className="texto-muted">Sin clases asignadas.</p>
             ) : (
               <table className="ficha-table" data-testid="ficha-maestro-cursos">
                 <thead>
                   <tr>
-                    <th>Curso</th>
+                    <th>Clase</th>
                     <th>Grado</th>
                     <th>Sección</th>
                     <th>Horas</th>

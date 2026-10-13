@@ -38,7 +38,7 @@ test.describe('secretaría: lo mismo que el director', () => {
       'Grados',
       'Modalidades',
       'Secciones',
-      'Cursos',
+      'Clases',
       'Periodos',
       'Tipos de ficha',
       'Notificaciones',

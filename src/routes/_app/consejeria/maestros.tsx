@@ -60,7 +60,7 @@ function MaestrosConsejeriaPage() {
       col.accessor('telefono', { header: 'Teléfono', cell: (i) => i.getValue() || '—' }),
       col.accessor((r) => r.cursos.join(', '), {
         id: 'cursos',
-        header: 'Cursos',
+        header: 'Clases',
         enableSorting: false,
         cell: (i) =>
           i.row.original.cursos.length ? i.getValue() : <span className="texto-muted">Sin clases</span>,
@@ -80,7 +80,7 @@ function MaestrosConsejeriaPage() {
     () => [
       {
         id: 'curso',
-        label: 'Curso',
+        label: 'Clase',
         getValue: (r: MaestroConsejeria) => r.cursos.join('|'),
         getOptionValues: (r: MaestroConsejeria) => r.cursos,
         matches: (r: MaestroConsejeria, v: string) => r.cursos.includes(v),

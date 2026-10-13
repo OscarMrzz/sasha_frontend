@@ -476,14 +476,14 @@ export function MatriculaWizard({
         return 'La sección no corresponde al grado y modalidad elegidos'
       }
       if (academico.tiene_cursos_retrasados === null) {
-        return 'Indica si lleva cursos retrasados'
+        return 'Indica si lleva clases retrasadas'
       }
       if (academico.tiene_cursos_retrasados) {
         const rows = academico.cursos_retrasados.filter((c) => c.curso_id)
-        if (!rows.length) return 'Añade al menos un curso retrasado'
+        if (!rows.length) return 'Añade al menos una clase retrasada'
         for (const c of rows) {
           if (!c.anio_previo.trim() || Number.isNaN(Number(c.anio_previo))) {
-            return 'Indica el año previo de cada curso retrasado'
+            return 'Indica el año previo de cada clase retrasada'
           }
         }
       }
@@ -1325,8 +1325,8 @@ export function MatriculaWizard({
               Al matricular se crean solas la cuota de matrícula y una mensualidad pendiente por cada mes del periodo.
             </p>
 
-            <p className="wizard-choice__question">¿Lleva cursos retrasados?</p>
-            <div className="wizard-choice" role="group" aria-label="¿Lleva cursos retrasados?">
+            <p className="wizard-choice__question">¿Lleva clases retrasadas?</p>
+            <div className="wizard-choice" role="group" aria-label="¿Lleva clases retrasadas?">
               <button
                 type="button"
                 data-testid="matricula-retrasados-si"
@@ -1363,7 +1363,7 @@ export function MatriculaWizard({
               <div className="wizard-choice-panel">
                 {academico.cursos_retrasados.map((c, idx) => (
                   <div className="wizard-grid" key={`cr-${idx}`} style={{ marginBottom: '0.5rem' }}>
-                    <Field label="Curso" htmlFor={`wiz-curso-${idx}`}>
+                    <Field label="Clase" htmlFor={`wiz-curso-${idx}`}>
                       <Combobox
                         id={`wiz-curso-${idx}`}
                         data-testid={idx === 0 ? 'matricula-curso-retrasado' : undefined}
@@ -1376,7 +1376,7 @@ export function MatriculaWizard({
                           })
                         }
                         options={cursoOptions}
-                        placeholder="Buscar curso…"
+                        placeholder="Buscar clase…"
                       />
                     </Field>
                     <Field label="Año previo">
@@ -1858,7 +1858,7 @@ export function MatriculaWizard({
                 <span className="wizard-summary__value">{becaTexto}</span>
               </div>
               <div className="wizard-summary__row">
-                <span className="wizard-summary__label">Cursos retrasados</span>
+                <span className="wizard-summary__label">Clases retrasadas</span>
                 <span className="wizard-summary__value">
                   {academico.tiene_cursos_retrasados
                     ? academico.cursos_retrasados

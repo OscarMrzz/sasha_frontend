@@ -304,7 +304,7 @@ export function buildFichaPdfDoc(ficha: UserFicha, opts: FichaPdfOpts = {}): jsP
       doc,
       ensureSpace(doc, y + GAP),
       'Matrículas',
-      ['Periodo', 'Grado', 'Sección', 'Modalidad', 'Reingreso', 'Cursos retrasados', 'Estado'],
+      ['Periodo', 'Grado', 'Sección', 'Modalidad', 'Reingreso', 'Clases retrasadas', 'Estado'],
       a.matriculas.map((m) => [
         `${m.periodo} (${m.anio_lectivo})`,
         m.grado,
@@ -345,8 +345,8 @@ export function buildFichaPdfDoc(ficha: UserFicha, opts: FichaPdfOpts = {}): jsP
     y = dataTable(
       doc,
       ensureSpace(doc, y + GAP),
-      'Cursos',
-      ['Curso', 'Grado', 'Sección', 'Horas'],
+      'Clases',
+      ['Clase', 'Grado', 'Sección', 'Horas'],
       m.asignaciones.length
         ? m.asignaciones.map((as) => {
             const min = minutosSemana(as.horarios)

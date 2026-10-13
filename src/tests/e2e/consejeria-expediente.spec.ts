@@ -42,7 +42,7 @@ test.describe('consejería: alumnos, maestros, horarios y matrícula', () => {
     await page.getByTestId('consejeria-maestros-ctx-ver').click()
     const cursos = page.getByTestId('ficha-maestro-cursos')
     await expect(cursos).toContainText('Español', { timeout: 15_000 })
-    await expect(cursos.locator('thead th')).toHaveText(['Curso', 'Grado', 'Sección', 'Horas'])
+    await expect(cursos.locator('thead th')).toHaveText(['Clase', 'Grado', 'Sección', 'Horas'])
     await expect(page.getByTestId('ficha-maestro-horas')).toHaveText('2 h 40 min por semana')
   })
 

@@ -51,7 +51,7 @@ function HorariosConsejeria() {
         cell: (i) => DIAS_SEMANA[i.row.original.dia_semana] ?? i.row.original.dia_semana,
       }),
       col.accessor((s) => `${s.hora_inicio}–${s.hora_fin}`, { id: 'hora', header: 'Hora' }),
-      col.accessor('curso', { header: 'Curso' }),
+      col.accessor('curso', { header: 'Clase' }),
       col.accessor((s) => `${s.maestro} ${s.maestro_codigo}`, {
         id: 'maestro',
         header: 'Maestro',
@@ -89,7 +89,7 @@ function HorariosConsejeria() {
         getValue: gradoSeccion,
         options: opcionesOrdenadas(slots, gradoSeccion, (s) => s.grado_orden),
       },
-      { id: 'curso', label: 'Curso', getValue: (s: SlotHorario) => s.curso },
+      { id: 'curso', label: 'Clase', getValue: (s: SlotHorario) => s.curso },
       { id: 'maestro', label: 'Maestro', getValue: (s: SlotHorario) => s.maestro },
       {
         id: 'dia',

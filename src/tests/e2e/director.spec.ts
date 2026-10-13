@@ -36,7 +36,7 @@ test.describe('director: lo mismo que consejería', () => {
       'Grados',
       'Modalidades',
       'Secciones',
-      'Cursos',
+      'Clases',
       'Periodos',
       'Padres',
       'Tipos de ficha',

@@ -167,7 +167,7 @@ function CursosPage() {
       return createCurso(form)
     },
     onSuccess: () => {
-      toast.success(editing ? 'Curso actualizado' : 'Curso creado')
+      toast.success(editing ? 'Clase actualizada' : 'Clase creada')
       qc.invalidateQueries({ queryKey: ['cursos'] })
       setModalOpen(false)
       setConfirmSave(false)
@@ -178,7 +178,7 @@ function CursosPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCurso(id),
     onSuccess: () => {
-      toast.success('Curso eliminado')
+      toast.success('Clase eliminada')
       qc.invalidateQueries({ queryKey: ['cursos'] })
       setConfirmDelete(null)
     },
@@ -203,16 +203,16 @@ function CursosPage() {
     [],
   )
 
-  if (isLoading) return <div className="empty-state">Cargando cursos…</div>
+  if (isLoading) return <div className="empty-state">Cargando clases…</div>
 
   return (
     <RequirePermission permission="catalogos:get">
       <DataTable
-        title="Cursos"
+        title="Clases"
         data={data}
         columns={columns}
         filters={tableFilters}
-        addLabel="Agregar curso"
+        addLabel="Agregar clase"
         canAdd={can('catalogos:post')}
         onAdd={openCreate}
         exportFilename="cursos"
@@ -257,7 +257,7 @@ function CursosPage() {
 
       <Modal
         open={modalOpen}
-        title={editing ? 'Editar curso' : 'Nuevo curso'}
+        title={editing ? 'Editar clase' : 'Nueva clase'}
         xl
         onClose={() => setModalOpen(false)}
         footer={
@@ -533,13 +533,13 @@ function CursosPage() {
       <ConfirmDialog
         open={confirmSave}
         title="Confirmar guardado"
-        message="¿Guardar los datos del curso?"
+        message="¿Guardar los datos de la clase?"
         onConfirm={() => saveMut.mutate()}
         onCancel={() => setConfirmSave(false)}
       />
       <ConfirmDialog
         open={Boolean(confirmDelete)}
-        title="Eliminar curso"
+        title="Eliminar clase"
         message={`¿Eliminar "${confirmDelete?.nombre}"?`}
         danger
         confirmLabel="Eliminar"

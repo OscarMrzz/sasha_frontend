@@ -207,7 +207,7 @@ function MaestroHubPage() {
         {ver ? (
           <div data-testid="maestro-hub-ver">
             <p>
-              <strong>Curso:</strong> {ver.curso_nombre}
+              <strong>Clase:</strong> {ver.curso_nombre}
             </p>
             <p>
               <strong>Grado / sección:</strong> {ver.grado_nombre} · sec{ver.seccion_nombre}

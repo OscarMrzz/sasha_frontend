@@ -163,7 +163,7 @@ function ReviewerView({ canPut }: { canPut: boolean }) {
   const columns = useMemo(
     () => [
       col.accessor('curso_nombre', {
-        header: 'Curso',
+        header: 'Clase',
         cell: (i) => i.getValue() || '—',
       }),
       col.accessor('maestro_nombre', {
@@ -204,7 +204,7 @@ function ReviewerView({ canPut }: { canPut: boolean }) {
       },
       {
         id: 'curso',
-        label: 'Curso',
+        label: 'Clase',
         getValue: (r: Plan) => r.curso_id || r.curso_nombre || '',
         getLabel: (r: Plan) => r.curso_nombre || '',
       },
@@ -242,7 +242,7 @@ function ReviewerView({ canPut }: { canPut: boolean }) {
         canAdd={false}
         exportFilename="planes-estudio"
         exportRows={data.map((p) => ({
-          curso: p.curso_nombre,
+          clase: p.curso_nombre,
           maestro: p.maestro_nombre,
           grado: p.grado_nombre,
           modalidad: p.modalidad_nombre,
@@ -398,7 +398,7 @@ function MaestroView({
   const columns = useMemo(
     () => [
       col.accessor('curso_nombre', {
-        header: 'Curso',
+        header: 'Clase',
         cell: (i) => i.getValue() || '—',
       }),
       col.accessor('grado_nombre', {
@@ -439,7 +439,7 @@ function MaestroView({
       },
       {
         id: 'curso',
-        label: 'Curso',
+        label: 'Clase',
         getValue: (r: Plan) => r.curso_id || '',
         getLabel: (r: Plan) => r.curso_nombre || '',
       },
@@ -473,7 +473,7 @@ function MaestroView({
         onAdd={() => setCreateOpen(true)}
         exportFilename="mis-planes"
         exportRows={data.map((p) => ({
-          curso: p.curso_nombre,
+          clase: p.curso_nombre,
           grado: p.grado_nombre,
           modalidad: p.modalidad_nombre,
           aprobacion: p.estado_aprobacion,
@@ -1211,7 +1211,7 @@ function CrearPlanModal({
             {session?.username || session?.code || '—'}
           </p>
 
-          <Field label="Curso">
+          <Field label="Clase">
             <select
               className="field__input"
               value={asigId}
@@ -1223,7 +1223,7 @@ function CrearPlanModal({
               }}
             >
               <option value="">
-                {isLoading ? 'Cargando cursos…' : 'Elegir curso…'}
+                {isLoading ? 'Cargando clases…' : 'Elegir clase…'}
               </option>
               {cursos.map((c) => (
                 <option
@@ -1242,13 +1242,13 @@ function CrearPlanModal({
 
           {!isLoading && cursos.length === 0 ? (
             <p className="texto-muted">
-              No tienes cursos asignados en este periodo.
+              No tienes clases asignadas en este periodo.
             </p>
           ) : null}
 
           {selected ? (
             <p data-testid="plan-create-meta">
-              Curso: <strong>{selected.curso_nombre}</strong> · Grado:{' '}
+              Clase: <strong>{selected.curso_nombre}</strong> · Grado:{' '}
               {selected.grado_nombre || '—'} · Modalidad:{' '}
               {selected.modalidad_nombre || '—'} · Periodo:{' '}
               {selected.periodo_nombre || '—'}
@@ -1257,7 +1257,7 @@ function CrearPlanModal({
 
           {selected?.objetivo_general ? (
             <details>
-              <summary>Sílabo del curso (solo lectura)</summary>
+              <summary>Sílabo de la clase (solo lectura)</summary>
               <p style={{ whiteSpace: 'pre-wrap' }}>
                 {selected.objetivo_general}
               </p>

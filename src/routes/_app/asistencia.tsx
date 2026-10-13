@@ -66,7 +66,7 @@ function AsistenciaPage() {
 
   const columns = useMemo(
     () => [
-      col.accessor('curso_nombre', { header: 'Curso', cell: (i) => i.getValue() || '—' }),
+      col.accessor('curso_nombre', { header: 'Clase', cell: (i) => i.getValue() || '—' }),
       col.accessor('grado_nombre', { header: 'Grado', cell: (i) => i.getValue() || '—' }),
       col.accessor('modalidad_nombre', { header: 'Modalidad', cell: (i) => i.getValue() || '—' }),
       col.accessor('seccion_nombre', { header: 'Sección', cell: (i) => i.getValue() || '—' }),
@@ -88,7 +88,7 @@ function AsistenciaPage() {
       },
       {
         id: 'curso',
-        label: 'Curso',
+        label: 'Clase',
         getValue: (r: AsistenciaMateria) => r.curso_id || r.curso_nombre,
         getLabel: (r: AsistenciaMateria) => r.curso_nombre,
       },
@@ -157,7 +157,7 @@ function AsistenciaPage() {
         canAdd={false}
         exportFilename="asistencia-materias"
         exportRows={data.map((m) => ({
-          curso: m.curso_nombre,
+          clase: m.curso_nombre,
           grado: m.grado_nombre,
           modalidad: m.modalidad_nombre,
           seccion: m.seccion_nombre,

@@ -117,7 +117,7 @@ export function CursoVerModal({ open, curso, onClose, onAsignar }: Props) {
       ) : isLoading ? (
         <p className="texto-muted">Cargando…</p>
       ) : rows.length === 0 ? (
-        <p className="texto-muted">Ningún maestro asignado a este curso.</p>
+        <p className="texto-muted">Ningún maestro asignado a esta clase.</p>
       ) : (
         <table className="ficha-table" data-testid="curso-ver-maestros">
           <thead>

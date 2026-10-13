@@ -7,6 +7,8 @@ export type ComboboxOption = {
   keywords?: string
   /** Apariencia más suave (sigue siendo seleccionable). */
   muted?: boolean
+  /** Visible pero no seleccionable (p. ej. cupo lleno o sección ya asignada). */
+  disabled?: boolean
 }
 
 type ComboboxProps = {
@@ -102,18 +104,31 @@ export function Combobox({
     onQueryChange?.(query)
   }, [query, onQueryChange])
 
+  const isSelectable = (i: number) => i >= filtered.length || !filtered[i]?.disabled
+  const stepHighlight = (dir: 1 | -1) => {
+    setOpen(true)
+    setHighlight((h) => {
+      if (itemCount === 0) return 0
+      let n = h
+      for (let k = 0; k < itemCount; k++) {
+        n = (n + dir + itemCount) % itemCount
+        if (isSelectable(n)) return n
+      }
+      return h
+    })
+  }
+
   const onKeyDown = (e: KeyboardEvent) => {
     if (disabled) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setOpen(true)
-      setHighlight((h) => Math.min(h + 1, Math.max(itemCount - 1, 0)))
+      stepHighlight(1)
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setHighlight((h) => Math.max(h - 1, 0))
+      stepHighlight(-1)
     } else if (e.key === 'Enter') {
       e.preventDefault()
-      if (open && filtered[highlight]) pick(filtered[highlight].value)
+      if (open && filtered[highlight] && !filtered[highlight].disabled) pick(filtered[highlight].value)
       else if (open && showCreate && highlight >= filtered.length) pick(q)
       else if (allowCustom && q) {
         commitCustom()
@@ -160,14 +175,26 @@ export function Combobox({
           ) : (
             <>
               {filtered.map((opt, i) => (
-                <li key={opt.value} role="option" aria-selected={opt.value === value}>
+                <li
+                  key={opt.value}
+                  role="option"
+                  aria-selected={opt.value === value}
+                  aria-disabled={opt.disabled || undefined}
+                >
                   <button
                     type="button"
+                    disabled={opt.disabled}
                     className={`combobox__option${i === highlight ? ' combobox__option--active' : ''}${
                       opt.value === value ? ' combobox__option--selected' : ''
-                    }${opt.muted ? ' combobox__option--muted' : ''}`}
-                    onMouseEnter={() => setHighlight(i)}
-                    onClick={() => pick(opt.value)}
+                    }${opt.muted ? ' combobox__option--muted' : ''}${
+                      opt.disabled ? ' combobox__option--disabled' : ''
+                    }`}
+                    onMouseEnter={() => {
+                      if (!opt.disabled) setHighlight(i)
+                    }}
+                    onClick={() => {
+                      if (!opt.disabled) pick(opt.value)
+                    }}
                   >
                     {opt.label}
                   </button>

@@ -33,3 +33,36 @@ export function gradosConSeccionesLibres(
     .filter((x) => x.libres > 0)
     .sort((a, b) => a.grado.nombre.localeCompare(b.grado.nombre))
 }
+
+export type GradoCupos = { grado: Grado; libres: number; total: number }
+
+/** Todos los grados activos que tengan al menos una sección, con su cupo (libres/total). */
+export function gradosConCupos(
+  grados: Grado[],
+  secciones: Seccion[],
+  cubiertas: Set<string>,
+): GradoCupos[] {
+  return grados
+    .filter((g) => g.status === 'ACTIVE')
+    .map((g) => {
+      const secs = secciones.filter((s) => s.grado_id === g.id && s.status === 'ACTIVE')
+      const libres = secs.filter((s) => !cubiertas.has(s.id)).length
+      return { grado: g, libres, total: secs.length }
+    })
+    .filter((x) => x.total > 0)
+    .sort((a, b) => a.grado.nombre.localeCompare(b.grado.nombre))
+}
+
+export type SeccionCupo = { seccion: Seccion; libre: boolean }
+
+/** Secciones activas de un grado con su disponibilidad (libre / asignada) en el periodo. */
+export function seccionesConCupo(
+  secciones: Seccion[],
+  gradoId: string,
+  cubiertas: Set<string>,
+): SeccionCupo[] {
+  return secciones
+    .filter((s) => s.grado_id === gradoId && s.status === 'ACTIVE')
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+    .map((s) => ({ seccion: s, libre: !cubiertas.has(s.id) }))
+}

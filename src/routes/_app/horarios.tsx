@@ -202,7 +202,7 @@ function HorariosAdminView() {
         const grado = sec ? gradoById.get(sec.grado_id) : undefined
         const maestro = maestroById.get(a.maestro_id)
         const seccionLabel = [grado?.nombre, sec ? `sec${sec.nombre}` : ''].filter(Boolean).join(' ')
-        const label = [curso?.nombre ?? 'Curso', grado?.nombre ?? '', sec ? `sec${sec.nombre}` : '']
+        const label = [curso?.nombre ?? 'Clase', grado?.nombre ?? '', sec ? `sec${sec.nombre}` : '']
           .filter(Boolean)
           .join('-')
         return {
@@ -214,7 +214,7 @@ function HorariosAdminView() {
           label,
           minHours: curso?.horas_semana_minimas ?? 1,
           maestroNombre: maestro?.nombre ?? a.maestro_id.slice(0, 8),
-          cursoNombre: curso?.nombre ?? 'Curso',
+          cursoNombre: curso?.nombre ?? 'Clase',
           seccionLabel: seccionLabel || sec?.nombre || a.seccion_id.slice(0, 8),
           gradoNombre: grado?.nombre ?? '',
         }

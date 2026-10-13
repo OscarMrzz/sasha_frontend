@@ -45,6 +45,7 @@ const adminPerms: Permission[] = [
   'asignacion:get',
   'asignacion:post',
   'asignacion:put',
+  'asignacion:delete',
   'horarios:get',
   'horarios:post',
   'horarios:put',

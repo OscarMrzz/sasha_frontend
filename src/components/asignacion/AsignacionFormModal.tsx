@@ -1,12 +1,15 @@
-import { createAsignacion, listAsignaciones, type AsignacionCreate } from '#/services/asignacion'
+import { createAsignacion, listAsignaciones } from '#/services/asignacion'
+import type { AsignacionCreate } from '#/services/asignacion'
 import { listCursos, listGrados, listPeriodos, listSecciones } from '#/services/catalogos'
 import { listMaestros } from '#/services/personas'
-import { gradosConSeccionesLibres, seccionIdsCubiertas } from '#/helpers/asignacionCupos'
+import { gradosConCupos, seccionIdsCubiertas, seccionesConCupo } from '#/helpers/asignacionCupos'
 import { periodoActivoId, periodoSelectOptions } from '#/helpers/periodos'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Can } from '#/components/gates/Can'
+import { Combobox } from '#/components/ui/Combobox'
+import type { ComboboxOption } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
@@ -18,63 +21,6 @@ const emptyForm: AsignacionCreate = {
   seccion_id: '',
   periodo_academico_id: '',
   status: 'ACTIVE',
-}
-
-type PickOption = {
-  value: string
-  label: string
-  disabled?: boolean
-  muted?: boolean
-  hint?: string
-}
-
-function OptionPick({
-  options,
-  value,
-  onChange,
-  testId,
-  empty,
-}: {
-  options: PickOption[]
-  value: string
-  onChange: (v: string) => void
-  testId?: string
-  empty?: ReactNode
-}) {
-  if (options.length === 0) {
-    return (
-      <div data-testid={testId}>
-        <p className="texto-muted pick-grid__empty">{empty ?? 'Sin opciones.'}</p>
-      </div>
-    )
-  }
-  return (
-    <div className="pick-grid" data-testid={testId} role="listbox" aria-orientation="horizontal">
-      {options.map((opt) => {
-        const selected = value === opt.value
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            role="option"
-            aria-selected={selected}
-            aria-disabled={opt.disabled || undefined}
-            disabled={opt.disabled}
-            title={opt.hint}
-            className={`pick-option${selected ? ' pick-option--selected' : ''}${
-              opt.disabled ? ' pick-option--disabled' : ''
-            }${opt.muted && !opt.disabled ? ' pick-option--muted' : ''}`}
-            onClick={() => {
-              if (!opt.disabled) onChange(opt.value)
-            }}
-          >
-            <span className="pick-option__label">{opt.label}</span>
-            {opt.hint ? <span className="pick-option__hint">{opt.hint}</span> : null}
-          </button>
-        )
-      })}
-    </div>
-  )
 }
 
 type Props = {
@@ -141,7 +87,7 @@ export function AsignacionFormModal({ open, onClose, cursoId, cursoNombre }: Pro
     if (!active) return
     setForm((f) => {
       if (f.periodo_academico_id === active) return f
-      return { ...f, periodo_academico_id: active, maestro_id: '', seccion_id: '' }
+      return { ...f, periodo_academico_id: active, seccion_id: '' }
     })
     setGradoId('')
   }, [open, periodos])
@@ -158,50 +104,45 @@ export function AsignacionFormModal({ open, onClose, cursoId, cursoNombre }: Pro
     [asignaciones, effectiveCursoId, periodoId],
   )
 
-  const gradosDisponibles = useMemo(() => {
+  const cursoOptions = useMemo<ComboboxOption[]>(
+    () =>
+      cursos
+        .filter((c) => c.status === 'ACTIVE')
+        .map((c) => ({ value: c.id, label: c.nombre, keywords: c.codigo }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [cursos],
+  )
+
+  const maestroOptions = useMemo<ComboboxOption[]>(
+    () =>
+      maestros
+        .map((m) => ({ value: m.id, label: m.nombre, keywords: m.user_code ?? '' }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [maestros],
+  )
+
+  const gradoOptions = useMemo<ComboboxOption[]>(() => {
     if (!readyForDetalle) return []
-    return gradosConSeccionesLibres(grados, secciones, seccionesCubiertas)
+    return gradosConCupos(grados, secciones, seccionesCubiertas).map(({ grado, libres }) => {
+      const lleno = libres === 0
+      return {
+        value: grado.id,
+        label: `${grado.nombre} (${lleno ? 'lleno' : 'libre'})`,
+        muted: lleno,
+        disabled: lleno,
+      }
+    })
   }, [grados, secciones, seccionesCubiertas, readyForDetalle])
 
-  const seccionesDelGrado = useMemo(() => {
+  const seccionOptions = useMemo<ComboboxOption[]>(() => {
     if (!gradoId) return []
-    return secciones
-      .filter((s) => s.grado_id === gradoId && s.status === 'ACTIVE')
-      .sort((a, b) => a.nombre.localeCompare(b.nombre))
-      .map((s) => {
-        const cubierta = seccionesCubiertas.has(s.id)
-        return {
-          value: s.id,
-          label: s.nombre,
-          disabled: cubierta,
-          hint: cubierta ? 'Ya asignada en este periodo' : undefined,
-        }
-      })
+    return seccionesConCupo(secciones, gradoId, seccionesCubiertas).map(({ seccion, libre }) => ({
+      value: seccion.id,
+      label: `${seccion.nombre} (${libre ? 'libre' : 'asignado'})`,
+      muted: !libre,
+      disabled: !libre,
+    }))
   }, [secciones, gradoId, seccionesCubiertas])
-
-  const maestrosOptions = useMemo(() => {
-    if (!readyForDetalle) return []
-    return maestros
-      .map((m) => {
-        const yaEnSeccion =
-          Boolean(form.seccion_id) &&
-          asignaciones.some(
-            (a) =>
-              a.status === 'ACTIVE' &&
-              a.maestro_id === m.id &&
-              a.curso_id === effectiveCursoId &&
-              a.seccion_id === form.seccion_id &&
-              a.periodo_academico_id === periodoId,
-          )
-        return {
-          value: m.id,
-          label: m.nombre,
-          disabled: yaEnSeccion,
-          hint: yaEnSeccion ? 'Ya asignado aquí' : undefined,
-        }
-      })
-      .sort((a, b) => a.label.localeCompare(b.label))
-  }, [maestros, asignaciones, readyForDetalle, form.seccion_id, effectiveCursoId, periodoId])
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -225,9 +166,11 @@ export function AsignacionFormModal({ open, onClose, cursoId, cursoNombre }: Pro
     Boolean(form.seccion_id) &&
     Boolean(periodoId)
 
-  const gradoEmptyMsg = periodoSeleccionado
-    ? `Todas las secciones de este curso ya están asignadas en «${periodoSeleccionado.nombre}».`
-    : 'Todas las secciones de este curso ya están asignadas en el periodo.'
+  const gradoEmptyMsg = readyForDetalle
+    ? periodoSeleccionado
+      ? `Todas las secciones de esta clase ya están asignadas en «${periodoSeleccionado.nombre}».`
+      : 'Todas las secciones de esta clase ya están asignadas en el periodo.'
+    : 'Elige el periodo y la clase.'
 
   return (
     <>
@@ -255,27 +198,22 @@ export function AsignacionFormModal({ open, onClose, cursoId, cursoNombre }: Pro
         }
       >
         <Field label="Periodo académico">
-          <OptionPick
-            testId="asignacion-periodo-select"
+          <Combobox
+            data-testid="asignacion-periodo-select"
             value={periodoId}
             onChange={(v) => {
               userPickedPeriod.current = true
-              setForm((f) => ({
-                ...f,
-                periodo_academico_id: v,
-                maestro_id: '',
-                seccion_id: '',
-                curso_id: cursoId ?? f.curso_id,
-              }))
+              setForm((f) => ({ ...f, periodo_academico_id: v, seccion_id: '' }))
               setGradoId('')
             }}
             options={periodoOptions}
-            empty="No hay periodos."
+            placeholder="Buscar…"
+            emptyLabel="No hay periodos."
           />
         </Field>
 
         {cursoId ? (
-          <Field label="Curso">
+          <Field label="Clase">
             <input
               className="field__input"
               data-testid="asignacion-curso-fijo"
@@ -284,72 +222,59 @@ export function AsignacionFormModal({ open, onClose, cursoId, cursoNombre }: Pro
             />
           </Field>
         ) : (
-          <Field label="Curso">
-            <OptionPick
-              testId="asignacion-curso-select"
+          <Field label="Clase">
+            <Combobox
+              data-testid="asignacion-curso-select"
               value={form.curso_id}
               onChange={(v) => {
-                setForm((f) => ({ ...f, curso_id: v, maestro_id: '', seccion_id: '' }))
+                setForm((f) => ({ ...f, curso_id: v, seccion_id: '' }))
                 setGradoId('')
               }}
-              options={
-                periodoId
-                  ? cursos
-                      .filter((c) => c.status === 'ACTIVE')
-                      .map((c) => ({ value: c.id, label: c.nombre }))
-                  : []
-              }
-              empty={periodoId ? 'No hay cursos activos.' : 'Elige un periodo primero.'}
+              options={periodoId ? cursoOptions : []}
+              placeholder="Buscar…"
+              emptyLabel={periodoId ? 'No hay clases activas.' : 'Elige un periodo primero.'}
             />
           </Field>
         )}
 
-        {readyForDetalle ? (
-          <>
-            <Field label="Maestro">
-              <OptionPick
-                testId="asignacion-maestro-select"
-                value={form.maestro_id}
-                onChange={(v) => setForm((f) => ({ ...f, maestro_id: v }))}
-                options={maestrosOptions}
-                empty="No hay maestros."
-              />
-            </Field>
+        <Field label="Maestro">
+          <Combobox
+            data-testid="asignacion-maestro-select"
+            value={form.maestro_id}
+            onChange={(v) => setForm((f) => ({ ...f, maestro_id: v }))}
+            options={readyForDetalle ? maestroOptions : []}
+            placeholder="Buscar por nombre o código…"
+            disabled={!readyForDetalle}
+            emptyLabel={readyForDetalle ? 'No hay maestros.' : 'Elige el periodo y la clase.'}
+          />
+        </Field>
 
-            <Field label="Grado">
-              <OptionPick
-                testId="asignacion-grado-select"
-                value={gradoId}
-                onChange={(v) => {
-                  setGradoId(v)
-                  setForm((f) => ({ ...f, seccion_id: '' }))
-                }}
-                options={gradosDisponibles.map(({ grado, libres, total }) => ({
-                  value: grado.id,
-                  label: grado.nombre,
-                  hint: libres < total ? `${libres} libres` : undefined,
-                }))}
-                empty={gradoEmptyMsg}
-              />
-            </Field>
+        <Field label="Grado">
+          <Combobox
+            data-testid="asignacion-grado-select"
+            value={gradoId}
+            onChange={(v) => {
+              setGradoId(v)
+              setForm((f) => ({ ...f, seccion_id: '' }))
+            }}
+            options={gradoOptions}
+            placeholder="Buscar…"
+            disabled={!readyForDetalle}
+            emptyLabel={gradoEmptyMsg}
+          />
+        </Field>
 
-            <Field label="Sección">
-              <OptionPick
-                testId="asignacion-seccion-select"
-                value={form.seccion_id}
-                onChange={(v) => setForm((f) => ({ ...f, seccion_id: v }))}
-                options={gradoId ? seccionesDelGrado : []}
-                empty={gradoId ? 'Sin secciones.' : 'Elige un grado primero.'}
-              />
-            </Field>
-          </>
-        ) : (
-          <p className="texto-muted">
-            {periodoId
-              ? 'Elige un curso para ver maestros, grados y secciones.'
-              : 'Elige el periodo académico para continuar.'}
-          </p>
-        )}
+        <Field label="Sección">
+          <Combobox
+            data-testid="asignacion-seccion-select"
+            value={form.seccion_id}
+            onChange={(v) => setForm((f) => ({ ...f, seccion_id: v }))}
+            options={seccionOptions}
+            placeholder="Buscar…"
+            disabled={!gradoId}
+            emptyLabel={gradoId ? 'Sin secciones.' : 'Elige un grado primero.'}
+          />
+        </Field>
       </Modal>
 
       <ConfirmDialog
