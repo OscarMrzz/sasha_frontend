@@ -63,23 +63,13 @@ export function AsignacionVerModal({ open, asignacion, onClose, onEditar }: Prop
   const gradoNombre = seccion ? gradoMap.get(seccion.grado_id) : undefined
   const modalidadNombre = seccion ? modalidadMap.get(seccion.modalidad_id) : undefined
   const filas: { label: string; value: string | ReactNode }[] = [
-    { label: 'Maestro', value: maestroMap.get(asignacion.maestro_id) ?? asignacion.maestro_id },
-    {
-      label: 'Clase',
-      value: cursoMap.get(asignacion.curso_id) ?? asignacion.curso_nombre ?? asignacion.curso_id,
-    },
+    { label: 'Maestro', value: maestroMap.get(asignacion.maestro_id) ?? '—' },
+    { label: 'Curso', value: cursoMap.get(asignacion.curso_id) ?? asignacion.curso_nombre ?? '—' },
     { label: 'Grado', value: gradoNombre ?? asignacion.grado_nombre ?? '—' },
     { label: 'Modalidad', value: modalidadNombre ?? asignacion.modalidad_nombre ?? '—' },
-    {
-      label: 'Sección',
-      value: seccion?.nombre ?? asignacion.seccion_nombre ?? asignacion.seccion_id,
-    },
-    {
-      label: 'Periodo',
-      value: periodoMap.get(asignacion.periodo_academico_id) ?? asignacion.periodo_academico_id,
-    },
+    { label: 'Sección', value: seccion?.nombre ?? asignacion.seccion_nombre ?? '—' },
+    { label: 'Periodo', value: periodoMap.get(asignacion.periodo_academico_id) ?? '—' },
     { label: 'Estado', value: <span className="badge">{asignacion.status}</span> },
-    { label: 'ID', value: <span className="texto-muted">{asignacion.id}</span> },
   ]
 
   return (

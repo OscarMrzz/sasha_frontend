@@ -114,10 +114,10 @@ function SeccionesPage() {
     () => [
       col.accessor('codigo', { header: 'Código' }),
       col.accessor('nombre', { header: 'Nombre' }),
-      col.accessor('grado_id', { header: 'Grado', cell: (i) => gradoMap[i.getValue()] ?? i.getValue() }),
+      col.accessor('grado_id', { header: 'Grado', cell: (i) => gradoMap[i.getValue()] ?? '—' }),
       col.accessor('modalidad_id', {
         header: 'Modalidad',
-        cell: (i) => modalidadMap[i.getValue()] ?? i.getValue(),
+        cell: (i) => modalidadMap[i.getValue()] ?? '—',
       }),
       col.accessor('status', { header: 'Estado', cell: (i) => <span className="badge">{i.getValue()}</span> }),
     ],
@@ -131,13 +131,13 @@ function SeccionesPage() {
         id: 'grado',
         label: 'Grado',
         getValue: (r: Seccion) => r.grado_id,
-        getLabel: (r: Seccion) => gradoMap[r.grado_id] ?? r.grado_id,
+        getLabel: (r: Seccion) => gradoMap[r.grado_id] ?? '—',
       },
       {
         id: 'modalidad',
         label: 'Modalidad',
         getValue: (r: Seccion) => r.modalidad_id,
-        getLabel: (r: Seccion) => modalidadMap[r.modalidad_id] ?? r.modalidad_id,
+        getLabel: (r: Seccion) => modalidadMap[r.modalidad_id] ?? '—',
       },
       { id: 'status', label: 'Estado', getValue: (r: Seccion) => r.status },
     ],

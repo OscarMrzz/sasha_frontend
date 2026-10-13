@@ -582,7 +582,7 @@ export function placedFromPreviewSlots(
     seccionId: s.seccion_id,
     cursoId: s.curso_id,
     maestroId: s.maestro_id,
-    label: labelByAsignacion.get(s.asignacion_docente_id) ?? s.curso_id.slice(0, 8),
+    label: labelByAsignacion.get(s.asignacion_docente_id) ?? '—',
     diaSemana: s.dia_semana,
     horaInicio: s.hora_inicio,
     horaFin: s.hora_fin,

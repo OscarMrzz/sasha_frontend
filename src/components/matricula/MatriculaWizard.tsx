@@ -1864,7 +1864,7 @@ export function MatriculaWizard({
                     ? academico.cursos_retrasados
                         .filter((c) => c.curso_id)
                         .map((c) => {
-                          const nombre = cursos.find((x) => x.id === c.curso_id)?.nombre ?? c.curso_id
+                          const nombre = cursos.find((x) => x.id === c.curso_id)?.nombre ?? '—'
                           return `${nombre} (${c.anio_previo})`
                         })
                         .join(', ') || 'Sí'

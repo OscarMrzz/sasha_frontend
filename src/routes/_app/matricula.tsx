@@ -124,7 +124,7 @@ function MatriculaPage() {
     () => [
       col.accessor('alumno_code', {
         header: 'Código',
-        cell: (i) => i.getValue() ?? i.row.original.alumno_id,
+        cell: (i) => i.getValue() ?? '—',
       }),
       col.accessor('alumno_username', { header: 'Usuario', cell: (i) => i.getValue() ?? '—' }),
       col.accessor('grado_nombre', { header: 'Grado', cell: (i) => i.getValue() ?? '—' }),
@@ -177,7 +177,7 @@ function MatriculaPage() {
         }
         exportFilename="matriculas"
         exportRows={data.map((m) => ({
-          codigo: m.alumno_code ?? m.alumno_id,
+          codigo: m.alumno_code ?? '',
           usuario: m.alumno_username ?? '',
           grado: m.grado_nombre ?? '',
           seccion: seccionNombre(m),

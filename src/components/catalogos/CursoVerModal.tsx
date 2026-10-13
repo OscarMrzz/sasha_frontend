@@ -60,10 +60,10 @@ export function CursoVerModal({ open, curso, onClose, onAsignar }: Props) {
       .map((a) => {
         const sec = seccionMap[a.seccion_id]
         return {
-          maestro: maestroMap[a.maestro_id] ?? a.maestro_id,
+          maestro: maestroMap[a.maestro_id] ?? '—',
           grado: sec ? (gradoMap[sec.grado_id] ?? '—') : '—',
-          seccion: sec?.nombre ?? a.seccion_id,
-          periodo: periodoMap[a.periodo_academico_id] ?? a.periodo_academico_id,
+          seccion: sec?.nombre ?? '—',
+          periodo: periodoMap[a.periodo_academico_id] ?? '—',
           status: a.status,
         }
       })

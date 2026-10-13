@@ -907,7 +907,7 @@ function VerPlanModal({
           <ul>
             {plan.comentarios!.map((c) => (
               <li key={c.id}>
-                <strong>{c.item_titulo || c.plan_estudio_item_id}:</strong>{' '}
+                <strong>{c.item_titulo || '—'}:</strong>{' '}
                 {c.texto} {c.resuelto ? '(resuelto)' : '(pendiente)'}
               </li>
             ))}

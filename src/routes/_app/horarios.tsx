@@ -213,9 +213,9 @@ function HorariosAdminView() {
           gradoId: sec?.grado_id ?? '',
           label,
           minHours: curso?.horas_semana_minimas ?? 1,
-          maestroNombre: maestro?.nombre ?? a.maestro_id.slice(0, 8),
+          maestroNombre: maestro?.nombre ?? '—',
           cursoNombre: curso?.nombre ?? 'Clase',
-          seccionLabel: seccionLabel || sec?.nombre || a.seccion_id.slice(0, 8),
+          seccionLabel: seccionLabel || sec?.nombre || '—',
           gradoNombre: grado?.nombre ?? '',
         }
       })
