@@ -139,6 +139,14 @@ export async function createTarea(body: TareaCreate) {
   return apiRequest<Tarea>('/tareas/', { method: 'POST', body })
 }
 
+export async function updateTarea(id: string, body: TareaCreate) {
+  return apiRequest<Tarea>(`/tareas/${id}`, { method: 'PUT', body })
+}
+
+export async function deleteTarea(id: string) {
+  return apiRequest<void>(`/tareas/${id}`, { method: 'DELETE' })
+}
+
 export async function calificarTarea(body: CalificacionTareaCreate) {
   return apiRequest<{ id: string; puntos: number }>('/tareas/calificaciones', {
     method: 'POST',

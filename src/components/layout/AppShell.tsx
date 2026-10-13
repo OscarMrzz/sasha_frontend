@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const maestro = isMaestroRole(roles)
   const portal = isPortalRole(roles)
   const portalClase = usePortalClase()
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)

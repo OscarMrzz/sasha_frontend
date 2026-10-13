@@ -1,19 +1,23 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { TareaCreateModal } from '#/components/tareas/TareaCreateModal'
 import { TareaRevisionModal } from '#/components/tareas/TareaRevisionModal'
+import { TareaVerModal } from '#/components/tareas/TareaVerModal'
 import { ClaseTareasModal } from '#/components/tareas/ClaseTareasModal'
 import { PortalTareasView } from '#/components/portal/PortalTareasView'
 import { RequirePortalClase } from '#/components/portal/RequirePortalClase'
+import { userMessageFromError } from '#/lib/api'
 import { isPortalRole } from '#/lib/home-path'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
-import { listClasesTareas, listTareas, labelCriterioModo } from '#/services/tareas'
+import { deleteTarea, listClasesTareas, listTareas, labelCriterioModo } from '#/services/tareas'
 import type { ClaseResumen, Tarea } from '#/services/tareas'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
@@ -167,7 +171,9 @@ function TareasConsejeriaView() {
 }
 
 function TareasStaffPage() {
-  const { can } = useCan()
+  const qc = useQueryClient()
+  const { roles } = useCan()
+  const esMaestro = roles.includes('maestro')
   const { revisar: revisarFromSearch } = Route.useSearch()
   const navigate = Route.useNavigate()
 
@@ -184,6 +190,9 @@ function TareasStaffPage() {
   const [revisarId, setRevisarId] = useState<string | null>(revisarFromSearch ?? null)
   const [asigId, setAsigId] = useState(() => readLastAsignacionId() ?? '')
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Tarea } | null>(null)
+  const [verTarea, setVerTarea] = useState<Tarea | null>(null)
+  const [editTarea, setEditTarea] = useState<Tarea | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Tarea | null>(null)
 
   useAccionPalette('nuevo-tarea', () => setCreateOpen(true))
 
@@ -198,6 +207,17 @@ function TareasStaffPage() {
     window.addEventListener('click', h)
     return () => window.removeEventListener('click', h)
   }, [ctx, closeCtx])
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteTarea(id),
+    onSuccess: () => {
+      toast.success('Tarea eliminada')
+      void qc.invalidateQueries({ queryKey: ['tareas'] })
+      void qc.invalidateQueries({ queryKey: ['maestro-dashboard'] })
+      setConfirmDelete(null)
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
 
   const asigEffective =
     asigId && materias.some((m) => m.asignacion_docente_id === asigId)
@@ -295,7 +315,7 @@ function TareasStaffPage() {
           columns={columns}
           filters={tableFilters}
           initialFilters={{ entrega: 'semana' }}
-          canAdd={can('tareas:post')}
+          canAdd={esMaestro}
           addLabel="Nueva tarea"
           onAdd={() => setCreateOpen(true)}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
@@ -314,12 +334,49 @@ function TareasStaffPage() {
             className="ctx-menu__item"
             data-testid="tareas-staff-ctx-ver"
             onClick={() => {
-              setRevisarId(ctx.row.id)
+              setVerTarea(ctx.row)
               closeCtx()
             }}
           >
             Ver
           </button>
+          <button
+            type="button"
+            className="ctx-menu__item"
+            data-testid="tareas-staff-ctx-revisar"
+            onClick={() => {
+              setRevisarId(ctx.row.id)
+              closeCtx()
+            }}
+          >
+            Revisar
+          </button>
+          {esMaestro ? (
+            <>
+              <button
+                type="button"
+                className="ctx-menu__item"
+                data-testid="tareas-staff-ctx-editar"
+                onClick={() => {
+                  setEditTarea(ctx.row)
+                  closeCtx()
+                }}
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                className="ctx-menu__item ctx-menu__item--danger"
+                data-testid="tareas-staff-ctx-eliminar"
+                onClick={() => {
+                  setConfirmDelete(ctx.row)
+                  closeCtx()
+                }}
+              >
+                Eliminar
+              </button>
+            </>
+          ) : null}
         </div>
       ) : null}
 
@@ -351,6 +408,31 @@ function TareasStaffPage() {
       ) : null}
 
       {revisarId ? <TareaRevisionModal tareaId={revisarId} onClose={closeRevision} /> : null}
+
+      {verTarea ? <TareaVerModal tarea={verTarea} onClose={() => setVerTarea(null)} /> : null}
+
+      {editTarea ? (
+        <TareaCreateModal
+          asignacionDocenteId={editTarea.asignacion_docente_id}
+          periodoAcademicoId={
+            materias.find((m) => m.asignacion_docente_id === editTarea.asignacion_docente_id)
+              ?.periodo_academico_id ?? ''
+          }
+          claseLabel={claseLabel(editTarea)}
+          tarea={editTarea}
+          onClose={() => setEditTarea(null)}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="Eliminar tarea"
+        message={`¿Eliminar la tarea "${confirmDelete?.titulo}"?`}
+        danger
+        confirmLabel="Eliminar"
+        onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.id)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </RequirePermission>
   )
 }

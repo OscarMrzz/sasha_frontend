@@ -1,20 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Can } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { Modal, useDismiss } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
-import {
-  createTarea,
-  listParcialesTarea,
-  listTiposTarea,
-  type TareaCreate,
-  type TareaCriterioModo,
-} from '#/services/tareas'
+import { createTarea, listParcialesTarea, listTiposTarea, updateTarea } from '#/services/tareas'
+import type { Tarea, TareaCreate, TareaCriterioModo } from '#/services/tareas'
 
 type ParcialOpt = { id: string; nombre: string }
+
+type TareaForm = {
+  titulo: string
+  descripcion: string
+  fecha_entrega: string
+  puntos: string
+  criterio: TareaCriterioModo
+  tipo_tarea_id: string
+  parcial_id: string
+}
 
 const PARCIALES_VACIOS: ParcialOpt[] = []
 
@@ -23,6 +29,7 @@ export function TareaCreateModal({
   periodoAcademicoId,
   claseLabel,
   claseSelect,
+  tarea,
   onClose,
 }: {
   asignacionDocenteId: string
@@ -30,20 +37,34 @@ export function TareaCreateModal({
   claseLabel: string
   /** Selector opcional de clase (página /tareas). */
   claseSelect?: ReactNode
+  /** Si viene, el modal edita esa tarea en vez de crear una nueva. */
+  tarea?: Tarea
   onClose: () => void
 }) {
   const { open, dismiss } = useDismiss(onClose)
   const qc = useQueryClient()
   const [confirmSave, setConfirmSave] = useState(false)
-  const [form, setForm] = useState({
-    titulo: '',
-    descripcion: '',
-    fecha_entrega: '',
-    puntos: '10',
-    criterio: 'simple' as TareaCriterioModo,
-    tipo_tarea_id: '',
-    parcial_id: '',
-  })
+  const [form, setForm] = useState<TareaForm>(() =>
+    tarea
+      ? {
+          titulo: tarea.titulo,
+          descripcion: tarea.descripcion ?? '',
+          fecha_entrega: tarea.fecha_entrega.slice(0, 10),
+          puntos: String(tarea.puntos),
+          criterio: tarea.tipo,
+          tipo_tarea_id: tarea.tipo_tarea_id ?? '',
+          parcial_id: tarea.parcial_id ?? '',
+        }
+      : {
+          titulo: '',
+          descripcion: '',
+          fecha_entrega: '',
+          puntos: '10',
+          criterio: 'simple',
+          tipo_tarea_id: '',
+          parcial_id: '',
+        },
+  )
 
   const { data: tipos = [] } = useQuery({
     queryKey: ['tipos-tarea'],
@@ -67,9 +88,9 @@ export function TareaCreateModal({
   }, [parciales, periodoAcademicoId])
 
   const createMut = useMutation({
-    mutationFn: (body: TareaCreate) => createTarea(body),
+    mutationFn: (body: TareaCreate) => (tarea ? updateTarea(tarea.id, body) : createTarea(body)),
     onSuccess: () => {
-      toast.success('Tarea creada')
+      toast.success(tarea ? 'Tarea actualizada' : 'Tarea creada')
       void qc.invalidateQueries({ queryKey: ['tareas'] })
       void qc.invalidateQueries({ queryKey: ['maestro-dashboard'] })
       setConfirmSave(false)
@@ -120,7 +141,7 @@ export function TareaCreateModal({
     <>
       <Modal
         open={open}
-        title="Nueva tarea"
+        title={tarea ? 'Editar tarea' : 'Nueva tarea'}
         onClose={dismiss}
         footer={
           <>
@@ -269,8 +290,8 @@ export function TareaCreateModal({
 
       <ConfirmDialog
         open={confirmSave}
-        title="Crear tarea"
-        message="¿Registrar esta tarea?"
+        title={tarea ? 'Guardar cambios' : 'Crear tarea'}
+        message={tarea ? '¿Guardar los cambios de esta tarea?' : '¿Registrar esta tarea?'}
         onConfirm={() => {
           const body = buildBody()
           if (body) createMut.mutate(body)
