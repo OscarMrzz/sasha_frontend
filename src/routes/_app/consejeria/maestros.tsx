@@ -7,8 +7,9 @@ import { RequirePermission, Can } from '#/components/gates/Can'
 import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
+import { Modal } from '#/components/ui/Modal'
 import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
-import { userMessageFromError } from '#/lib/api'
+import { ApiError, userMessageFromError } from '#/lib/api'
 import { listMaestrosConsejeria  } from '#/services/consejeria'
 import type {MaestroConsejeria} from '#/services/consejeria';
 import { deletePersona } from '#/services/personas'
@@ -24,6 +25,10 @@ function MaestrosConsejeriaPage() {
   const [ver, setVer] = useState<string | null>(null)
   const [editar, setEditar] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<MaestroConsejeria | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+
+  const mensajeVinculado = (m: MaestroConsejeria) =>
+    `No se puede eliminar a ${m.nombre} (${m.codigo}) porque tiene clases asignadas. Quita primero sus asignaciones en «Asignación docente».`
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -40,7 +45,14 @@ function MaestrosConsejeriaPage() {
       qc.invalidateQueries({ queryKey: ['consejeria-maestros'] })
       qc.invalidateQueries({ queryKey: ['maestros'] })
     },
-    onError: (e) => toast.error(userMessageFromError(e)),
+    onError: (e) => {
+      setConfirmDelete(null)
+      if (e instanceof ApiError && e.status === 409) {
+        setAviso(e.message)
+      } else {
+        toast.error(userMessageFromError(e))
+      }
+    },
   })
 
   const columns = useMemo(
@@ -158,7 +170,11 @@ function MaestrosConsejeriaPage() {
               className="ctx-menu__item ctx-menu__item--danger"
               data-testid="ctx-eliminar"
               onClick={() => {
-                setConfirmDelete(ctx.row)
+                if (ctx.row.clases > 0) {
+                  setAviso(mensajeVinculado(ctx.row))
+                } else {
+                  setConfirmDelete(ctx.row)
+                }
                 closeCtx()
               }}
             >
@@ -190,6 +206,22 @@ function MaestrosConsejeriaPage() {
         onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.codigo)}
         onCancel={() => setConfirmDelete(null)}
       />
+
+      <Modal
+        open={Boolean(aviso)}
+        title="No se puede eliminar"
+        onClose={() => setAviso(null)}
+        testId="maestro-no-eliminar-modal"
+        footer={
+          <button type="button" className="btn btn--primary" onClick={() => setAviso(null)}>
+            Entendido
+          </button>
+        }
+      >
+        <p className="texto-primary" style={{ margin: 0 }}>
+          {aviso}
+        </p>
+      </Modal>
     </RequirePermission>
   )
 }

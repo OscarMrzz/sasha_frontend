@@ -12,7 +12,7 @@ import { Modal } from '#/components/ui/Modal'
 import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
 import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
 import { ROLES, roleLabel, type RoleName } from '#/helpers/permissions'
-import { userMessageFromError } from '#/lib/api'
+import { userMessageFromError, ApiError } from '#/lib/api'
 import {
   createUser,
   listUsers,
@@ -97,6 +97,7 @@ function UsuariosPage() {
   const [createForm, setCreateForm] = useState<CreateUserRequest>(defaultForm)
   const [confirmSave, setConfirmSave] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<ResponseUser | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
   const [createdCode, setCreatedCode] = useState<string | null>(null)
   const [viewCode, setViewCode] = useState<string | null>(null)
   const [editarPersona, setEditarPersona] = useState<ResponseUser | null>(null)
@@ -180,7 +181,14 @@ function UsuariosPage() {
       setConfirmDelete(null)
       qc.invalidateQueries({ queryKey: ['users'] })
     },
-    onError: (e) => toast.error(userMessageFromError(e)),
+    onError: (e) => {
+      setConfirmDelete(null)
+      if (e instanceof ApiError && e.status === 409) {
+        setAviso(e.message)
+      } else {
+        toast.error(userMessageFromError(e))
+      }
+    },
   })
 
   const columns = useMemo(
@@ -426,6 +434,21 @@ function UsuariosPage() {
         onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.code)}
         onCancel={() => setConfirmDelete(null)}
       />
+
+      <Modal
+        open={Boolean(aviso)}
+        title="No se puede eliminar"
+        onClose={() => setAviso(null)}
+        footer={
+          <button type="button" className="btn btn--primary" onClick={() => setAviso(null)}>
+            Entendido
+          </button>
+        }
+      >
+        <p className="texto-primary" style={{ margin: 0 }}>
+          {aviso}
+        </p>
+      </Modal>
     </RequirePermission>
   )
 }
