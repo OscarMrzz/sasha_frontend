@@ -43,6 +43,7 @@ import { Route as AppTareasRouteImport } from './routes/_app/tareas'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 import { Route as AppAlumnoIndexRouteImport } from './routes/_app/alumno/index'
 import { Route as AppAlumnoClasesRouteImport } from './routes/_app/alumno/clases'
+import { Route as AppAlumnoFichasRouteImport } from './routes/_app/alumno/fichas'
 import { Route as AppAlumnoHorarioRouteImport } from './routes/_app/alumno/horario'
 import { Route as AppAlumnoResultadosRouteImport } from './routes/_app/alumno/resultados'
 import { Route as AppAlumnoTareasRouteImport } from './routes/_app/alumno/tareas'
@@ -59,6 +60,7 @@ import { Route as AppDisciplinaIndexRouteImport } from './routes/_app/disciplina
 import { Route as AppDisciplinaTiposRouteImport } from './routes/_app/disciplina/tipos'
 import { Route as AppExcusasIndexRouteImport } from './routes/_app/excusas/index'
 import { Route as AppExcusasTiposRouteImport } from './routes/_app/excusas/tipos'
+import { Route as AppHijoFichasRouteImport } from './routes/_app/hijo/fichas'
 import { Route as AppHijoHorarioRouteImport } from './routes/_app/hijo/horario'
 import { Route as AppHijoPagosRouteImport } from './routes/_app/hijo/pagos'
 import { Route as AppHijoTareasRouteImport } from './routes/_app/hijo/tareas'
@@ -239,6 +241,11 @@ const AppAlumnoClasesRoute = AppAlumnoClasesRouteImport.update({
   path: '/alumno/clases',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAlumnoFichasRoute = AppAlumnoFichasRouteImport.update({
+  id: '/alumno/fichas',
+  path: '/alumno/fichas',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAlumnoHorarioRoute = AppAlumnoHorarioRouteImport.update({
   id: '/alumno/horario',
   path: '/alumno/horario',
@@ -317,6 +324,11 @@ const AppExcusasIndexRoute = AppExcusasIndexRouteImport.update({
 const AppExcusasTiposRoute = AppExcusasTiposRouteImport.update({
   id: '/excusas/tipos',
   path: '/excusas/tipos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHijoFichasRoute = AppHijoFichasRouteImport.update({
+  id: '/hijo/fichas',
+  path: '/hijo/fichas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppHijoHorarioRoute = AppHijoHorarioRouteImport.update({
@@ -404,6 +416,7 @@ export interface FileRoutesByFullPath {
   '/tareas': typeof AppTareasRoute
   '/usuarios': typeof AppUsuariosRoute
   '/alumno/clases': typeof AppAlumnoClasesRoute
+  '/alumno/fichas': typeof AppAlumnoFichasRoute
   '/alumno/horario': typeof AppAlumnoHorarioRoute
   '/alumno/resultados': typeof AppAlumnoResultadosRoute
   '/alumno/tareas': typeof AppAlumnoTareasRoute
@@ -417,6 +430,7 @@ export interface FileRoutesByFullPath {
   '/consejeria/maestros': typeof AppConsejeriaMaestrosRoute
   '/disciplina/tipos': typeof AppDisciplinaTiposRoute
   '/excusas/tipos': typeof AppExcusasTiposRoute
+  '/hijo/fichas': typeof AppHijoFichasRoute
   '/hijo/horario': typeof AppHijoHorarioRoute
   '/hijo/pagos': typeof AppHijoPagosRoute
   '/hijo/tareas': typeof AppHijoTareasRoute
@@ -465,6 +479,7 @@ export interface FileRoutesByTo {
   '/tareas': typeof AppTareasRoute
   '/usuarios': typeof AppUsuariosRoute
   '/alumno/clases': typeof AppAlumnoClasesRoute
+  '/alumno/fichas': typeof AppAlumnoFichasRoute
   '/alumno/horario': typeof AppAlumnoHorarioRoute
   '/alumno/resultados': typeof AppAlumnoResultadosRoute
   '/alumno/tareas': typeof AppAlumnoTareasRoute
@@ -478,6 +493,7 @@ export interface FileRoutesByTo {
   '/consejeria/maestros': typeof AppConsejeriaMaestrosRoute
   '/disciplina/tipos': typeof AppDisciplinaTiposRoute
   '/excusas/tipos': typeof AppExcusasTiposRoute
+  '/hijo/fichas': typeof AppHijoFichasRoute
   '/hijo/horario': typeof AppHijoHorarioRoute
   '/hijo/pagos': typeof AppHijoPagosRoute
   '/hijo/tareas': typeof AppHijoTareasRoute
@@ -528,6 +544,7 @@ export interface FileRoutesById {
   '/_app/tareas': typeof AppTareasRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/alumno/clases': typeof AppAlumnoClasesRoute
+  '/_app/alumno/fichas': typeof AppAlumnoFichasRoute
   '/_app/alumno/horario': typeof AppAlumnoHorarioRoute
   '/_app/alumno/resultados': typeof AppAlumnoResultadosRoute
   '/_app/alumno/tareas': typeof AppAlumnoTareasRoute
@@ -541,6 +558,7 @@ export interface FileRoutesById {
   '/_app/consejeria/maestros': typeof AppConsejeriaMaestrosRoute
   '/_app/disciplina/tipos': typeof AppDisciplinaTiposRoute
   '/_app/excusas/tipos': typeof AppExcusasTiposRoute
+  '/_app/hijo/fichas': typeof AppHijoFichasRoute
   '/_app/hijo/horario': typeof AppHijoHorarioRoute
   '/_app/hijo/pagos': typeof AppHijoPagosRoute
   '/_app/hijo/tareas': typeof AppHijoTareasRoute
@@ -591,6 +609,7 @@ export interface FileRouteTypes {
     | '/tareas'
     | '/usuarios'
     | '/alumno/clases'
+    | '/alumno/fichas'
     | '/alumno/horario'
     | '/alumno/resultados'
     | '/alumno/tareas'
@@ -604,6 +623,7 @@ export interface FileRouteTypes {
     | '/consejeria/maestros'
     | '/disciplina/tipos'
     | '/excusas/tipos'
+    | '/hijo/fichas'
     | '/hijo/horario'
     | '/hijo/pagos'
     | '/hijo/tareas'
@@ -652,6 +672,7 @@ export interface FileRouteTypes {
     | '/tareas'
     | '/usuarios'
     | '/alumno/clases'
+    | '/alumno/fichas'
     | '/alumno/horario'
     | '/alumno/resultados'
     | '/alumno/tareas'
@@ -665,6 +686,7 @@ export interface FileRouteTypes {
     | '/consejeria/maestros'
     | '/disciplina/tipos'
     | '/excusas/tipos'
+    | '/hijo/fichas'
     | '/hijo/horario'
     | '/hijo/pagos'
     | '/hijo/tareas'
@@ -714,6 +736,7 @@ export interface FileRouteTypes {
     | '/_app/tareas'
     | '/_app/usuarios'
     | '/_app/alumno/clases'
+    | '/_app/alumno/fichas'
     | '/_app/alumno/horario'
     | '/_app/alumno/resultados'
     | '/_app/alumno/tareas'
@@ -727,6 +750,7 @@ export interface FileRouteTypes {
     | '/_app/consejeria/maestros'
     | '/_app/disciplina/tipos'
     | '/_app/excusas/tipos'
+    | '/_app/hijo/fichas'
     | '/_app/hijo/horario'
     | '/_app/hijo/pagos'
     | '/_app/hijo/tareas'
@@ -989,6 +1013,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAlumnoClasesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/alumno/fichas': {
+      id: '/_app/alumno/fichas'
+      path: '/alumno/fichas'
+      fullPath: '/alumno/fichas'
+      preLoaderRoute: typeof AppAlumnoFichasRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/alumno/horario': {
       id: '/_app/alumno/horario'
       path: '/alumno/horario'
@@ -1101,6 +1132,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppExcusasTiposRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/hijo/fichas': {
+      id: '/_app/hijo/fichas'
+      path: '/hijo/fichas'
+      fullPath: '/hijo/fichas'
+      preLoaderRoute: typeof AppHijoFichasRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/hijo/horario': {
       id: '/_app/hijo/horario'
       path: '/hijo/horario'
@@ -1205,6 +1243,7 @@ interface AppRouteChildren {
   AppTareasRoute: typeof AppTareasRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
   AppAlumnoClasesRoute: typeof AppAlumnoClasesRoute
+  AppAlumnoFichasRoute: typeof AppAlumnoFichasRoute
   AppAlumnoHorarioRoute: typeof AppAlumnoHorarioRoute
   AppAlumnoResultadosRoute: typeof AppAlumnoResultadosRoute
   AppAlumnoTareasRoute: typeof AppAlumnoTareasRoute
@@ -1218,6 +1257,7 @@ interface AppRouteChildren {
   AppConsejeriaMaestrosRoute: typeof AppConsejeriaMaestrosRoute
   AppDisciplinaTiposRoute: typeof AppDisciplinaTiposRoute
   AppExcusasTiposRoute: typeof AppExcusasTiposRoute
+  AppHijoFichasRoute: typeof AppHijoFichasRoute
   AppHijoHorarioRoute: typeof AppHijoHorarioRoute
   AppHijoPagosRoute: typeof AppHijoPagosRoute
   AppHijoTareasRoute: typeof AppHijoTareasRoute
@@ -1265,6 +1305,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTareasRoute: AppTareasRoute,
   AppUsuariosRoute: AppUsuariosRoute,
   AppAlumnoClasesRoute: AppAlumnoClasesRoute,
+  AppAlumnoFichasRoute: AppAlumnoFichasRoute,
   AppAlumnoHorarioRoute: AppAlumnoHorarioRoute,
   AppAlumnoResultadosRoute: AppAlumnoResultadosRoute,
   AppAlumnoTareasRoute: AppAlumnoTareasRoute,
@@ -1278,6 +1319,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppConsejeriaMaestrosRoute: AppConsejeriaMaestrosRoute,
   AppDisciplinaTiposRoute: AppDisciplinaTiposRoute,
   AppExcusasTiposRoute: AppExcusasTiposRoute,
+  AppHijoFichasRoute: AppHijoFichasRoute,
   AppHijoHorarioRoute: AppHijoHorarioRoute,
   AppHijoPagosRoute: AppHijoPagosRoute,
   AppHijoTareasRoute: AppHijoTareasRoute,

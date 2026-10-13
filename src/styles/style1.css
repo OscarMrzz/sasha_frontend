@@ -9057,3 +9057,78 @@ body::before {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   }
 }
+
+/* Fichas disciplinarias (portal del padre y del alumno) */
+.fichas-ok {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+  padding: 2.5rem 1rem;
+}
+.fichas-ok__icono {
+  color: var(--sasha-success);
+}
+.fichas-ok__titulo {
+  margin: 0.35rem 0 0;
+  color: var(--sasha-texto-title);
+}
+.fichas-ok__texto {
+  margin: 0;
+  max-width: 28rem;
+  color: var(--sasha-texto-muted);
+}
+.fichas-disc-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.fichas-disc {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+  background: var(--sasha-bg-raised);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+}
+.fichas-disc__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.fichas-disc__fecha {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--sasha-texto-muted);
+}
+.fichas-disc__titulo {
+  margin: 0.1rem 0;
+  font-size: 1rem;
+  color: var(--sasha-texto-title);
+}
+.fichas-disc__castigo {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.fichas-disc__meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--sasha-texto-muted);
+}
+.fichas-disc__texto {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+}
+.fichas-disc__parcial {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  color: var(--sasha-texto-title);
+}
+.fichas-disc__mas {
+  align-self: center;
+  margin-top: 0.5rem;
+}

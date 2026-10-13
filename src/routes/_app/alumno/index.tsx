@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Navigate } from '@tanstack/react-router'
-import { Award, BookOpen, CalendarDays, ChevronRight, ListTodo } from 'lucide-react'
+import { Award, BookOpen, CalendarDays, ChevronRight, ListTodo, ShieldAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { AvisoBanner } from '#/components/layout/AvisoBanner'
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_app/alumno/')({
 })
 
 type Tile = {
-  to: '/alumno/tareas' | '/alumno/clases' | '/alumno/horario' | '/alumno/resultados'
+  to: '/alumno/tareas' | '/alumno/clases' | '/alumno/horario' | '/alumno/resultados' | '/alumno/fichas'
   id: string
   label: string
   detalle: string
@@ -80,6 +80,13 @@ function AlumnoHomePage() {
       label: 'Notas',
       detalle: 'Promedio y calificaciones',
       icon: <Award size={30} />,
+    },
+    {
+      to: '/alumno/fichas',
+      id: 'fichas',
+      label: 'Fichas disciplinarias',
+      detalle: 'Mi conducta y sanciones',
+      icon: <ShieldAlert size={30} />,
     },
   ]
 

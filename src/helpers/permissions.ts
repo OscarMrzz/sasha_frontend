@@ -264,6 +264,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'pagos:post',
     'notificaciones:get',
     'personas:get',
+    'mis_fichas:get',
     'boveda:post',
     'boveda:get',
   ],
@@ -273,6 +274,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'horarios:get',
     'planestudio:get',
     'notificaciones:get',
+    'mis_fichas:get',
   ],
   developer: ['auditoria:get', 'notificaciones:get', 'contratos:get', 'credenciales:get', 'credenciales:post'],
 }

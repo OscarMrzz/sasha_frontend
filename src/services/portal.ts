@@ -317,3 +317,28 @@ export function subirRecibo(alumnoId: string, anio: number, mes: number, file: F
   form.append('mes', String(mes))
   return apiRequest<Recibo>('/portal/recibos', { method: 'POST', body: form })
 }
+
+export interface PortalFicha {
+  id: string
+  fecha: string
+  titulo: string
+  descripcion: string
+  nivel: number
+  castigo: string
+  dias?: number
+  fecha_inicio?: string
+  fecha_fin?: string
+  observaciones?: string
+  parcial_id?: string
+  parcial?: string
+}
+
+export interface PortalFichas {
+  parcial_actual: { id: string; nombre: string } | null
+  fichas: PortalFicha[]
+}
+
+/** Fichas disciplinarias del alumno (propias o del hijo a cargo), más recientes primero. */
+export function getFichasHijo(alumnoId?: string | null) {
+  return apiRequest<PortalFichas>(`/portal/fichas${alumnoQs(alumnoId)}`)
+}
