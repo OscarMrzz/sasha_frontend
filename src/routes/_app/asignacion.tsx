@@ -66,6 +66,7 @@ function AsignacionPage() {
       col.accessor('maestro_id', { header: 'Maestro', cell: (i) => maestroMap[i.getValue()] ?? i.getValue() }),
       col.accessor('curso_id', { header: 'Clase', cell: (i) => cursoMap[i.getValue()] ?? i.getValue() }),
       col.accessor('seccion_id', { header: 'Sección', cell: (i) => seccionMap[i.getValue()] ?? i.getValue() }),
+      col.accessor('modalidad_nombre', { header: 'Modalidad', cell: (i) => i.getValue() || '—' }),
       col.accessor('periodo_academico_id', {
         header: 'Periodo',
         cell: (i) => periodoMap[i.getValue()] ?? i.getValue(),
@@ -117,11 +118,25 @@ function AsignacionPage() {
           maestro: maestroMap[a.maestro_id],
           clase: cursoMap[a.curso_id],
           seccion: seccionMap[a.seccion_id],
+          modalidad: a.modalidad_nombre,
           periodo: periodoMap[a.periodo_academico_id],
           status: a.status,
         }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
         onRowDoubleClick={(row) => setVerRow(row)}
+        searchText={(a) =>
+          [
+            maestroMap[a.maestro_id],
+            cursoMap[a.curso_id] ?? a.curso_nombre,
+            a.grado_nombre,
+            a.modalidad_nombre,
+            seccionMap[a.seccion_id] ?? a.seccion_nombre,
+            periodoMap[a.periodo_academico_id],
+            a.status,
+          ]
+            .filter(Boolean)
+            .join(' ')
+        }
       />
 
       {ctx ? (

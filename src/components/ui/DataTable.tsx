@@ -49,6 +49,12 @@ type DataTableProps<T extends RowData> = {
   canAdd?: boolean
   /** `data-testid` del botón Agregar (por defecto `data-table-add-button`). */
   addTestId?: string
+  /**
+   * Texto adicional por fila para el buscador global (el buscador usa los valores
+   * crudos de las columnas; pásalo cuando las columnas guardan IDs y quieras
+   * encontrar por nombre: maestro, clase, grado, sección, etc.).
+   */
+  searchText?: (row: T) => string
   onExport?: () => void
   /** Filas para Descargar (Excel + PDF). Si se pasa, se ignora onExport. */
   exportFilename?: string
@@ -59,6 +65,22 @@ type DataTableProps<T extends RowData> = {
 function isCodigoFilterId(id: string) {
   const n = id.toLowerCase()
   return n === 'codigo' || n === 'code' || n.endsWith('_codigo') || n.endsWith('_code') || n === 'user_code'
+}
+
+/** Columna oculta que aporta texto buscable (nombres) sin mostrarse en la tabla. */
+const SEARCH_COL_ID = '__search'
+
+function isSearchOnly(colDef: { meta?: unknown }) {
+  return Boolean((colDef.meta as { searchOnly?: boolean } | undefined)?.searchOnly)
+}
+
+/** Minúsculas y sin acentos, para que «chacon» encuentre «Chacón». */
+function norm(texto: string) {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
 }
 
 export function DataTable<T extends RowData>({
@@ -77,6 +99,7 @@ export function DataTable<T extends RowData>({
   onAdd,
   canAdd,
   addTestId = 'data-table-add-button',
+  searchText,
   onExport,
   exportFilename,
   exportRows,
@@ -141,8 +164,19 @@ export function DataTable<T extends RowData>({
         return <span className="data-table__rownum">{pageIndex * ps + row.index + 1}</span>
       },
     }
-    return [rowNum, ...columns]
-  }, [columns])
+    const cols: LegacyColumnDef<T, any>[] = [rowNum, ...columns]
+    if (searchText) {
+      cols.push({
+        id: SEARCH_COL_ID,
+        header: '',
+        enableSorting: false,
+        accessorFn: (row) => searchText(row as T),
+        cell: () => null,
+        meta: { searchOnly: true },
+      })
+    }
+    return cols
+  }, [columns, searchText])
 
   const table = useLegacyTable({
     data: filteredData,
@@ -150,6 +184,14 @@ export function DataTable<T extends RowData>({
     state: { globalFilter, sorting },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
+    globalFilterFn: (row, columnId, filterValue) => {
+      const needle = norm(String(filterValue ?? ''))
+      if (!needle) return true
+      const raw = row.getValue(columnId)
+      if (raw == null) return false
+      const hay = norm(String(raw))
+      return needle.split(/\s+/).every((token) => hay.includes(token))
+    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -277,7 +319,7 @@ export function DataTable<T extends RowData>({
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
-                {hg.headers.map((h) => {
+                {hg.headers.filter((h) => !isSearchOnly(h.column.columnDef)).map((h) => {
                   const canSort = h.column.getCanSort()
                   const sorted = h.column.getIsSorted()
                   return (
@@ -335,7 +377,7 @@ export function DataTable<T extends RowData>({
                     onRowContextMenu(row.original as T, e)
                   }}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().filter((cell) => !isSearchOnly(cell.column.columnDef)).map((cell) => (
                     <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
                   ))}
                 </tr>
