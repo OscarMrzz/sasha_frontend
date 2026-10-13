@@ -116,7 +116,11 @@ export function AsignacionFormModal({ open, onClose, cursoId, cursoNombre }: Pro
   const maestroOptions = useMemo<ComboboxOption[]>(
     () =>
       maestros
-        .map((m) => ({ value: m.id, label: m.nombre, keywords: m.user_code ?? '' }))
+        .map((m) => ({
+          value: m.id,
+          label: m.user_code ? `${m.nombre} (${m.user_code})` : m.nombre,
+          keywords: m.user_code ?? '',
+        }))
         .sort((a, b) => a.label.localeCompare(b.label)),
     [maestros],
   )
