@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { TareaPortalVerModal } from '#/components/portal/TareaPortalVerModal'
 import { DataTable } from '#/components/ui/DataTable'
 import { listTareasClase } from '#/services/portal'
 import type { PortalTarea } from '#/services/portal'
@@ -24,6 +25,7 @@ export function PortalTareasView({
     queryKey: ['portal-tareas', asignacionId, alumnoId ?? 'self'],
     queryFn: () => listTareasClase(asignacionId, alumnoId),
   })
+  const [verTarea, setVerTarea] = useState<PortalTarea | null>(null)
 
   const columns = useMemo(
     () => [
@@ -70,7 +72,10 @@ export function PortalTareasView({
         columns={columns}
         filters={filters}
         canAdd={false}
+        onRowClick={(row) => setVerTarea(row)}
       />
+
+      <TareaPortalVerModal tarea={verTarea} onClose={() => setVerTarea(null)} />
     </div>
   )
 }
