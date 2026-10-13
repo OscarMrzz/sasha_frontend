@@ -30,6 +30,10 @@ function AsignacionPage() {
   const { data: periodos = [] } = useQuery({ queryKey: ['periodos'], queryFn: listPeriodos })
 
   const maestroMap = useMemo(() => Object.fromEntries(maestros.map((m) => [m.id, m.nombre])), [maestros])
+  const maestroCodeMap = useMemo(
+    () => Object.fromEntries(maestros.map((m) => [m.id, m.user_code ?? ''])),
+    [maestros],
+  )
   const cursoMap = useMemo(() => Object.fromEntries(cursos.map((c) => [c.id, c.nombre])), [cursos])
   const seccionMap = useMemo(() => Object.fromEntries(secciones.map((s) => [s.id, s.nombre])), [secciones])
   const periodoMap = useMemo(
@@ -63,6 +67,11 @@ function AsignacionPage() {
 
   const columns = useMemo(
     () => [
+      col.accessor((r) => maestroCodeMap[r.maestro_id] ?? '', {
+        id: 'maestro_code',
+        header: 'Código',
+        cell: (i) => i.getValue() || '—',
+      }),
       col.accessor('maestro_id', { header: 'Maestro', cell: (i) => maestroMap[i.getValue()] ?? i.getValue() }),
       col.accessor('curso_id', { header: 'Clase', cell: (i) => cursoMap[i.getValue()] ?? i.getValue() }),
       col.accessor('seccion_id', { header: 'Sección', cell: (i) => seccionMap[i.getValue()] ?? i.getValue() }),
@@ -73,11 +82,16 @@ function AsignacionPage() {
       }),
       col.accessor('status', { header: 'Estado', cell: (i) => <span className="badge">{i.getValue()}</span> }),
     ],
-    [maestroMap, cursoMap, seccionMap, periodoMap],
+    [maestroCodeMap, maestroMap, cursoMap, seccionMap, periodoMap],
   )
 
   const tableFilters = useMemo(
     () => [
+      {
+        id: 'codigo_maestro',
+        label: 'Código',
+        getValue: (r: Asignacion) => maestroCodeMap[r.maestro_id] ?? '',
+      },
       {
         id: 'maestro',
         label: 'Maestro',
@@ -98,7 +112,7 @@ function AsignacionPage() {
       },
       { id: 'status', label: 'Estado', getValue: (r: Asignacion) => r.status },
     ],
-    [maestroMap, cursoMap, seccionMap],
+    [maestroCodeMap, maestroMap, cursoMap, seccionMap],
   )
 
   if (isLoading) return <div className="empty-state">Cargando asignaciones…</div>
@@ -115,6 +129,7 @@ function AsignacionPage() {
         onAdd={() => setModalOpen(true)}
         exportFilename="asignaciones"
         exportRows={data.map((a) => ({
+          codigo: maestroCodeMap[a.maestro_id],
           maestro: maestroMap[a.maestro_id],
           clase: cursoMap[a.curso_id],
           seccion: seccionMap[a.seccion_id],
@@ -126,6 +141,7 @@ function AsignacionPage() {
         onRowDoubleClick={(row) => setVerRow(row)}
         searchText={(a) =>
           [
+            maestroCodeMap[a.maestro_id],
             maestroMap[a.maestro_id],
             cursoMap[a.curso_id] ?? a.curso_nombre,
             a.grado_nombre,
