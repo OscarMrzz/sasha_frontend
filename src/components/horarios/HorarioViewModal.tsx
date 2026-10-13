@@ -25,6 +25,8 @@ type HorarioViewModalProps = {
   loading?: boolean
   /** Fin de jornada de la modalidad; filas posteriores se marcan como extra. */
   jornadaFin?: string
+  /** maestro_id → código, para mostrar «código · nombre» en el filtro de maestro. */
+  maestroCodeById?: Record<string, string>
   onClose: () => void
 }
 
@@ -33,6 +35,7 @@ export function HorarioViewModal({
   detail,
   loading,
   jornadaFin,
+  maestroCodeById,
   onClose,
 }: HorarioViewModalProps) {
   const [filterMode, setFilterMode] = useState<'seccion' | 'maestro'>('seccion')
@@ -62,9 +65,12 @@ export function HorarioViewModal({
 
   const maestroOptions = useMemo(() => {
     const m = new Map<string, string>()
-    for (const s of slots) m.set(s.maestro_id, s.maestro_nombre)
+    for (const s of slots) {
+      const code = maestroCodeById?.[s.maestro_id]
+      m.set(s.maestro_id, code ? `${code} · ${s.maestro_nombre}` : s.maestro_nombre)
+    }
     return [...m.entries()].map(([value, label]) => ({ value, label }))
-  }, [slots])
+  }, [slots, maestroCodeById])
 
   const filtered = useMemo(() => {
     return slots.filter((s) => {

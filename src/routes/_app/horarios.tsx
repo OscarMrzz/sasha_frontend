@@ -214,12 +214,18 @@ function HorariosAdminView() {
           label,
           minHours: curso?.horas_semana_minimas ?? 1,
           maestroNombre: maestro?.nombre ?? '—',
+          maestroCodigo: maestro?.user_code ?? '',
           cursoNombre: curso?.nombre ?? 'Clase',
           seccionLabel: seccionLabel || sec?.nombre || '—',
           gradoNombre: grado?.nombre ?? '',
         }
       })
   }, [asignaciones, secciones, cursos, grados, maestros, periodoId, modalidadId])
+
+  const maestroCodeById = useMemo(
+    () => Object.fromEntries(maestros.map((m) => [m.id, m.user_code ?? ''])),
+    [maestros],
+  )
 
   const labelByAsignacion = useMemo(() => {
     const m = new Map<string, string>()
@@ -832,6 +838,7 @@ function HorariosAdminView() {
         jornadaFin={
           modalidades.find((m) => m.id === (viewDetail?.modalidad_id || ''))?.hora_fin
         }
+        maestroCodeById={maestroCodeById}
         onClose={() => {
           setViewOpen(false)
           setViewDetail(null)

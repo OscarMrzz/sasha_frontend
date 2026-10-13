@@ -81,7 +81,7 @@ function CarnetsPage() {
         .filter((a) => Boolean(a.user_code))
         .map((a) => ({
           value: a.user_code as string,
-          label: `${a.nombre} · ${a.user_code}`,
+          label: `${a.user_code} · ${a.nombre}`,
           keywords: a.user_code ?? '',
         })),
     [alumnos.data],

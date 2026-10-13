@@ -15,6 +15,8 @@ export type HorarioPill = {
   label: string
   minHours: number
   maestroNombre: string
+  /** Código del maestro para el combo de filtro (código · nombre). */
+  maestroCodigo?: string
   cursoNombre: string
   seccionLabel: string
   gradoNombre: string
@@ -88,7 +90,9 @@ export function HorarioBoard({
 
   const maestroOptions = useMemo(() => {
     const m = new Map<string, string>()
-    for (const p of pills) m.set(p.maestroId, p.maestroNombre)
+    for (const p of pills) {
+      m.set(p.maestroId, p.maestroCodigo ? `${p.maestroCodigo} · ${p.maestroNombre}` : p.maestroNombre)
+    }
     return [...m.entries()].map(([value, label]) => ({ value, label }))
   }, [pills])
 
