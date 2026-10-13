@@ -183,12 +183,21 @@ function TareasStaffPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [revisarId, setRevisarId] = useState<string | null>(revisarFromSearch ?? null)
   const [asigId, setAsigId] = useState(() => readLastAsignacionId() ?? '')
+  const [ctx, setCtx] = useState<{ x: number; y: number; row: Tarea } | null>(null)
 
   useAccionPalette('nuevo-tarea', () => setCreateOpen(true))
 
   useEffect(() => {
     if (revisarFromSearch) setRevisarId(revisarFromSearch)
   }, [revisarFromSearch])
+
+  const closeCtx = useCallback(() => setCtx(null), [])
+  useEffect(() => {
+    if (!ctx) return
+    const h = () => closeCtx()
+    window.addEventListener('click', h)
+    return () => window.removeEventListener('click', h)
+  }, [ctx, closeCtx])
 
   const asigEffective =
     asigId && materias.some((m) => m.asignacion_docente_id === asigId)
@@ -289,8 +298,30 @@ function TareasStaffPage() {
           canAdd={can('tareas:post')}
           addLabel="Nueva tarea"
           onAdd={() => setCreateOpen(true)}
+          onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
+          onRowDoubleClick={(row) => setRevisarId(row.id)}
         />
       )}
+
+      {ctx ? (
+        <div
+          className="ctx-menu"
+          style={{ left: ctx.x, top: ctx.y }}
+          data-testid="tareas-staff-ctx-menu"
+        >
+          <button
+            type="button"
+            className="ctx-menu__item"
+            data-testid="tareas-staff-ctx-ver"
+            onClick={() => {
+              setRevisarId(ctx.row.id)
+              closeCtx()
+            }}
+          >
+            Ver
+          </button>
+        </div>
+      ) : null}
 
       {createOpen ? (
         <TareaCreateModal

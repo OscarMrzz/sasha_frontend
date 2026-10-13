@@ -42,4 +42,21 @@ test.describe('matricula wizard @critical', () => {
     const option = page.getByRole('button', { name: /^Maní$/ }).or(page.getByRole('button', { name: /Usar «Maní»/ }))
     await expect(option.first()).toBeVisible({ timeout: 8_000 })
   })
+
+  test('admin edita una matrícula desde el clic derecho', async ({ page }) => {
+    await loginAs(page)
+    await page.goto('/matricula')
+    await expect(page.getByRole('heading', { name: 'Matrícula' })).toBeVisible({ timeout: 15_000 })
+
+    const row = page.locator('table.data-table tbody tr').first()
+    await expect(row).toBeVisible()
+    await row.click({ button: 'right' })
+    await page.getByTestId('matricula-ctx-editar').click()
+
+    await expect(page.getByRole('heading', { name: 'Editar matrícula' })).toBeVisible()
+    await expect(page.getByTestId('matricula-edit-seccion')).toBeVisible()
+    await expect(page.getByTestId('matricula-edit-save')).toBeVisible()
+    await page.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(page.getByRole('heading', { name: 'Editar matrícula' })).toHaveCount(0)
+  })
 })

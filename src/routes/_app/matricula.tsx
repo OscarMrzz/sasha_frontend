@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { MatriculaWizard } from '#/components/matricula/MatriculaWizard'
+import { MatriculaEditModal } from '#/components/matricula/MatriculaEditModal'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
@@ -23,9 +24,8 @@ import {
   getSugerencia,
   listMatriculas,
   reingreso,
-  type Matricula,
-  type SugerenciaResponse,
 } from '#/services/matricula'
+import type { Matricula, SugerenciaResponse } from '#/services/matricula'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/matricula')({ component: MatriculaPage })
@@ -46,6 +46,7 @@ function MatriculaPage() {
   const [reingresoOpen, setReingresoOpen] = useState(false)
   const [confirmSave, setConfirmSave] = useState(false)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Matricula } | null>(null)
+  const [editar, setEditar] = useState<Matricula | null>(null)
 
   useAccionPalette('nuevo-matricula', () => setCreateOpen(true))
 
@@ -159,20 +160,24 @@ function MatriculaPage() {
           status: m.status,
         }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
+        onRowDoubleClick={(row) => setEditar(row)}
       />
 
       {ctx ? (
-        <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }}>
-          <button
-            type="button"
-            className="ctx-menu__item"
-            onClick={() => {
-              toast.info(`Matrícula ${ctx.row.id}`)
-              closeCtx()
-            }}
-          >
-            Ver
-          </button>
+        <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }} data-testid="matricula-ctx">
+          <Can permission="matricula:put">
+            <button
+              type="button"
+              className="ctx-menu__item"
+              data-testid="matricula-ctx-editar"
+              onClick={() => {
+                setEditar(ctx.row)
+                closeCtx()
+              }}
+            >
+              Editar
+            </button>
+          </Can>
         </div>
       ) : null}
 
@@ -295,6 +300,22 @@ function MatriculaPage() {
           />
         </Field>
       </Modal>
+
+      {editar ? (
+        <MatriculaEditModal
+          matricula={editar}
+          periodos={periodos}
+          grados={grados}
+          modalidades={modalidades}
+          secciones={secciones}
+          onClose={() => setEditar(null)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ['matriculas'] })
+            qc.invalidateQueries({ queryKey: ['alumnos'] })
+            qc.invalidateQueries({ queryKey: ['consejeria-alumnos'] })
+          }}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={confirmSave}

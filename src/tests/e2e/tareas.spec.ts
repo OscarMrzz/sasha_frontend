@@ -10,6 +10,30 @@ test.describe('tareas staff @critical', () => {
     await expect(page.getByRole('columnheader', { name: 'Maestro' })).toHaveCount(0)
   })
 
+  test('admin abre la revisión de una tarea con clic derecho o doble clic', async ({ page }) => {
+    await loginAs(page)
+    await page.goto('/tareas')
+    await expect(page.getByRole('columnheader', { name: 'Título' })).toBeVisible({
+      timeout: 15_000,
+    })
+
+    const row = page.locator('table.data-table tbody tr').first()
+    await expect(row).toBeVisible()
+
+    await row.click({ button: 'right' })
+    await expect(page.getByTestId('tareas-staff-ctx-menu')).toBeVisible()
+    await page.getByTestId('tareas-staff-ctx-ver').click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByTestId('tarea-revision-modal')).toBeVisible({
+      timeout: 15_000,
+    })
+    await dialog.getByRole('button', { name: 'Listo' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+
+    await row.dblclick()
+    await expect(dialog.getByTestId('tarea-revision-modal')).toBeVisible({ timeout: 15_000 })
+  })
+
   test('consejeria ve clases con maestro y abre el modal de tareas en cards', async ({ page }) => {
     await loginAs(page, { code: '1002026602', password: 'Admin123!' })
     await page.goto('/tareas')

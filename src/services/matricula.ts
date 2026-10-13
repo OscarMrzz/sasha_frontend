@@ -96,6 +96,17 @@ export async function createMatricula(body: MatriculaCreate) {
   return apiRequest<Matricula>('/matricula/', { method: 'POST', body })
 }
 
+export interface MatriculaUpdate {
+  seccion_id?: string
+  periodo_academico_id?: string
+  es_reingreso?: boolean
+  status?: string
+}
+
+export async function updateMatricula(id: string, body: MatriculaUpdate) {
+  return apiRequest<Matricula>(`/matricula/${id}`, { method: 'PUT', body })
+}
+
 export async function getSugerencia(code: string) {
   const qs = new URLSearchParams({ code })
   return apiRequest<SugerenciaResponse>(`/matricula/sugerencia?${qs}`)
