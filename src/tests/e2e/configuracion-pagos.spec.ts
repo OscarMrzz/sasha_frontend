@@ -42,6 +42,7 @@ test.describe('configuracion-pagos @critical', () => {
     await expect(page.getByTestId('pagos-config-dia-mora')).toHaveCount(0)
     await page.getByTestId('pagos-config-dia-pago').selectOption('12')
     await page.getByTestId(`pagos-config-monto-${GRADO_ID}`).fill('100')
+    await page.getByTestId(`pagos-config-monto-matricula-${GRADO_ID}`).fill('250')
 
     // Dos reglas de mora: los días se numeran solos (1 y 2); solo se rellenan montos.
     await page.getByTestId(`pagos-config-agregar-regla-${GRADO_ID}`).click()
@@ -80,6 +81,7 @@ test.describe('configuracion-pagos @critical', () => {
     await page.getByTestId(`config-pagos-btn-${PERIODO_ID}`).click()
     await expect(page.getByTestId('pagos-config-dia-pago')).toHaveValue('12')
     await expect(page.getByTestId(`pagos-config-monto-${GRADO_ID}`)).toHaveValue('100')
+    await expect(page.getByTestId(`pagos-config-monto-matricula-${GRADO_ID}`)).toHaveValue('250')
     await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-dias`)).toHaveText('1 día o más')
     await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-0-monto`)).toHaveValue('200')
     await expect(page.getByTestId(`pagos-config-regla-${GRADO_ID}-1`)).toHaveCount(0)

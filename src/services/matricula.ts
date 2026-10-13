@@ -10,6 +10,16 @@ export interface MatriculaCreate {
   es_reingreso?: boolean
   tiene_cursos_retrasados?: boolean
   cursos_retrasados?: { curso_id: string; anio_previo: number; anio_actual: number }[]
+  /** Beca del alumno (solo mensualidades): normal | media | completa | especial. */
+  tipo_beca?: string
+  /** Monto por mes, requerido solo cuando `tipo_beca` es `especial`. */
+  monto_especial?: number
+}
+
+/** Montos del grado en un periodo, para mostrar cuánto paga el alumno. */
+export interface CostoGrado {
+  mensualidad: number
+  matricula: number
 }
 
 export interface Matricula {
@@ -94,6 +104,12 @@ export async function listMatriculas() {
 
 export async function createMatricula(body: MatriculaCreate) {
   return apiRequest<Matricula>('/matricula/', { method: 'POST', body })
+}
+
+/** Montos (mensualidad y matrícula) del grado en el periodo. Requiere `matricula:get`. */
+export async function getCostoGrado(periodoId: string, gradoId: string) {
+  const qs = new URLSearchParams({ periodo_id: periodoId, grado_id: gradoId })
+  return apiRequest<CostoGrado>(`/matricula/costo?${qs}`)
 }
 
 export interface MatriculaUpdate {

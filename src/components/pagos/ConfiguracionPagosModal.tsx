@@ -93,6 +93,14 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
       grados: f.grados.map((g) => (g.grado_id === gradoId ? { ...g, monto } : g)),
     }))
 
+  const setGradoMontoMatricula = (gradoId: string, monto_matricula: string) =>
+    setForm((f) => ({
+      ...f,
+      grados: f.grados.map((g) =>
+        g.grado_id === gradoId ? { ...g, monto_matricula } : g,
+      ),
+    }))
+
   const setGradoReglas = (gradoId: string, reglas_mora: ReglaMoraForm[]) =>
     setForm((f) => ({
       ...f,
@@ -190,7 +198,13 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
               </section>
 
               <section className="expediente__seccion">
-                <h3 className="expediente__titulo">Montos por grado y reglas de mora</h3>
+                <h3 className="expediente__titulo">Mensualidad, matrícula y reglas de mora</h3>
+                <p className="texto-muted ficha-form__nota">
+                  Cada grado tiene dos conceptos distintos: la <strong>mensualidad</strong> (pago
+                  mensual, 0 = monto por defecto del sistema) y la <strong>matrícula</strong> (pago
+                  único de ingreso, 0 = monto por defecto del sistema). La beca del alumno, cuando
+                  exista, aplica solo a la mensualidad.
+                </p>
                 <p className="texto-muted ficha-form__nota">
                   Las reglas de mora se numeran solas: la 1.ª fila es «1 día o más», la 2.ª «2 días
                   o más», y así sucesivamente (solo eliges el monto). El recargo es acumulativo: se
@@ -208,18 +222,34 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
                         data-testid={`pagos-config-grado-${grado.grado_id}`}
                       >
                         <h4 className="pagos-config__grado-titulo">{grado.grado_nombre}</h4>
-                        <Field label="Monto a pagar">
-                          <input
-                            type="number"
-                            min={0}
-                            className="field__input"
-                            data-testid={`pagos-config-monto-${grado.grado_id}`}
-                            placeholder="0"
-                            disabled={saving}
-                            value={grado.monto}
-                            onChange={(e) => setGradoMonto(grado.grado_id, e.target.value)}
-                          />
-                        </Field>
+                        <div className="pagos-config__dias">
+                          <Field label="Mensualidad">
+                            <input
+                              type="number"
+                              min={0}
+                              className="field__input"
+                              data-testid={`pagos-config-monto-${grado.grado_id}`}
+                              placeholder="0"
+                              disabled={saving}
+                              value={grado.monto}
+                              onChange={(e) => setGradoMonto(grado.grado_id, e.target.value)}
+                            />
+                          </Field>
+                          <Field label="Matrícula">
+                            <input
+                              type="number"
+                              min={0}
+                              className="field__input"
+                              data-testid={`pagos-config-monto-matricula-${grado.grado_id}`}
+                              placeholder="0"
+                              disabled={saving}
+                              value={grado.monto_matricula}
+                              onChange={(e) =>
+                                setGradoMontoMatricula(grado.grado_id, e.target.value)
+                              }
+                            />
+                          </Field>
+                        </div>
                         <ReglasMoraGrado
                           gradoId={grado.grado_id}
                           value={grado.reglas_mora}

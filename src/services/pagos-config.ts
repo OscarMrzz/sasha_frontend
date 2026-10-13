@@ -12,6 +12,8 @@ export interface ConfigGrado {
   grado_nombre: string
   /** Mensualidad del grado. Default 0. */
   monto: number
+  /** Matrícula del grado (pago único de ingreso). Default 0. */
+  monto_matricula: number
   reglas_mora: ReglaMora[]
 }
 
@@ -31,7 +33,12 @@ export interface ConfiguracionPagosUpdate {
   dia_pago: number
   /** Si `true`, el cambio aplica a las obligaciones ya generadas del periodo. */
   retroactivo: boolean
-  grados: { grado_id: string; monto: number; reglas_mora: ReglaMora[] }[]
+  grados: {
+    grado_id: string
+    monto: number
+    monto_matricula: number
+    reglas_mora: ReglaMora[]
+  }[]
 }
 
 /** Periodo listado en la pantalla de configuración (`GET /pagos/configuracion/periodos`). */

@@ -8,6 +8,7 @@ import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
 import { WizardSteps } from '#/components/ui/WizardSteps'
 import { userMessageFromError } from '#/lib/api'
+import { lempiras } from '#/lib/fechas-padre'
 import { upload, uploadErrorMessage } from '#/services/boveda'
 import { periodoSelectOptions } from '#/helpers/periodos'
 import { generarDocumentosMatricula } from '#/helpers/documentos-matricula'
@@ -30,7 +31,7 @@ import {
   listProfesiones,
 } from '#/services/catalogos'
 import { getInstitucion } from '#/services/carnets'
-import { createMatricula, linkResponsable } from '#/services/matricula'
+import { createMatricula, getCostoGrado, linkResponsable } from '#/services/matricula'
 import { createAlumno, createResponsable, getFicha, getResponsableByCode } from '#/services/personas'
 import type { UserFicha } from '#/services/personas'
 import { createUser } from '#/services/users'
@@ -48,6 +49,16 @@ const SEXO_OPTIONS = [
   { value: 'M', label: 'Masculino', keywords: 'M masculino hombre' },
   { value: 'F', label: 'Femenino', keywords: 'F femenino mujer' },
   { value: 'Otro', label: 'Otro', keywords: 'otro' },
+]
+
+type TipoBeca = 'normal' | 'media' | 'completa' | 'especial'
+
+/** Beca del alumno: aplica solo a las mensualidades, no a la cuota de matrícula. */
+const BECA_OPTIONS: { value: TipoBeca; label: string; desc: string }[] = [
+  { value: 'normal', label: 'Normal', desc: 'Paga la mensualidad completa del grado' },
+  { value: 'media', label: 'Media beca', desc: 'Paga el 50% de la mensualidad' },
+  { value: 'completa', label: 'Beca completa', desc: 'No paga mensualidades (L 0)' },
+  { value: 'especial', label: 'Beca especial', desc: 'Paga el monto que indiques por mes' },
 ]
 
 type BoolChoice = boolean | null
@@ -287,6 +298,9 @@ export function MatriculaWizard({
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
   const [generandoDocs, setGenerandoDocs] = useState(false)
   const [zipDescargado, setZipDescargado] = useState(false)
+  const [tipoBeca, setTipoBeca] = useState<TipoBeca>('normal')
+  const [montoEspecial, setMontoEspecial] = useState('')
+  const [becaOpen, setBecaOpen] = useState(false)
 
   const { data: alergiasCat = [] } = useQuery({
     queryKey: ['catalogo-alergias'],
@@ -307,6 +321,14 @@ export function MatriculaWizard({
     queryKey: ['catalogo-profesiones'],
     queryFn: listProfesiones,
     enabled: open,
+  })
+
+  // Costo del grado en el periodo: lo que paga el alumno sin beca. Se consulta solo
+  // cuando el paso académico ya tiene periodo y grado elegidos y el wizard está abierto.
+  const { data: costoGrado } = useQuery({
+    queryKey: ['matricula-costo', academico.periodo_academico_id, academico.grado_id],
+    queryFn: () => getCostoGrado(academico.periodo_academico_id, academico.grado_id),
+    enabled: open && Boolean(academico.periodo_academico_id) && Boolean(academico.grado_id),
   })
 
   const alergiaOptions = useMemo(() => listaOptions(alergiasCat), [alergiasCat])
@@ -394,6 +416,9 @@ export function MatriculaWizard({
     setBuscandoRespId(null)
     setGenerandoDocs(false)
     setZipDescargado(false)
+    setTipoBeca('normal')
+    setMontoEspecial('')
+    setBecaOpen(false)
   }
 
   const requestClose = () => {
@@ -488,8 +513,38 @@ export function MatriculaWizard({
 
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
 
+  const becaOpcion = BECA_OPTIONS.find((o) => o.value === tipoBeca) ?? BECA_OPTIONS[0]
+
+  /** Monto que pagará el alumno por mes según la beca elegida; null si aún falta el dato. */
+  const becaMontoMes = (): number | null => {
+    if (tipoBeca === 'completa') return 0
+    if (tipoBeca === 'especial') {
+      const n = Number(montoEspecial)
+      return montoEspecial.trim() !== '' && Number.isFinite(n) && n >= 0 ? n : null
+    }
+    if (!costoGrado) return null
+    return tipoBeca === 'media' ? costoGrado.mensualidad * 0.5 : costoGrado.mensualidad
+  }
+
+  const becaMonto = becaMontoMes()
+  const becaTexto = `${becaOpcion.label} · ${
+    becaMonto !== null ? `${lempiras(becaMonto)}/mes` : '—'
+  }`
+
+  const validarBeca = (): string | null => {
+    if (tipoBeca !== 'especial') return null
+    const n = Number(montoEspecial)
+    if (montoEspecial.trim() === '' || !Number.isFinite(n) || n < 0) {
+      return 'Indica un monto de beca especial válido (número mayor o igual a 0)'
+    }
+    return null
+  }
+
   const saveMut = useMutation({
     mutationFn: async () => {
+      const becaErr = validarBeca()
+      if (becaErr) throw new Error(becaErr)
+
       let pathImagen: string | undefined
       if (foto) {
         try {
@@ -566,6 +621,8 @@ export function MatriculaWizard({
         periodo_academico_id: academico.periodo_academico_id,
         tiene_cursos_retrasados: Boolean(academico.tiene_cursos_retrasados),
         ...(cursosRetrasados.length ? { cursos_retrasados: cursosRetrasados } : {}),
+        tipo_beca: tipoBeca,
+        ...(tipoBeca === 'especial' ? { monto_especial: Number(montoEspecial) } : {}),
         ...(academico.asignar_seccion_automatica
           ? {
               asignar_seccion_automatica: true,
@@ -762,6 +819,11 @@ export function MatriculaWizard({
                     const err = validateStep(3)
                     if (err) {
                       toast.error(err)
+                      return
+                    }
+                    const becaErr = validarBeca()
+                    if (becaErr) {
+                      toast.error(becaErr)
                       return
                     }
                     setConfirmSave(true)
@@ -1742,6 +1804,10 @@ export function MatriculaWizard({
                 <span className="wizard-summary__label">Mensualidades</span>
                 <span className="wizard-summary__value">Se generan al matricular</span>
               </div>
+              <div className="wizard-summary__row" data-testid="beca-resumen">
+                <span className="wizard-summary__label">Beca</span>
+                <span className="wizard-summary__value">{becaTexto}</span>
+              </div>
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Cursos retrasados</span>
                 <span className="wizard-summary__value">
@@ -1771,7 +1837,87 @@ export function MatriculaWizard({
                 </span>
               </div>
             </div>
+
+            <p className="wizard-pane__title" style={{ marginTop: '1.25rem' }}>
+              Pago / Beca
+            </p>
+            <p className="wizard-pane__hint">La beca aplica solo a las mensualidades del periodo.</p>
+            <div
+              className="wizard-choice-panel"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.75rem',
+                flexWrap: 'wrap',
+              }}
+              data-testid="beca-seccion"
+            >
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 600 }}>{becaOpcion.label}</p>
+                <p className="texto-muted" style={{ margin: '0.15rem 0 0', fontSize: '0.8rem' }}>
+                  {becaOpcion.desc}
+                </p>
+              </div>
+              <span
+                className="wizard-summary__value"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
+                {becaMonto !== null ? `${lempiras(becaMonto)}/mes` : '—'}
+              </span>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                data-testid="beca-btn"
+                onClick={() => setBecaOpen(true)}
+              >
+                Cambiar
+              </button>
+            </div>
           </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={becaOpen}
+        title="Beca del alumno"
+        testId="beca-modal"
+        onClose={() => setBecaOpen(false)}
+        footer={
+          <button type="button" className="btn btn--primary" onClick={() => setBecaOpen(false)}>
+            Listo
+          </button>
+        }
+      >
+        <p className="wizard-pane__hint">
+          La beca aplica solo a las mensualidades. La cuota de matrícula siempre es la del grado.
+        </p>
+        <div className="wizard-choice" role="group" aria-label="Tipo de beca">
+          {BECA_OPTIONS.map((op) => (
+            <button
+              key={op.value}
+              type="button"
+              data-testid={`beca-op-${op.value}`}
+              className={`wizard-choice__btn${tipoBeca === op.value ? ' wizard-choice__btn--on' : ''}`}
+              onClick={() => setTipoBeca(op.value)}
+            >
+              {op.label}
+            </button>
+          ))}
+        </div>
+        {tipoBeca === 'especial' ? (
+          <Field label="Monto por mes (L)" htmlFor="wiz-beca-monto">
+            <input
+              id="wiz-beca-monto"
+              type="number"
+              min={0}
+              step="0.01"
+              className="field__input"
+              data-testid="beca-monto-especial"
+              value={montoEspecial}
+              onChange={(e) => setMontoEspecial(e.target.value)}
+            />
+          </Field>
         ) : null}
       </Modal>
 

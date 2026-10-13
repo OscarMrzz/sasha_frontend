@@ -19,7 +19,10 @@ export interface ReglaMoraForm {
 export interface GradoConfigForm {
   grado_id: string
   grado_nombre: string
+  /** Mensualidad (texto editable). */
   monto: string
+  /** Matrícula (texto editable, pago único de ingreso). */
+  monto_matricula: string
   reglas_mora: ReglaMoraForm[]
 }
 
@@ -81,7 +84,10 @@ export function validarConfiguracion(form: ConfiguracionPagosForm): string {
   if (!diaValido(form.dia_pago)) return 'Selecciona un día de pago entre 1 y 31.'
   for (const grado of form.grados) {
     if (!montoValido(grado.monto)) {
-      return `El monto de ${grado.grado_nombre} no puede ser negativo.`
+      return `La mensualidad de ${grado.grado_nombre} no puede ser negativa.`
+    }
+    if (!montoValido(grado.monto_matricula)) {
+      return `La matrícula de ${grado.grado_nombre} no puede ser negativa.`
     }
     for (const regla of grado.reglas_mora) {
       if (!montoValido(regla.monto)) {
@@ -122,6 +128,7 @@ export function configToForm(
       grado_id: grado.id,
       grado_nombre: c?.grado_nombre ?? grado.nombre,
       monto: c ? montoTexto(c.monto) : '0',
+      monto_matricula: c ? montoTexto(c.monto_matricula) : '0',
       reglas_mora: reglasToForm(c?.reglas_mora ?? []),
     }
   })
@@ -132,6 +139,7 @@ export function configToForm(
       grado_id: c.grado_id,
       grado_nombre: c.grado_nombre,
       monto: montoTexto(c.monto),
+      monto_matricula: montoTexto(c.monto_matricula),
       reglas_mora: reglasToForm(c.reglas_mora),
     })
   }
@@ -152,6 +160,7 @@ export function formToPayload(
     grados: form.grados.map((grado) => ({
       grado_id: grado.grado_id,
       monto: montoSeguro(grado.monto),
+      monto_matricula: montoSeguro(grado.monto_matricula),
       // Los días se derivan de la posición de la fila (1, 2, 3, …).
       reglas_mora: grado.reglas_mora.map((regla, i) => ({
         dias: i + 1,
