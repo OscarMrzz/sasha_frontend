@@ -1,22 +1,33 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Can } from '#/components/gates/Can'
+import { Can, useCan } from '#/components/gates/Can'
 import { PhotoCapture } from '#/components/matricula/PhotoCapture'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
+import { roleLabel } from '#/helpers/permissions'
+import { periodoSelectOptions } from '#/helpers/periodos'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { userMessageFromError } from '#/lib/api'
 import { upload, uploadErrorMessage } from '#/services/boveda'
-import { listGrados, type Grado } from '#/services/catalogos'
+import {
+  listGrados,
+  type Grado,
+  type Modalidad,
+  type Periodo,
+  type Seccion,
+} from '#/services/catalogos'
+import { updateMatricula, type Matricula } from '#/services/matricula'
 import {
   getFicha,
   updatePersona,
   type PersonaUpdate,
   type UserFicha,
 } from '#/services/personas'
+import { listRoles } from '#/services/roles'
+import { updateRoles } from '#/services/users'
 
 const SEXO_OPTIONS = [
   { value: 'M', label: 'Masculino', keywords: 'M masculino hombre' },
@@ -30,9 +41,16 @@ const TIPO_DOC_OPTIONS = [
   { value: 'PAS', label: 'Pasaporte', keywords: 'pasaporte' },
 ]
 
+const STATUS_OPTIONS = [
+  { value: 'ACTIVE', label: 'Activa' },
+  { value: 'INACTIVE', label: 'Inactiva' },
+]
+
 type GradoRow = { id: string; nombre: string; anio: string }
 
 type FormState = {
+  // rol del usuario (uno solo por usuario, DEC-015)
+  rol: string
   primer_nombre: string
   segundo_nombre: string
   primer_apellido: string
@@ -62,6 +80,12 @@ function joinName(p?: UserFicha['perfil']) {
     .join(' ')
 }
 
+/** Primer (único) rol de la ficha; '' si no viene ninguno (un usuario = un rol, DEC-015). */
+function rolPrincipal(ficha: UserFicha | undefined): string {
+  const roles = ficha?.user.roles
+  return roles?.length ? roles[0] : ''
+}
+
 function idPorNombre(grados: Grado[], nombre: string): string {
   const n = nombre.trim().toLowerCase()
   if (!n) return ''
@@ -77,6 +101,7 @@ function buildSeed(ficha: UserFicha, grados: Grado[]): FormState {
   const alumno = ficha.alumno
   const responsable = ficha.responsable
   return {
+    rol: rolPrincipal(ficha),
     primer_nombre: p?.primer_nombre ?? '',
     segundo_nombre: p?.segundo_nombre ?? '',
     primer_apellido: p?.primer_apellido ?? '',
@@ -108,16 +133,42 @@ type Props = {
   code: string
   onClose: () => void
   onSaved?: () => void
+  /** Matrícula a editar en el mismo modal (opcional, para el uso combinado). */
+  matricula?: Matricula
+  /** Catálogos para la sección de matrícula (solo se usan si `matricula` viene). */
+  periodos?: Periodo[]
+  grados?: Grado[]
+  modalidades?: Modalidad[]
+  secciones?: Seccion[]
 }
 
-/** Edita la ficha completa de una persona (perfil + datos del rol + foto), sin contraseña ni roles. */
-export function PersonaEditModal({ code, onClose, onSaved }: Props) {
+/** Edita la ficha completa de una persona (perfil + datos del rol + foto + rol del usuario). */
+export function PersonaEditModal({
+  code,
+  onClose,
+  onSaved,
+  matricula,
+  periodos,
+  grados: gradosProp,
+  modalidades,
+  secciones,
+}: Props) {
+  const { can, roles } = useCan()
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['persona-ficha', code],
     queryFn: () => getFicha(code),
     enabled: Boolean(code),
   })
-  const { data: grados = [] } = useQuery({ queryKey: ['grados'], queryFn: listGrados })
+  const { data: gradosQuery = [] } = useQuery({ queryKey: ['grados'], queryFn: listGrados })
+  // Reutiliza el catálogo que ya trae la página cuando se pasa como prop.
+  const grados = gradosProp && gradosProp.length > 0 ? gradosProp : gradosQuery
+  // Solo admin/admin_temporal tienen `users:put`; el resto no debe pedir la lista de roles.
+  const puedeEditarRol = can('users:put')
+  const { data: rolesData = [] } = useQuery({
+    queryKey: ['roles'],
+    queryFn: listRoles,
+    enabled: puedeEditarRol,
+  })
 
   const [form, setForm] = useState<FormState | null>(null)
   const [foto, setFoto] = useState<File | null>(null)
@@ -125,6 +176,21 @@ export function PersonaEditModal({ code, onClose, onSaved }: Props) {
   const [confirmSave, setConfirmSave] = useState(false)
 
   const fotoActual = useBovedaImage(data?.perfil?.path_imagen)
+
+  // Estado de la sección «Matrícula» (solo se usa cuando llega el prop `matricula`).
+  const seccionesMat = useMemo(() => secciones ?? [], [secciones])
+  const [matGradoId, setMatGradoId] = useState(() =>
+    matricula ? (seccionesMat.find((s) => s.id === matricula.seccion_id)?.grado_id ?? '') : '',
+  )
+  const [matSeccionId, setMatSeccionId] = useState(matricula?.seccion_id ?? '')
+  const [matPeriodoId, setMatPeriodoId] = useState(matricula?.periodo_academico_id ?? '')
+  const [matEsReingreso, setMatEsReingreso] = useState(matricula?.es_reingreso ?? false)
+  const [matStatus, setMatStatus] = useState(matricula?.status ?? 'ACTIVE')
+
+  const seccionesFiltradas = useMemo(
+    () => (matGradoId ? seccionesMat.filter((s) => s.grado_id === matGradoId) : seccionesMat),
+    [seccionesMat, matGradoId],
+  )
 
   useEffect(() => {
     if (!data || form) return
@@ -136,6 +202,19 @@ export function PersonaEditModal({ code, onClose, onSaved }: Props) {
   const esAlumno = Boolean(data?.alumno)
   const esResponsable = Boolean(data?.responsable)
 
+  // Rol activo de la sesión (un usuario = un rol; se envía en X-Active-Role).
+  const rolActivo = roles[0]
+  const objetivoEsAdmin = (data?.user.roles ?? []).includes('admin')
+  // Un admin solo puede ser modificado por otro admin (tampoco admin_temporal).
+  const soloLectura = Boolean(data && objetivoEsAdmin && rolActivo !== 'admin')
+
+  const rolActual = rolPrincipal(data)
+  const rolOptions = useMemo(() => {
+    return rolesData
+      .filter((r) => r.status === 'ACTIVE' || r.name === rolActual)
+      .map((r) => ({ value: r.name, label: roleLabel(r.name), keywords: r.name }))
+  }, [rolesData, rolActual])
+
   const update = (patch: Partial<FormState>) => {
     setForm((f) => (f ? { ...f, ...patch } : f))
     setDirty(true)
@@ -146,7 +225,9 @@ export function PersonaEditModal({ code, onClose, onSaved }: Props) {
     [grados],
   )
 
-  const valid = Boolean(form && form.primer_nombre.trim() && form.primer_apellido.trim())
+  const valid = Boolean(
+    form && form.primer_nombre.trim() && form.primer_apellido.trim() && (!matricula || matSeccionId),
+  )
 
   const buildPayload = (): PersonaUpdate | null => {
     if (!form) return null
@@ -206,10 +287,25 @@ export function PersonaEditModal({ code, onClose, onSaved }: Props) {
           throw new Error(uploadErrorMessage(e, 'perfil_foto'))
         }
       }
-      return updatePersona(code, payload)
+      // 1) datos de la persona; 2) rol solo si cambió (un usuario = un rol, DEC-015).
+      await updatePersona(code, payload)
+      const nuevoRol = form?.rol ?? ''
+      const original = rolPrincipal(data)
+      if (puedeEditarRol && nuevoRol && nuevoRol !== original) {
+        await updateRoles(code, [nuevoRol])
+      }
+      // 3) matrícula, solo en el uso combinado.
+      if (matricula) {
+        await updateMatricula(matricula.id, {
+          seccion_id: matSeccionId,
+          periodo_academico_id: matPeriodoId,
+          es_reingreso: matEsReingreso,
+          status: matStatus,
+        })
+      }
     },
     onSuccess: () => {
-      toast.success('Datos de la persona actualizados')
+      toast.success(matricula ? 'Alumno actualizado' : 'Datos de la persona actualizados')
       setConfirmSave(false)
       onSaved?.()
       onClose()
@@ -226,7 +322,7 @@ export function PersonaEditModal({ code, onClose, onSaved }: Props) {
     <Modal
       open
       wide
-      title="Editar datos de la persona"
+      title={matricula ? 'Editar alumno' : 'Editar datos de la persona'}
       testId="persona-edit-modal"
       onClose={onClose}
       footer={
@@ -234,17 +330,19 @@ export function PersonaEditModal({ code, onClose, onSaved }: Props) {
           <button type="button" className="btn btn--ghost" onClick={onClose}>
             Cancelar
           </button>
-          <Can permission="personas:put">
-            <button
-              type="button"
-              className="btn btn--primary"
-              data-testid="persona-edit-save"
-              disabled={!dirty || !valid || saveMut.isPending}
-              onClick={() => setConfirmSave(true)}
-            >
-              {saveMut.isPending ? 'Guardando…' : 'Guardar'}
-            </button>
-          </Can>
+          {soloLectura ? null : (
+            <Can permission="personas:put">
+              <button
+                type="button"
+                className="btn btn--primary"
+                data-testid="persona-edit-save"
+                disabled={!dirty || !valid || saveMut.isPending}
+                onClick={() => setConfirmSave(true)}
+              >
+                {saveMut.isPending ? 'Guardando…' : 'Guardar'}
+              </button>
+            </Can>
+          )}
         </>
       }
     >
@@ -256,7 +354,44 @@ export function PersonaEditModal({ code, onClose, onSaved }: Props) {
       ) : null}
 
       {form ? (
-        <>
+        <fieldset
+          disabled={soloLectura}
+          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        >
+          {soloLectura ? (
+            <p className="empty-state" role="alert" data-testid="persona-edit-readonly-note">
+              El administrador solo puede ser modificado por un administrador
+            </p>
+          ) : null}
+
+          <p className="wizard-pane__title">Foto de perfil</p>
+          {fotoActual ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <img
+                src={fotoActual}
+                alt="Foto actual"
+                style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8 }}
+              />
+              <span className="texto-muted" style={{ fontSize: '0.8rem' }}>
+                Foto actual
+              </span>
+            </div>
+          ) : (
+            <p className="texto-muted" style={{ fontSize: '0.8rem', marginTop: 0 }}>
+              Sin foto actual.
+            </p>
+          )}
+          <PhotoCapture
+            file={foto}
+            onChange={(f) => {
+              setFoto(f)
+              setDirty(true)
+            }}
+          />
+
+          <p className="wizard-pane__title" style={{ marginTop: '1.25rem' }}>
+            Datos personales
+          </p>
           <div className="wizard-grid">
             <Field label="Primer nombre" htmlFor="pe-pn">
               <input
@@ -329,32 +464,19 @@ export function PersonaEditModal({ code, onClose, onSaved }: Props) {
             </Field>
           </div>
 
-          <p className="wizard-pane__title" style={{ marginTop: '1.25rem' }}>
-            Foto de perfil
-          </p>
-          {fotoActual ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <img
-                src={fotoActual}
-                alt="Foto actual"
-                style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8 }}
-              />
-              <span className="texto-muted" style={{ fontSize: '0.8rem' }}>
-                Foto actual
-              </span>
+          <Can permission="users:put">
+            <div style={{ marginTop: '1.25rem', maxWidth: 320 }}>
+              <Field label="Rol">
+                <Combobox
+                  value={form.rol}
+                  onChange={(v) => update({ rol: v })}
+                  options={rolOptions}
+                  placeholder="Buscar rol…"
+                  data-testid="persona-edit-rol"
+                />
+              </Field>
             </div>
-          ) : (
-            <p className="texto-muted" style={{ fontSize: '0.8rem', marginTop: 0 }}>
-              Sin foto actual.
-            </p>
-          )}
-          <PhotoCapture
-            file={foto}
-            onChange={(f) => {
-              setFoto(f)
-              setDirty(true)
-            }}
-          />
+          </Can>
 
           {esAlumno ? (
             <>
@@ -580,7 +702,91 @@ export function PersonaEditModal({ code, onClose, onSaved }: Props) {
               </Field>
             </>
           ) : null}
-        </>
+
+          {matricula ? (
+            <>
+              <p className="wizard-pane__title" style={{ marginTop: '1.25rem' }}>
+                Matrícula
+              </p>
+              <div className="wizard-grid">
+                <Field label="Grado">
+                  <Combobox
+                    value={matGradoId}
+                    onChange={(v) => {
+                      setMatGradoId(v)
+                      const actual = seccionesMat.find((s) => s.id === matSeccionId)
+                      if (actual && actual.grado_id !== v) setMatSeccionId('')
+                      setDirty(true)
+                    }}
+                    options={grados.map((g) => ({
+                      value: g.id,
+                      label: g.nombre,
+                      keywords: g.codigo,
+                    }))}
+                    placeholder="Buscar grado…"
+                    data-testid="matricula-edit-grado"
+                  />
+                </Field>
+                <Field label="Sección">
+                  <Combobox
+                    value={matSeccionId}
+                    onChange={(v) => {
+                      setMatSeccionId(v)
+                      setDirty(true)
+                    }}
+                    options={seccionesFiltradas.map((s) => {
+                      const g = grados.find((x) => x.id === s.grado_id)
+                      const m = modalidades?.find((x) => x.id === s.modalidad_id)
+                      return {
+                        value: s.id,
+                        label: [g?.nombre, m?.nombre, s.nombre].filter(Boolean).join(' · '),
+                        keywords: s.codigo,
+                      }
+                    })}
+                    placeholder="Buscar sección…"
+                    data-testid="matricula-edit-seccion"
+                  />
+                </Field>
+                <Field label="Periodo académico">
+                  <Combobox
+                    value={matPeriodoId}
+                    onChange={(v) => {
+                      setMatPeriodoId(v)
+                      setDirty(true)
+                    }}
+                    options={periodoSelectOptions(periodos ?? [])}
+                    placeholder="Buscar periodo…"
+                    data-testid="matricula-edit-periodo"
+                  />
+                </Field>
+                <Field label="Estado">
+                  <Combobox
+                    value={matStatus}
+                    onChange={(v) => {
+                      setMatStatus(v)
+                      setDirty(true)
+                    }}
+                    options={STATUS_OPTIONS}
+                    placeholder="Buscar estado…"
+                    data-testid="matricula-edit-status"
+                  />
+                </Field>
+              </div>
+              <label style={{ fontSize: '0.85rem', display: 'block', margin: '0.25rem 0 1rem' }}>
+                <input
+                  type="checkbox"
+                  checked={matEsReingreso}
+                  onChange={(e) => {
+                    setMatEsReingreso(e.target.checked)
+                    setDirty(true)
+                  }}
+                  data-testid="matricula-edit-reingreso"
+                />{' '}
+                El alumno es un reingreso
+              </label>
+            </>
+          ) : null}
+        </fieldset>
       ) : null}
 
       <ConfirmDialog

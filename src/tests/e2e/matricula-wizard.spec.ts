@@ -108,13 +108,13 @@ test.describe('matricula wizard @critical', () => {
     const row = page.locator('table.data-table tbody tr').first()
     await expect(row).toBeVisible()
     await row.click({ button: 'right' })
-    await page.getByTestId('matricula-ctx-editar').click()
+    await page.getByTestId('ctx-editar').click()
 
-    await expect(page.getByRole('heading', { name: 'Editar matrícula' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Editar alumno' })).toBeVisible()
     await expect(page.getByTestId('matricula-edit-seccion')).toBeVisible()
-    await expect(page.getByTestId('matricula-edit-save')).toBeVisible()
+    await expect(page.getByTestId('persona-edit-save')).toBeVisible()
     await page.getByRole('button', { name: 'Cancelar' }).click()
-    await expect(page.getByRole('heading', { name: 'Editar matrícula' })).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Editar alumno' })).toHaveCount(0)
   })
 
   test('último paso: elige la beca y se refleja en el resumen', async ({ page }) => {

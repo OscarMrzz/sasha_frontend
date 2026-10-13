@@ -30,6 +30,7 @@ export interface Matricula {
   es_reingreso: boolean
   status: string
   alumno_code?: string
+  alumno_username?: string
   grado_id?: string
   grado_nombre?: string
   grado_orden?: number

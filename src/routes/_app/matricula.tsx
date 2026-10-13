@@ -4,7 +4,6 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { MatriculaWizard } from '#/components/matricula/MatriculaWizard'
-import { MatriculaEditModal } from '#/components/matricula/MatriculaEditModal'
 import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
 import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
@@ -49,9 +48,8 @@ function MatriculaPage() {
   const [reingresoOpen, setReingresoOpen] = useState(false)
   const [confirmSave, setConfirmSave] = useState(false)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Matricula } | null>(null)
-  const [editar, setEditar] = useState<Matricula | null>(null)
+  const [editRow, setEditRow] = useState<Matricula | null>(null)
   const [verPersona, setVerPersona] = useState<string | null>(null)
-  const [editarPersona, setEditarPersona] = useState<string | null>(null)
   const [confirmDeletePersona, setConfirmDeletePersona] = useState<Matricula | null>(null)
 
   useAccionPalette('nuevo-matricula', () => setCreateOpen(true))
@@ -109,37 +107,45 @@ function MatriculaPage() {
     }
   }
 
+  const seccionNombre = useCallback(
+    (m: Matricula) => secciones.find((s) => s.id === m.seccion_id)?.nombre ?? '—',
+    [secciones],
+  )
+  const jornadaNombre = useCallback(
+    (m: Matricula) => {
+      const s = secciones.find((x) => x.id === m.seccion_id)
+      if (!s) return '—'
+      return modalidades.find((x) => x.id === s.modalidad_id)?.nombre ?? '—'
+    },
+    [secciones, modalidades],
+  )
+
   const columns = useMemo(
     () => [
       col.accessor('alumno_code', {
-        header: 'Alumno',
+        header: 'Código',
         cell: (i) => i.getValue() ?? i.row.original.alumno_id,
       }),
+      col.accessor('alumno_username', { header: 'Usuario', cell: (i) => i.getValue() ?? '—' }),
       col.accessor('grado_nombre', { header: 'Grado', cell: (i) => i.getValue() ?? '—' }),
-      col.accessor('seccion_id', {
-        header: 'Sección',
-        cell: (i) => secciones.find((s) => s.id === i.getValue())?.nombre ?? i.getValue(),
+      col.accessor('seccion_id', { header: 'Sección', cell: (i) => seccionNombre(i.row.original) }),
+      col.display({
+        id: 'jornada',
+        header: 'Jornada',
+        cell: (i) => jornadaNombre(i.row.original),
       }),
-      col.accessor('es_reingreso', {
-        header: 'Reingreso',
-        cell: (i) => (i.getValue() ? 'Sí' : 'No'),
-      }),
-      col.accessor('status', { header: 'Estado', cell: (i) => <span className="badge">{i.getValue()}</span> }),
     ],
-    [secciones],
+    [seccionNombre, jornadaNombre],
   )
 
   const tableFilters = useMemo(
     () => [
       { id: 'grado_nombre', label: 'Grado', getValue: (r: Matricula) => r.grado_nombre ?? '' },
+      { id: 'seccion', label: 'Sección', getValue: (r: Matricula) => seccionNombre(r) },
+      { id: 'jornada', label: 'Jornada', getValue: (r: Matricula) => jornadaNombre(r) },
       { id: 'status', label: 'Estado', getValue: (r: Matricula) => r.status },
-      {
-        id: 'es_reingreso',
-        label: 'Reingreso',
-        getValue: (r: Matricula) => (r.es_reingreso ? 'Sí' : 'No'),
-      },
     ],
-    [],
+    [seccionNombre, jornadaNombre],
   )
 
   if (isLoading) return <div className="empty-state">Cargando matrículas…</div>
@@ -171,13 +177,17 @@ function MatriculaPage() {
         }
         exportFilename="matriculas"
         exportRows={data.map((m) => ({
-          alumno: m.alumno_code ?? m.alumno_id,
-          grado: m.grado_nombre,
-          reingreso: m.es_reingreso,
-          status: m.status,
+          codigo: m.alumno_code ?? m.alumno_id,
+          usuario: m.alumno_username ?? '',
+          grado: m.grado_nombre ?? '',
+          seccion: seccionNombre(m),
+          jornada: jornadaNombre(m),
+          estado: m.status,
         }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
-        onRowDoubleClick={(row) => setEditar(row)}
+        onRowDoubleClick={(row) => {
+          if (row.alumno_code) setEditRow(row)
+        }}
       />
 
       {ctx ? (
@@ -199,32 +209,21 @@ function MatriculaPage() {
           ) : null}
           {ctx.row.alumno_code ? (
             <Can permission="personas:put">
-              <button
-                type="button"
-                className="ctx-menu__item"
-                data-testid="ctx-editar"
-                onClick={() => {
-                  setEditarPersona(ctx.row.alumno_code ?? null)
-                  closeCtx()
-                }}
-              >
-                Editar datos del alumno
-              </button>
+              <Can permission="matricula:put">
+                <button
+                  type="button"
+                  className="ctx-menu__item"
+                  data-testid="ctx-editar"
+                  onClick={() => {
+                    setEditRow(ctx.row)
+                    closeCtx()
+                  }}
+                >
+                  Editar
+                </button>
+              </Can>
             </Can>
           ) : null}
-          <Can permission="matricula:put">
-            <button
-              type="button"
-              className="ctx-menu__item"
-              data-testid="matricula-ctx-editar"
-              onClick={() => {
-                setEditar(ctx.row)
-                closeCtx()
-              }}
-            >
-              Editar matrícula
-            </button>
-          </Can>
           {ctx.row.alumno_code ? (
             <Can permission="personas:delete">
               <button
@@ -363,32 +362,22 @@ function MatriculaPage() {
         </Field>
       </Modal>
 
-      {editar ? (
-        <MatriculaEditModal
-          matricula={editar}
+      <UserFichaModal code={verPersona} onClose={() => setVerPersona(null)} />
+
+      {editRow && editRow.alumno_code ? (
+        <PersonaEditModal
+          code={editRow.alumno_code}
+          matricula={editRow}
           periodos={periodos}
           grados={grados}
           modalidades={modalidades}
           secciones={secciones}
-          onClose={() => setEditar(null)}
+          onClose={() => setEditRow(null)}
           onSaved={() => {
             qc.invalidateQueries({ queryKey: ['matriculas'] })
             qc.invalidateQueries({ queryKey: ['alumnos'] })
             qc.invalidateQueries({ queryKey: ['consejeria-alumnos'] })
-          }}
-        />
-      ) : null}
-
-      <UserFichaModal code={verPersona} onClose={() => setVerPersona(null)} />
-
-      {editarPersona ? (
-        <PersonaEditModal
-          code={editarPersona}
-          onClose={() => setEditarPersona(null)}
-          onSaved={() => {
-            qc.invalidateQueries({ queryKey: ['matriculas'] })
-            qc.invalidateQueries({ queryKey: ['alumnos'] })
-            qc.invalidateQueries({ queryKey: ['persona-ficha', editarPersona] })
+            qc.invalidateQueries({ queryKey: ['persona-ficha', editRow.alumno_code] })
           }}
         />
       ) : null}
