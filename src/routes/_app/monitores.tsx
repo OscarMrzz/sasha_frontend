@@ -28,6 +28,13 @@ function nowParts() {
   }
 }
 
+/** «YYYY-MM-DD» → «DD/MM/YYYY» (sin dependencias). */
+function fechaCorta(fecha: string) {
+  const [y, m, d] = fecha.split('-')
+  if (!y || !m || !d) return fecha
+  return `${d}/${m}/${y}`
+}
+
 function labelCumplimiento(v: string) {
   if (v === 'finalizado') return 'Finalizado'
   if (v === 'iniciado') return 'Iniciado'
@@ -213,14 +220,28 @@ function MonitorCard({ clase }: { clase: MonitorClase }) {
 }
 
 function MonitoresPage() {
-  const clock = useMemo(() => nowParts(), [])
   const [q, setQ] = useState('')
+  // null = «ahora» (reloj); si no, el bloque concreto que se está viendo.
+  const [momento, setMomento] = useState<{ fecha: string; hora: string } | null>(null)
+  const esAhora = momento === null
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['monitor', clock.fecha],
-    queryFn: () => getMonitor({ fecha: clock.fecha, hora: clock.hora }),
-    refetchInterval: 60_000,
+    queryKey: ['monitor', momento?.fecha ?? 'ahora', momento?.hora ?? ''],
+    queryFn: () => getMonitor(momento ?? nowParts()),
+    // Solo refresca en vivo mientras se ve «ahora»; al navegar a un bloque
+    // pasado/futuro la vista queda fija.
+    refetchInterval: esAhora ? 60_000 : false,
   })
+
+  const irAnterior = () => {
+    if (!data?.anterior) return
+    setMomento({ fecha: data.anterior.fecha, hora: data.anterior.hora_inicio })
+  }
+  const irAhora = () => setMomento(null)
+  const irSiguiente = () => {
+    if (!data?.siguiente) return
+    setMomento({ fecha: data.siguiente.fecha, hora: data.siguiente.hora_inicio })
+  }
 
   const clases = useMemo(
     () => (data?.clases ?? []).filter((c) => matchClase(c, q.trim())),
@@ -243,7 +264,7 @@ function MonitoresPage() {
       <div
         style={{
           display: 'flex',
-          alignItems: 'baseline',
+          alignItems: 'center',
           gap: '0.75rem',
           flexWrap: 'wrap',
           marginBottom: '0.75rem',
@@ -255,6 +276,52 @@ function MonitoresPage() {
         {bloqueLabel ? (
           <span className="badge" data-testid="monitor-bloque">
             {bloqueLabel}
+          </span>
+        ) : null}
+
+        <div
+          role="group"
+          aria-label="Navegar entre bloques de clase"
+          data-testid="monitor-nav"
+          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}
+        >
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            data-testid="monitor-nav-anterior"
+            onClick={irAnterior}
+            disabled={!data?.anterior}
+          >
+            Anterior
+          </button>
+          <button
+            type="button"
+            className={`btn btn--sm ${esAhora ? 'btn--primary' : 'btn--ghost'}`}
+            data-testid="monitor-nav-ahora"
+            aria-pressed={esAhora}
+            onClick={irAhora}
+          >
+            Ahora
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            data-testid="monitor-nav-siguiente"
+            onClick={irSiguiente}
+            disabled={!data?.siguiente}
+          >
+            Siguiente
+          </button>
+        </div>
+
+        {data ? (
+          <span
+            className="texto-muted"
+            data-testid="monitor-consulta"
+            style={{ fontSize: '0.8rem' }}
+          >
+            {esAhora ? 'Ahora' : 'Viendo'} · {fechaCorta(data.consulta.fecha)} ·{' '}
+            {data.consulta.hora}
           </span>
         ) : null}
       </div>

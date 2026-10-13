@@ -5,6 +5,13 @@ export interface MonitorBloque {
   hora_fin: string
 }
 
+/** Un bloque del horario junto con la fecha concreta (YYYY-MM-DD) en que ocurre. */
+export interface MonitorBloqueFecha {
+  fecha: string
+  hora_inicio: string
+  hora_fin: string
+}
+
 export interface MonitorPlanItem {
   id: string
   titulo: string
@@ -63,6 +70,8 @@ export interface MonitorRespuesta {
   estado: 'en_clase' | 'recreo' | 'sin_clase'
   bloque?: MonitorBloque
   proxima?: MonitorBloque
+  anterior?: MonitorBloqueFecha
+  siguiente?: MonitorBloqueFecha
   clases: MonitorClase[]
 }
 
