@@ -9,7 +9,7 @@ const PEDRO = '1002026501'
 test.describe('consejería: alumnos, maestros, horarios y matrícula', () => {
   test('alumnos: Ver abre el expediente con notas, asistencia, horario y responsables', async ({ page }) => {
     await loginAs(page, { code: CONSEJERIA })
-    await page.locator('.sidebar-nav').getByTitle('Alumnos').click()
+    await page.locator('.sidebar-nav').getByRole('link', { name: 'Alumnos', exact: true }).click()
     await expect(page.getByTestId('consejeria-alumnos-page')).toBeVisible({ timeout: 15_000 })
 
     await page.getByTestId('data-table-search').fill(ANA)
@@ -32,7 +32,7 @@ test.describe('consejería: alumnos, maestros, horarios y matrícula', () => {
 
   test('maestros: Ver muestra la ficha con sus cursos', async ({ page }) => {
     await loginAs(page, { code: CONSEJERIA })
-    await page.locator('.sidebar-nav').getByTitle('Maestros').click()
+    await page.locator('.sidebar-nav').getByRole('link', { name: 'Maestros', exact: true }).click()
     await expect(page.getByTestId('consejeria-maestros-page')).toBeVisible({ timeout: 15_000 })
 
     await page.getByTestId('data-table-search').fill(PEDRO)
@@ -48,7 +48,7 @@ test.describe('consejería: alumnos, maestros, horarios y matrícula', () => {
 
   test('horarios: tabla de bloques del horario activo con búsqueda', async ({ page }) => {
     await loginAs(page, { code: CONSEJERIA })
-    await page.locator('.sidebar-nav').getByTitle('Horarios').click()
+    await page.locator('.sidebar-nav').getByRole('link', { name: 'Horarios', exact: true }).click()
     await expect(page.getByTestId('consejeria-horarios-page')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('35 filas')).toBeVisible({ timeout: 15_000 })
 
@@ -60,7 +60,7 @@ test.describe('consejería: alumnos, maestros, horarios y matrícula', () => {
 
   test('matrícula: abre el asistente con los catálogos cargados', async ({ page }) => {
     await loginAs(page, { code: CONSEJERIA })
-    await page.locator('.sidebar-nav').getByTitle('Matrícula').click()
+    await page.locator('.sidebar-nav').getByRole('link', { name: 'Matrícula', exact: true }).click()
     await expect(page).toHaveURL(/matricula/)
     await page.getByRole('button', { name: 'Nueva matrícula' }).click()
     await expect(page.getByRole('heading', { name: 'Nueva matrícula' })).toBeVisible()

@@ -1,12 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { ExpedienteAlumnoModal } from '#/components/consejeria/ExpedienteAlumnoModal'
-import { RequirePermission } from '#/components/gates/Can'
+import { RequirePermission, Can } from '#/components/gates/Can'
+import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
+import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
+import { userMessageFromError } from '#/lib/api'
 import { listAlumnosConsejeria  } from '#/services/consejeria'
 import type {AlumnoConsejeria} from '#/services/consejeria';
+import { deletePersona } from '#/services/personas'
 
 export const Route = createFileRoute('/_app/consejeria/alumnos')({ component: AlumnosConsejeriaPage })
 
@@ -29,9 +34,12 @@ const ESTADO_MATRICULA: Record<string, string> = {
 const estadoMatricula = (r: AlumnoConsejeria) => ESTADO_MATRICULA[r.estado_matricula] ?? r.estado_matricula
 
 function AlumnosConsejeriaPage() {
+  const qc = useQueryClient()
   const { data = [], isLoading } = useQuery({ queryKey: ['consejeria-alumnos'], queryFn: listAlumnosConsejeria })
   const [ctx, setCtx] = useState<{ x: number; y: number; row: AlumnoConsejeria } | null>(null)
   const [ver, setVer] = useState<string | null>(null)
+  const [editar, setEditar] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<AlumnoConsejeria | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -39,6 +47,18 @@ function AlumnosConsejeriaPage() {
     window.addEventListener('click', closeCtx)
     return () => window.removeEventListener('click', closeCtx)
   }, [ctx, closeCtx])
+
+  const deleteMut = useMutation({
+    mutationFn: (code: string) => deletePersona(code),
+    onSuccess: () => {
+      toast.success('Alumno eliminado')
+      setConfirmDelete(null)
+      qc.invalidateQueries({ queryKey: ['consejeria-alumnos'] })
+      qc.invalidateQueries({ queryKey: ['alumnos'] })
+      qc.invalidateQueries({ queryKey: ['matriculas'] })
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
 
   const columns = useMemo(
     () => [
@@ -153,10 +173,57 @@ function AlumnosConsejeriaPage() {
           >
             Ver
           </button>
+          <Can permission="personas:put">
+            <button
+              type="button"
+              className="ctx-menu__item"
+              data-testid="ctx-editar"
+              onClick={() => {
+                setEditar(ctx.row.codigo)
+                closeCtx()
+              }}
+            >
+              Editar
+            </button>
+          </Can>
+          <Can permission="personas:delete">
+            <button
+              type="button"
+              className="ctx-menu__item ctx-menu__item--danger"
+              data-testid="ctx-eliminar"
+              onClick={() => {
+                setConfirmDelete(ctx.row)
+                closeCtx()
+              }}
+            >
+              Eliminar
+            </button>
+          </Can>
         </div>
       ) : null}
 
       {ver ? <ExpedienteAlumnoModal code={ver} onClose={() => setVer(null)} /> : null}
+
+      {editar ? (
+        <PersonaEditModal
+          code={editar}
+          onClose={() => setEditar(null)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ['consejeria-alumnos'] })
+            qc.invalidateQueries({ queryKey: ['persona-ficha', editar] })
+          }}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="Eliminar alumno"
+        message={`¿Dar de baja al alumno ${confirmDelete?.codigo} (${confirmDelete?.nombre})? Es una eliminación lógica: el registro no se borra, queda inactivo.`}
+        danger
+        confirmLabel="Eliminar"
+        onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.codigo)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </RequirePermission>
   )
 }

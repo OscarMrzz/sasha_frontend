@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { MatriculaWizard } from '#/components/matricula/MatriculaWizard'
 import { MatriculaEditModal } from '#/components/matricula/MatriculaEditModal'
+import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
+import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
@@ -26,6 +28,7 @@ import {
   reingreso,
 } from '#/services/matricula'
 import type { Matricula, SugerenciaResponse } from '#/services/matricula'
+import { deletePersona } from '#/services/personas'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/matricula')({ component: MatriculaPage })
@@ -47,6 +50,9 @@ function MatriculaPage() {
   const [confirmSave, setConfirmSave] = useState(false)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Matricula } | null>(null)
   const [editar, setEditar] = useState<Matricula | null>(null)
+  const [verPersona, setVerPersona] = useState<string | null>(null)
+  const [editarPersona, setEditarPersona] = useState<string | null>(null)
+  const [confirmDeletePersona, setConfirmDeletePersona] = useState<Matricula | null>(null)
 
   useAccionPalette('nuevo-matricula', () => setCreateOpen(true))
 
@@ -77,6 +83,17 @@ function MatriculaPage() {
       setReingresoOpen(false)
       setConfirmSave(false)
       setSugerencia(null)
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
+
+  const deletePersonaMut = useMutation({
+    mutationFn: (code: string) => deletePersona(code),
+    onSuccess: () => {
+      toast.success('Alumno eliminado')
+      setConfirmDeletePersona(null)
+      qc.invalidateQueries({ queryKey: ['matriculas'] })
+      qc.invalidateQueries({ queryKey: ['alumnos'] })
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
@@ -165,6 +182,36 @@ function MatriculaPage() {
 
       {ctx ? (
         <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }} data-testid="matricula-ctx">
+          {ctx.row.alumno_code ? (
+            <Can permission="personas:get">
+              <button
+                type="button"
+                className="ctx-menu__item"
+                data-testid="ctx-ver"
+                onClick={() => {
+                  setVerPersona(ctx.row.alumno_code ?? null)
+                  closeCtx()
+                }}
+              >
+                Ver
+              </button>
+            </Can>
+          ) : null}
+          {ctx.row.alumno_code ? (
+            <Can permission="personas:put">
+              <button
+                type="button"
+                className="ctx-menu__item"
+                data-testid="ctx-editar"
+                onClick={() => {
+                  setEditarPersona(ctx.row.alumno_code ?? null)
+                  closeCtx()
+                }}
+              >
+                Editar datos del alumno
+              </button>
+            </Can>
+          ) : null}
           <Can permission="matricula:put">
             <button
               type="button"
@@ -175,9 +222,24 @@ function MatriculaPage() {
                 closeCtx()
               }}
             >
-              Editar
+              Editar matrícula
             </button>
           </Can>
+          {ctx.row.alumno_code ? (
+            <Can permission="personas:delete">
+              <button
+                type="button"
+                className="ctx-menu__item ctx-menu__item--danger"
+                data-testid="ctx-eliminar"
+                onClick={() => {
+                  setConfirmDeletePersona(ctx.row)
+                  closeCtx()
+                }}
+              >
+                Eliminar
+              </button>
+            </Can>
+          ) : null}
         </div>
       ) : null}
 
@@ -316,6 +378,33 @@ function MatriculaPage() {
           }}
         />
       ) : null}
+
+      <UserFichaModal code={verPersona} onClose={() => setVerPersona(null)} />
+
+      {editarPersona ? (
+        <PersonaEditModal
+          code={editarPersona}
+          onClose={() => setEditarPersona(null)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ['matriculas'] })
+            qc.invalidateQueries({ queryKey: ['alumnos'] })
+            qc.invalidateQueries({ queryKey: ['persona-ficha', editarPersona] })
+          }}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={Boolean(confirmDeletePersona)}
+        title="Eliminar alumno"
+        message={`¿Dar de baja al alumno ${confirmDeletePersona?.alumno_code ?? confirmDeletePersona?.alumno_id}? Es una eliminación lógica: el registro no se borra, queda inactivo.`}
+        danger
+        confirmLabel="Eliminar"
+        onConfirm={() => {
+          const code = confirmDeletePersona?.alumno_code
+          if (code) deletePersonaMut.mutate(code)
+        }}
+        onCancel={() => setConfirmDeletePersona(null)}
+      />
 
       <ConfirmDialog
         open={confirmSave}

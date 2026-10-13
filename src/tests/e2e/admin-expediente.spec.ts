@@ -21,7 +21,7 @@ test.describe('admin: alumnos y maestros de solo lectura', () => {
 
   test('alumnos: sin agregar; Ver abre el expediente', async ({ page }) => {
     await loginAs(page, { code: ADMIN })
-    await page.locator('.sidebar-nav').getByTitle('Alumnos').click()
+    await page.locator('.sidebar-nav').getByRole('link', { name: 'Alumnos', exact: true }).click()
     await expect(page.getByTestId('consejeria-alumnos-page')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('data-table-add-button')).toHaveCount(0)
 
@@ -29,7 +29,7 @@ test.describe('admin: alumnos y maestros de solo lectura', () => {
     const ana = page.locator('table.data-table tbody tr', { hasText: ANA })
     await expect(ana).toContainText('Matriculado', { timeout: 15_000 })
     await ana.click({ button: 'right' })
-    await expect(page.getByTestId('consejeria-alumnos-ctx').locator('.ctx-menu__item')).toHaveCount(1)
+    await expect(page.getByTestId('consejeria-alumnos-ctx').locator('.ctx-menu__item')).toHaveCount(3)
     await page.getByTestId('consejeria-alumnos-ctx-ver').click()
 
     await expect(page.getByTestId('expediente-alumno')).toBeVisible({ timeout: 15_000 })
@@ -38,7 +38,7 @@ test.describe('admin: alumnos y maestros de solo lectura', () => {
 
   test('maestros: sin agregar; Ver muestra la ficha con sus cursos', async ({ page }) => {
     await loginAs(page, { code: ADMIN })
-    await page.locator('.sidebar-nav').getByTitle('Maestros').click()
+    await page.locator('.sidebar-nav').getByRole('link', { name: 'Maestros', exact: true }).click()
     await expect(page.getByTestId('consejeria-maestros-page')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('data-table-add-button')).toHaveCount(0)
 

@@ -35,6 +35,34 @@ export interface PersonaCreate {
   direcciones_trabajo?: DireccionTrabajoInput[]
 }
 
+/**
+ * Edición de la ficha completa (perfil + datos del rol) SIN `user_id`, `status`,
+ * contraseña ni roles. Espejo de `PersonaCreate` en los campos de perfil, alumno
+ * y responsable.
+ */
+export interface PersonaUpdate {
+  primer_nombre: string
+  segundo_nombre?: string
+  primer_apellido: string
+  segundo_apellido?: string
+  numero_identidad?: string
+  tipo_documento_identidad?: string
+  fecha_nacimiento?: string
+  sexo?: string
+  telefono_contacto?: string
+  path_imagen?: string
+  procede_otra_institucion?: boolean
+  nombre_institucion_origen?: string
+  presenta_condicion_aprendizaje?: boolean
+  ha_repetido_grado?: boolean
+  alergias?: string[]
+  condiciones_aprendizaje?: string[]
+  grados_repetidos?: GradoRepetidoInput[]
+  profesion?: string
+  direccion_domicilio?: string
+  direcciones_trabajo?: DireccionTrabajoInput[]
+}
+
 export interface Alumno {
   id: string
   perfil_id: string
@@ -88,6 +116,16 @@ export async function createResponsable(body: PersonaCreate) {
 
 export async function getResponsableByCode(code: string) {
   return apiRequest<Responsable>(`/personas/responsables/by-code/${encodeURIComponent(code)}`)
+}
+
+/** Edita la ficha completa (perfil + rol + foto). Devuelve la ficha actualizada. */
+export async function updatePersona(code: string, body: PersonaUpdate) {
+  return apiRequest<UserFicha>(`/personas/${encodeURIComponent(code)}`, { method: 'PUT', body })
+}
+
+/** Eliminación lógica: marca la persona como inactiva sin borrar filas. */
+export async function deletePersona(code: string) {
+  return apiRequest<{ status: string }>(`/personas/${encodeURIComponent(code)}`, { method: 'DELETE' })
 }
 
 export interface UserFicha {

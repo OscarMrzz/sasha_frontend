@@ -9,6 +9,7 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
+import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
 import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
 import { ROLES, roleLabel, type RoleName } from '#/helpers/permissions'
 import { userMessageFromError } from '#/lib/api'
@@ -108,6 +109,7 @@ function UsuariosPage() {
   const [confirmDelete, setConfirmDelete] = useState<ResponseUser | null>(null)
   const [createdCode, setCreatedCode] = useState<string | null>(null)
   const [viewCode, setViewCode] = useState<string | null>(null)
+  const [editarPersona, setEditarPersona] = useState<ResponseUser | null>(null)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: ResponseUser } | null>(null)
   const [coordSel, setCoordSel] = useState<string[]>([])
   const assignable = ASSIGNABLE.filter((r) => r !== 'coordinador' || can('coordinaciones:put'))
@@ -303,6 +305,7 @@ function UsuariosPage() {
           <button
             type="button"
             className="ctx-menu__item"
+            data-testid="ctx-ver"
             onClick={(e) => {
               e.stopPropagation()
               setViewCode(ctx.row.code)
@@ -313,10 +316,25 @@ function UsuariosPage() {
           </button>
           {!hasAdminRole(ctx.row.roles) ? (
             <>
+              <Can permission="personas:put">
+                <button
+                  type="button"
+                  className="ctx-menu__item"
+                  data-testid="ctx-editar"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setEditarPersona(ctx.row)
+                    closeCtx()
+                  }}
+                >
+                  Editar datos
+                </button>
+              </Can>
               <Can permission="users:put">
                 <button
                   type="button"
                   className="ctx-menu__item"
+                  data-testid="ctx-editar-roles"
                   onClick={(e) => {
                     e.stopPropagation()
                     openEdit(ctx.row)
@@ -329,6 +347,7 @@ function UsuariosPage() {
                 <button
                   type="button"
                   className="ctx-menu__item ctx-menu__item--danger"
+                  data-testid="ctx-eliminar"
                   onClick={(e) => {
                     e.stopPropagation()
                     setConfirmDelete(ctx.row)
@@ -344,6 +363,20 @@ function UsuariosPage() {
       ) : null}
 
       <UserFichaModal code={viewCode} onClose={() => setViewCode(null)} />
+
+      {editarPersona ? (
+        <PersonaEditModal
+          code={editarPersona.code}
+          onClose={() => setEditarPersona(null)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ['users'] })
+            qc.invalidateQueries({ queryKey: ['alumnos'] })
+            qc.invalidateQueries({ queryKey: ['maestros'] })
+            qc.invalidateQueries({ queryKey: ['responsables'] })
+            qc.invalidateQueries({ queryKey: ['persona-ficha', editarPersona.code] })
+          }}
+        />
+      ) : null}
 
       <Modal
         open={modalOpen}

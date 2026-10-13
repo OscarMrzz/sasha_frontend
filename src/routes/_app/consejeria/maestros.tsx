@@ -1,21 +1,29 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { RequirePermission } from '#/components/gates/Can'
+import { toast } from 'sonner'
+import { RequirePermission, Can } from '#/components/gates/Can'
+import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
+import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
+import { userMessageFromError } from '#/lib/api'
 import { listMaestrosConsejeria  } from '#/services/consejeria'
 import type {MaestroConsejeria} from '#/services/consejeria';
+import { deletePersona } from '#/services/personas'
 
 export const Route = createFileRoute('/_app/consejeria/maestros')({ component: MaestrosConsejeriaPage })
 
 const col = createColumnHelper<MaestroConsejeria>()
 
 function MaestrosConsejeriaPage() {
+  const qc = useQueryClient()
   const { data = [], isLoading } = useQuery({ queryKey: ['consejeria-maestros'], queryFn: listMaestrosConsejeria })
   const [ctx, setCtx] = useState<{ x: number; y: number; row: MaestroConsejeria } | null>(null)
   const [ver, setVer] = useState<string | null>(null)
+  const [editar, setEditar] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<MaestroConsejeria | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -23,6 +31,17 @@ function MaestrosConsejeriaPage() {
     window.addEventListener('click', closeCtx)
     return () => window.removeEventListener('click', closeCtx)
   }, [ctx, closeCtx])
+
+  const deleteMut = useMutation({
+    mutationFn: (code: string) => deletePersona(code),
+    onSuccess: () => {
+      toast.success('Maestro eliminado')
+      setConfirmDelete(null)
+      qc.invalidateQueries({ queryKey: ['consejeria-maestros'] })
+      qc.invalidateQueries({ queryKey: ['maestros'] })
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
 
   const columns = useMemo(
     () => [
@@ -120,10 +139,57 @@ function MaestrosConsejeriaPage() {
           >
             Ver
           </button>
+          <Can permission="personas:put">
+            <button
+              type="button"
+              className="ctx-menu__item"
+              data-testid="ctx-editar"
+              onClick={() => {
+                setEditar(ctx.row.codigo)
+                closeCtx()
+              }}
+            >
+              Editar
+            </button>
+          </Can>
+          <Can permission="personas:delete">
+            <button
+              type="button"
+              className="ctx-menu__item ctx-menu__item--danger"
+              data-testid="ctx-eliminar"
+              onClick={() => {
+                setConfirmDelete(ctx.row)
+                closeCtx()
+              }}
+            >
+              Eliminar
+            </button>
+          </Can>
         </div>
       ) : null}
 
       {ver ? <UserFichaModal code={ver} onClose={() => setVer(null)} /> : null}
+
+      {editar ? (
+        <PersonaEditModal
+          code={editar}
+          onClose={() => setEditar(null)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ['consejeria-maestros'] })
+            qc.invalidateQueries({ queryKey: ['persona-ficha', editar] })
+          }}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="Eliminar maestro"
+        message={`¿Dar de baja al maestro ${confirmDelete?.codigo} (${confirmDelete?.nombre})? Es una eliminación lógica: el registro no se borra, queda inactivo.`}
+        danger
+        confirmLabel="Eliminar"
+        onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.codigo)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </RequirePermission>
   )
 }

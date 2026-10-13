@@ -3,7 +3,7 @@ import { test, expect, loginAs } from './fixtures/auth'
 test.describe('modulos @critical', () => {
   test('configuracion carga para admin', async ({ page }) => {
     await loginAs(page)
-    await page.getByRole('link', { name: 'Configuración' }).click()
+    await page.getByRole('link', { name: 'Configuración', exact: true }).click()
     await expect(page).toHaveURL(/configuracion/)
     await expect(page.getByText(/Configuraci|instituci/i).first()).toBeVisible()
   })
@@ -29,10 +29,10 @@ test.describe('modulos @critical', () => {
     const row = page.locator('table.data-table tbody tr').first()
     await expect(row).toBeVisible({ timeout: 10_000 })
     await row.click({ button: 'right' })
-    await expect(page.getByRole('button', { name: 'Ver' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Editar' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Eliminar' })).toBeVisible()
-    await page.getByRole('button', { name: 'Ver' }).click()
+    await expect(page.getByRole('button', { name: 'Ver', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Editar', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Eliminar', exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Ver', exact: true }).click()
     await expect(page.getByTestId('user-ficha')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByTestId('ficha-download-pdf')).toBeVisible()
   })
