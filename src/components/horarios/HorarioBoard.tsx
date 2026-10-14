@@ -54,6 +54,8 @@ type HorarioBoardProps = {
   onPlacedChange: (next: PlacedBlock[]) => void
   pillSearch: string
   onPillSearchChange: (v: string) => void
+  /** Ignora solo el conflicto de maestro (fuerza horarios); el de sección sigue bloqueado. */
+  permitirForzar?: boolean
   toolbar?: ReactNode
 }
 
@@ -69,6 +71,7 @@ export function HorarioBoard({
   onPlacedChange,
   pillSearch,
   onPillSearchChange,
+  permitirForzar,
   toolbar,
 }: HorarioBoardProps) {
   const [drag, setDrag] = useState<DragPayload | null>(null)
@@ -144,7 +147,10 @@ export function HorarioBoard({
 
   function isPlaceable(pill: HorarioPill, day: number, horaInicio: string, ignoreKey?: string) {
     const others = placed.filter((b) => b.key !== ignoreKey)
-    if (others.some((b) => b.maestroId === pill.maestroId && b.diaSemana === day && b.horaInicio === horaInicio)) {
+    if (
+      !permitirForzar &&
+      others.some((b) => b.maestroId === pill.maestroId && b.diaSemana === day && b.horaInicio === horaInicio)
+    ) {
       return false
     }
     if (others.some((b) => b.seccionId === pill.seccionId && b.diaSemana === day && b.horaInicio === horaInicio)) {
@@ -171,10 +177,11 @@ export function HorarioBoard({
           b.diaSemana === focusCell.diaSemana &&
           b.horaInicio === focusCell.horaInicio,
       )
-      if (!maestroBusy && !secBusy) set.add(p.asignacionId)
+      if (secBusy || (!permitirForzar && maestroBusy)) continue
+      set.add(p.asignacionId)
     }
     return set
-  }, [focusCell, pills, placed, remaining])
+  }, [focusCell, pills, placed, remaining, permitirForzar])
 
   function isHighlighted(p: {
     asignacionId: string
@@ -219,19 +226,20 @@ export function HorarioBoard({
         return
       }
       if (!isPlaceable(pill, day, slot.start)) {
-        const conflict = placed.find(
+        const maestroConflict = placed.find(
           (b) =>
-            (b.maestroId === pill.maestroId || b.seccionId === pill.seccionId) &&
-            b.diaSemana === day &&
-            b.horaInicio === slot.start,
+            b.maestroId === pill.maestroId && b.diaSemana === day && b.horaInicio === slot.start,
         )
-        if (conflict?.maestroId === pill.maestroId) {
+        if (!permitirForzar && maestroConflict) {
           toast.error(
-            `No puedes colocar ${pill.label} aquí porque el mismo maestro ya da otra clase a esa hora (${conflict.label}).`,
+            `No puedes colocar ${pill.label} aquí porque el mismo maestro ya da otra clase a esa hora (${maestroConflict.label}).`,
           )
-        } else {
-          toast.error(`La sección ya tiene clase en esa franja (${conflict?.label ?? ''}).`)
+          return
         }
+        const secConflict = placed.find(
+          (b) => b.seccionId === pill.seccionId && b.diaSemana === day && b.horaInicio === slot.start,
+        )
+        toast.error(`La sección ya tiene clase en esa franja (${secConflict?.label ?? ''}).`)
         return
       }
       onPlacedChange([
@@ -272,9 +280,20 @@ export function HorarioBoard({
     }
 
     if (!isPlaceable(asPill, day, slot.start, moving.key)) {
-      toast.error(
-        `No puedes mover ${moving.label} aquí porque hay conflicto de maestro o sección a esa hora.`,
-      )
+      if (permitirForzar) {
+        const secConflict = placed.find(
+          (b) =>
+            b.key !== moving.key &&
+            b.seccionId === asPill.seccionId &&
+            b.diaSemana === day &&
+            b.horaInicio === slot.start,
+        )
+        toast.error(`La sección ya tiene clase en esa franja (${secConflict?.label ?? ''}).`)
+      } else {
+        toast.error(
+          `No puedes mover ${moving.label} aquí porque hay conflicto de maestro o sección a esa hora.`,
+        )
+      }
       return
     }
 

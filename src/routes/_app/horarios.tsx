@@ -125,6 +125,8 @@ function HorariosAdminView() {
   const [pillSearch, setPillSearch] = useState('')
   const [preview, setPreview] = useState<HorarioPreview | null>(null)
   const [activar, setActivar] = useState(true)
+  const [permitirForzar, setPermitirForzar] = useState(false)
+  const [avisoForzar, setAvisoForzar] = useState(false)
   const [confirmGenerate, setConfirmGenerate] = useState(false)
   const [confirmSave, setConfirmSave] = useState(false)
   const [generateMode, setGenerateMode] = useState<'vaciar' | 'rellenar'>('rellenar')
@@ -290,6 +292,8 @@ function HorariosAdminView() {
     setEditingCode('')
     setEditingNumero(0)
     setActivar(true)
+    setPermitirForzar(false)
+    setAvisoForzar(false)
   }
 
   function openCreate() {
@@ -765,10 +769,32 @@ function HorariosAdminView() {
         onClose={closeWizard}
         footer={
           <>
-            <label style={{ marginRight: 'auto', fontSize: '0.85rem' }}>
-              <input type="checkbox" checked={activar} onChange={(e) => setActivar(e.target.checked)} />{' '}
-              Activar al guardar
-            </label>
+            <div
+              style={{
+                marginRight: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+              }}
+            >
+              <label style={{ fontSize: '0.85rem' }}>
+                <input type="checkbox" checked={activar} onChange={(e) => setActivar(e.target.checked)} />{' '}
+                Activar al guardar
+              </label>
+              <label style={{ fontSize: '0.85rem' }}>
+                <input
+                  type="checkbox"
+                  data-testid="horario-forzar-checkbox"
+                  checked={!permitirForzar}
+                  onChange={(e) => {
+                    const allowForce = !e.target.checked
+                    setPermitirForzar(allowForce)
+                    if (allowForce) setAvisoForzar(true)
+                  }}
+                />{' '}
+                No permitir forzar
+              </label>
+            </div>
             <button type="button" className="btn btn--ghost" onClick={() => setStep(1)}>
               Atrás
             </button>
@@ -815,6 +841,7 @@ function HorariosAdminView() {
               }}
               pillSearch={pillSearch}
               onPillSearchChange={setPillSearch}
+              permitirForzar={permitirForzar}
               toolbar={
                 <>
                   <WizardSteps steps={WIZARD_STEPS} current={2} />
@@ -829,6 +856,28 @@ function HorariosAdminView() {
             <p className="texto-muted">No se pudo cargar la modalidad de esta versión.</p>
           )}
         </div>
+      </Modal>
+
+      <Modal
+        open={avisoForzar}
+        title="Forzar horarios"
+        testId="horario-forzar-aviso"
+        onClose={() => setAvisoForzar(false)}
+        footer={
+          <button
+            type="button"
+            className="btn btn--ghost"
+            data-testid="horario-forzar-aviso-cerrar"
+            onClick={() => setAvisoForzar(false)}
+          >
+            Cerrar
+          </button>
+        }
+      >
+        <p className="texto-muted" style={{ margin: 0 }}>
+          Ahora el sistema permite forzar los horarios: podrás poner al mismo maestro en varias
+          secciones a la misma hora. El choque de sección seguirá bloqueado con su aviso.
+        </p>
       </Modal>
 
       <HorarioViewModal
