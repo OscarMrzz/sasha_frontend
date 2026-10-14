@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Can, useCan } from '#/components/gates/Can'
+import { CoordinacionesSelect } from '#/components/coordinaciones/CoordinacionesSelect'
 import { PhotoCapture } from '#/components/matricula/PhotoCapture'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
@@ -19,6 +20,7 @@ import {
   type Periodo,
   type Seccion,
 } from '#/services/catalogos'
+import { asignarCoordinaciones, coordinacionesDeUsuario } from '#/services/coordinaciones'
 import { updateMatricula, type Matricula } from '#/services/matricula'
 import {
   getFicha,
@@ -180,6 +182,7 @@ export function PersonaEditModal({
   const [foto, setFoto] = useState<File | null>(null)
   const [dirty, setDirty] = useState(false)
   const [confirmSave, setConfirmSave] = useState(false)
+  const [coordSel, setCoordSel] = useState<string[]>([])
 
   const fotoActual = useBovedaImage(data?.perfil?.path_imagen)
 
@@ -221,6 +224,17 @@ export function PersonaEditModal({
       .map((r) => ({ value: r.name, label: roleLabel(r.name), keywords: r.name }))
   }, [rolesData, rolActual])
 
+  // Coordinaciones del coordinador (DEC-018): al editar se precargan y solo se guardan si sigue siéndolo.
+  const puedeAsignarCoordinaciones = can('coordinaciones:put')
+  const coordQuery = useQuery({
+    queryKey: ['coordinaciones-usuario', code],
+    queryFn: () => coordinacionesDeUsuario(code),
+    enabled: permitirRol && puedeEditarRol && puedeAsignarCoordinaciones && rolActual === 'coordinador',
+  })
+  useEffect(() => {
+    if (coordQuery.data) setCoordSel(coordQuery.data.coordinaciones)
+  }, [coordQuery.data])
+
   const update = (patch: Partial<FormState>) => {
     setForm((f) => (f ? { ...f, ...patch } : f))
     setDirty(true)
@@ -231,8 +245,17 @@ export function PersonaEditModal({
     [grados],
   )
 
+  const esCoordinador = form?.rol === 'coordinador'
+  const requiereCoordinaciones = Boolean(
+    form && esCoordinador && permitirRol && puedeEditarRol && puedeAsignarCoordinaciones,
+  )
+  const cargandoCoordinaciones = requiereCoordinaciones && rolActual === 'coordinador' && coordQuery.isPending
   const valid = Boolean(
-    form && form.primer_nombre.trim() && form.primer_apellido.trim() && (!matricula || matSeccionId),
+    form &&
+      form.primer_nombre.trim() &&
+      form.primer_apellido.trim() &&
+      (!matricula || matSeccionId) &&
+      (!requiereCoordinaciones || coordSel.length > 0),
   )
 
   const buildPayload = (): PersonaUpdate | null => {
@@ -299,6 +322,10 @@ export function PersonaEditModal({
       const original = rolPrincipal(data)
       if (permitirRol && puedeEditarRol && nuevoRol && nuevoRol !== original) {
         await updateRoles(code, [nuevoRol])
+      }
+      // Coordinaciones (DEC-018): después del rol, el backend exige que ya sea coordinador.
+      if (requiereCoordinaciones) {
+        await asignarCoordinaciones(code, coordSel)
       }
       const nuevoEstado = form?.estado ?? ''
       const estadoOriginal = data?.user.statususer ?? ''
@@ -497,6 +524,24 @@ export function PersonaEditModal({
                   />
                 </Field>
               </div>
+              {requiereCoordinaciones ? (
+                cargandoCoordinaciones ? (
+                  <p className="texto-muted" style={{ marginTop: '1.25rem' }}>
+                    Cargando coordinaciones…
+                  </p>
+                ) : (
+                  <div style={{ marginTop: '1.25rem', maxWidth: 700 }}>
+                    <CoordinacionesSelect
+                      testIdPrefix="persona-edit"
+                      value={coordSel}
+                      onChange={(ids) => {
+                        setCoordSel(ids)
+                        setDirty(true)
+                      }}
+                    />
+                  </div>
+                )
+              ) : null}
             </Can>
           ) : null}
 

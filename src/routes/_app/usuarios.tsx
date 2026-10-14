@@ -9,6 +9,7 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
+import { CoordinacionesSelect } from '#/components/coordinaciones/CoordinacionesSelect'
 import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
 import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
 import { ROLES, roleLabel, type RoleName } from '#/helpers/permissions'
@@ -21,7 +22,7 @@ import {
   type ResponseUser,
 } from '#/services/users'
 import { createAlumno, createMaestro, createResponsable } from '#/services/personas'
-import { asignarCoordinaciones, listCoordinaciones } from '#/services/coordinaciones'
+import { asignarCoordinaciones } from '#/services/coordinaciones'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/usuarios')({ component: UsuariosPage })
@@ -44,41 +45,6 @@ function hasAdminRole(roles: string[]) {
 }
 
 const esCoordinador = (roles: string[]) => roles[0] === 'coordinador'
-
-function CoordinacionesSelect({ value, onChange }: { value: string[]; onChange: (ids: string[]) => void }) {
-  const { data = [], isPending } = useQuery({ queryKey: ['coordinaciones'], queryFn: listCoordinaciones })
-  const activas = data.filter((c) => c.status === 'ACTIVE' || value.includes(c.id))
-  return (
-    <Field
-      label="Coordinaciones"
-      error={!isPending && value.length === 0 ? 'Elige al menos una coordinación.' : undefined}
-    >
-      {isPending ? (
-        <p className="texto-muted" style={{ margin: 0 }}>
-          Cargando coordinaciones…
-        </p>
-      ) : activas.length === 0 ? (
-        <p className="texto-muted" style={{ margin: 0 }}>
-          No hay coordinaciones. Créalas primero en Coordinaciones.
-        </p>
-      ) : (
-        <div className="coord-lista" data-testid="user-coordinaciones">
-          {activas.map((c) => (
-            <label key={c.id} className="coord-check" title={c.descripcion || undefined}>
-              <input
-                type="checkbox"
-                data-testid={`user-coordinacion-${c.titulo}`}
-                checked={value.includes(c.id)}
-                onChange={(e) => onChange(e.target.checked ? [...value, c.id] : value.filter((id) => id !== c.id))}
-              />
-              <span>{c.titulo}</span>
-            </label>
-          ))}
-        </div>
-      )}
-    </Field>
-  )
-}
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE' },

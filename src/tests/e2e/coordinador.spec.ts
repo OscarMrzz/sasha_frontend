@@ -116,4 +116,38 @@ test.describe('admin: coordinaciones', () => {
     await page.getByTestId('user-coordinacion-Coordinación de Español').check()
     await expect(page.getByTestId('create-user-button')).toBeEnabled()
   })
+
+  test('al editar un usuario se le puede poner rol Coordinador y elegir sus coordinaciones', async ({ page }) => {
+    const apellido = `Edita${Date.now()}`
+    await loginAs(page, { code: ADMIN })
+    await page.goto('/usuarios')
+
+    // 1) Crear un usuario base (rol por defecto: Maestro) para luego editarlo.
+    await page.getByTestId('data-table-add-button').click()
+    await page.getByTestId('user-primer-nombre-input').fill('Rita')
+    await page.getByTestId('user-primer-apellido-input').fill(apellido)
+    await page.getByTestId('create-user-button').click()
+    await page.getByRole('button', { name: 'Confirmar' }).click()
+
+    const fila = page.locator('table.data-table tbody tr', { hasText: apellido })
+    await expect(fila).toBeVisible({ timeout: 15_000 })
+
+    // 2) Editar y poner rol Coordinador: aparece el selector de coordinaciones y exige una.
+    await fila.click({ button: 'right' })
+    await page.getByTestId('ctx-editar').click()
+    await expect(page.getByRole('heading', { name: 'Editar datos de la persona' })).toBeVisible({ timeout: 15_000 })
+
+    await page.getByTestId('persona-edit-rol').click()
+    await page.locator('.combobox__list').getByRole('option', { name: 'Coordinador', exact: true }).click()
+
+    await expect(page.getByTestId('persona-edit-coordinaciones')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('persona-edit-save')).toBeDisabled()
+    await page.getByTestId('persona-edit-coordinacion-Coordinación de Español').check()
+    await expect(page.getByTestId('persona-edit-save')).toBeEnabled()
+
+    await page.getByTestId('persona-edit-save').click()
+    await page.getByRole('button', { name: 'Confirmar' }).click()
+
+    await expect(fila).toContainText('Coordinador', { timeout: 15_000 })
+  })
 })
