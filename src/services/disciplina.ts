@@ -83,6 +83,38 @@ export interface FichaDisciplinaria {
   registrado_por: string
 }
 
+export interface FichaFila {
+  id: string
+  fecha: string
+  alumno_codigo: string
+  alumno_nombre: string
+  grado: string
+  grado_orden: number
+  seccion: string
+  modalidad: string
+  tipo_ficha_id: string
+  titulo: string
+  descripcion: string
+  nivel: number
+  castigo: string
+  dias: number | null
+  fecha_inicio: string
+  fecha_fin: string
+  observaciones: string
+  parcial: string
+  registrado_por: string
+  registrado_por_codigo: string
+}
+
+export interface EditarFichaInput {
+  tipo_ficha_id?: string
+  fecha?: string
+  dias?: number | null
+  fecha_inicio?: string
+  fecha_fin?: string
+  observaciones?: string
+}
+
 export interface AlumnoBusqueda {
   codigo: string
   nombre: string
@@ -141,6 +173,18 @@ export async function listAlumnosConFichas() {
 
 export async function listFichasAlumno(code: string) {
   return apiRequestList<FichaDisciplinaria>(`/disciplina/alumnos/${encodeURIComponent(code)}/fichas`)
+}
+
+export async function listFichas() {
+  return apiRequestList<FichaFila>('/disciplina/fichas')
+}
+
+export async function editarFicha(id: string, body: EditarFichaInput) {
+  return apiRequest<FichaFila>(`/disciplina/fichas/${encodeURIComponent(id)}`, { method: 'PUT', body })
+}
+
+export async function eliminarFicha(id: string) {
+  return apiRequest<void>(`/disciplina/fichas/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
 export async function buscarAlumnosFicha(q: string) {

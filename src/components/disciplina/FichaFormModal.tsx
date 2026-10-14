@@ -125,6 +125,7 @@ export function FichaFormModal({ onClose }: { onClose: () => void }) {
       toast.success('Ficha aplicada')
       qc.invalidateQueries({ queryKey: ['disciplina-alumnos'] })
       qc.invalidateQueries({ queryKey: ['disciplina-fichas'] })
+      qc.invalidateQueries({ queryKey: ['disciplina-fichas-lista'] })
       qc.invalidateQueries({ queryKey: ['disciplina-previa'] })
       setConfirmar(false)
       dismiss()

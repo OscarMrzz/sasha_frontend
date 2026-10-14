@@ -119,7 +119,7 @@ test.describe('fichas disciplinarias', () => {
     await expect(page.getByText('Ficha aplicada').first()).toBeVisible({ timeout: 15_000 })
 
     await page.getByTestId('data-table-search').fill(ALUMNO)
-    const fila = page.locator('table.data-table tbody tr', { hasText: ALUMNO })
+    const fila = page.locator('table.data-table tbody tr', { hasText: ALUMNO }).first()
     await expect(fila).toBeVisible({ timeout: 15_000 })
   })
 
@@ -132,25 +132,81 @@ test.describe('fichas disciplinarias', () => {
     await expect(page.getByTestId('ficha-castigo')).toHaveText('Suspensión de clases')
   })
 
-  test('las fichas se ven en el historial del alumno y en el expediente', async ({ page }) => {
+  test('ver una fila abre el detalle de la ficha (una fila por ficha)', async ({ page }) => {
     await loginAs(page, { code: CONSEJERIA })
     await page.goto('/disciplina')
     await page.getByTestId('data-table-search').fill(ALUMNO)
-    const fila = page.locator('table.data-table tbody tr', { hasText: ALUMNO })
+    const fila = page.locator('table.data-table tbody tr', { hasText: ALUMNO }).first()
+    await expect(fila).toBeVisible({ timeout: 15_000 })
     await fila.click({ button: 'right' })
     await page.getByTestId('disciplina-ctx-ver').click()
-    await expect(page.getByTestId('fichas-alumno-modal')).toContainText(TITULO, { timeout: 15_000 })
-    await expect(page.getByTestId('ficha-disc-card').filter({ hasText: TITULO })).toHaveCount(2)
-    await page.getByRole('button', { name: 'Cerrar' }).click()
+
+    const detalle = page.getByTestId('ficha-ver-modal')
+    await expect(detalle).toBeVisible()
+    await expect(detalle).toContainText(TITULO)
+    await page.getByRole('dialog', { name: /Ficha ·/ }).getByRole('button', { name: 'Cerrar' }).click()
+    await expect(detalle).toHaveCount(0)
+  })
+
+  test('las fichas se ven en el detalle de la ficha y en el expediente', async ({ page }) => {
+    await loginAs(page, { code: CONSEJERIA })
+    await page.goto('/disciplina')
+    await page.getByTestId('data-table-search').fill(ALUMNO)
+    const fila = page.locator('table.data-table tbody tr', { hasText: ALUMNO }).first()
+    await fila.click({ button: 'right' })
+    await page.getByTestId('disciplina-ctx-ver').click()
+    await expect(page.getByTestId('ficha-ver-modal')).toContainText(TITULO, { timeout: 15_000 })
+    await page.getByRole('dialog', { name: /Ficha ·/ }).getByRole('button', { name: 'Cerrar' }).click()
 
     await page.goto('/consejeria/alumnos')
     await page.getByTestId('data-table-search').fill(ALUMNO)
-    const al = page.locator('table.data-table tbody tr', { hasText: ALUMNO })
+    const al = page.locator('table.data-table tbody tr', { hasText: ALUMNO }).first()
     await al.click({ button: 'right' })
     await page.getByTestId('consejeria-alumnos-ctx-ver').click()
     const tabla = page.getByTestId('expediente-fichas-tabla')
     await expect(tabla.locator('tbody tr', { hasText: TITULO })).toHaveCount(2, { timeout: 15_000 })
     await expect(tabla).toContainText('Suspensión de clases')
+  })
+
+  // Requiere backend + DB (como el resto de la suite): crea su propia ficha en una fecha
+  // distinta a las del fixture para no tocar los datos sembrados antes de eliminarla.
+  test('admin edita y elimina una ficha desde el menú de fila', async ({ page }) => {
+    await loginAs(page, { code: ADMIN })
+    await page.goto('/disciplina')
+    await expect(page.getByTestId('disciplina-page')).toBeVisible({ timeout: 15_000 })
+
+    await page.getByTestId('data-table-add-button').click()
+    await expect(page.getByTestId('ficha-form')).toBeVisible()
+    await page.getByTestId('ficha-alumno-input').fill(ALUMNO)
+    await page.locator('.combobox__option', { hasText: ALUMNO }).first().click()
+    await page.getByTestId('ficha-fecha').fill('2026-10-05')
+    await page.getByTestId('ficha-tipo-input').fill(TITULO)
+    await page.locator('.combobox__option', { hasText: TITULO }).first().click()
+    await expect(page.getByTestId('ficha-vez')).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId('ficha-observaciones').fill('Para editar y eliminar (e2e).')
+    await page.getByTestId('ficha-aplicar').click()
+    await confirmar(page, 'Aplicar ficha', 'Aplicar')
+    await expect(page.getByText('Ficha aplicada')).toBeVisible({ timeout: 15_000 })
+
+    await page.getByTestId('data-table-search').fill(ALUMNO)
+    const fila = page.locator('table.data-table tbody tr', { hasText: '05/10/2026' })
+    await expect(fila).toBeVisible({ timeout: 15_000 })
+
+    await fila.click({ button: 'right' })
+    await page.getByTestId('disciplina-ctx-editar').click()
+    const editar = page.getByTestId('ficha-editar-modal')
+    await expect(editar).toBeVisible()
+    await page.getByTestId('ficha-editar-observaciones').fill('Editada (e2e).')
+    await page.getByTestId('ficha-editar-guardar').click()
+    await confirmar(page, 'Guardar cambios', 'Guardar')
+    await expect(page.getByText('Ficha actualizada')).toBeVisible({ timeout: 15_000 })
+    await expect(editar).toHaveCount(0)
+
+    await fila.click({ button: 'right' })
+    await page.getByTestId('disciplina-ctx-eliminar').click()
+    await confirmar(page, 'Eliminar ficha', 'Eliminar')
+    await expect(page.getByText('Ficha eliminada')).toBeVisible({ timeout: 15_000 })
+    await expect(page.locator('table.data-table tbody tr', { hasText: '05/10/2026' })).toHaveCount(0)
   })
 
   test('consejería no define tipos de ficha', async ({ page }) => {
