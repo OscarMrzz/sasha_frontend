@@ -9132,3 +9132,29 @@ body::before {
   align-self: center;
   margin-top: 0.5rem;
 }
+
+/* Nav de clases del maestro en la barra superior (Anterior / Ahora / Siguiente) */
+.app-shell__top-clase {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+.clase-nav {
+  display: flex;
+  gap: 0.4rem;
+}
+.clase-nav__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .clase-nav .clase-nav__label {
+    display: none;
+  }
+  .clase-nav__btn {
+    padding: 0.5rem 0.6rem;
+  }
+}

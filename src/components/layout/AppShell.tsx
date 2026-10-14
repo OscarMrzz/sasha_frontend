@@ -20,6 +20,7 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { CommandPalette } from '#/components/layout/CommandPalette'
 import { NavIcon } from '#/components/layout/nav-icons'
 import { NotificationsBell } from '#/components/layout/NotificationsBell'
+import { ClaseNavButtons } from '#/components/maestro/ClaseNavButtons'
 import atajosTeclado from '#/config/atajos-teclado.json'
 import { DESCRIPCION_RUTA, PALABRAS_CLAVE_RUTA, COMANDOS_AGREGAR } from '#/helpers/command-palette'
 import type { Comando } from '#/helpers/command-palette'
@@ -51,6 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith('/alumno/')
   const maestro = isMaestroRole(roles)
   const portal = isPortalRole(roles)
+  const claseId = maestro ? (pathname.match(/^\/maestro\/clases\/([^/]+)/)?.[1] ?? null) : null
   const portalClase = usePortalClase()
   const [collapsed, setCollapsed] = useState(true)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -271,6 +273,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             Sasha
           </button>
         </div>
+
+        {maestro && (claseId || pathname === '/maestro') ? (
+          <div className="app-shell__top-clase">
+            <ClaseNavButtons asignacionId={claseId} />
+          </div>
+        ) : null}
 
         {maestro || portal ? (
           <button
