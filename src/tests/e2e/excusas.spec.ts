@@ -19,7 +19,7 @@ async function confirmar(page: Page, titulo: string, boton: string) {
 test.describe('excusas', () => {
   test('admin crea y desactiva un tipo de excusa', async ({ page }) => {
     await loginAs(page, { code: ADMIN })
-    await page.locator('.sidebar-nav').getByTitle('Tipos de excusa').click()
+    await page.locator('.sidebar-nav').first().getByTitle('Tipos de excusa').click()
     await expect(page.getByTestId('tipos-excusa-page')).toBeVisible({ timeout: 15_000 })
     await expect(page.locator('table.data-table tbody tr', { hasText: 'Visita al doctor' })).toBeVisible()
 
@@ -38,9 +38,27 @@ test.describe('excusas', () => {
     await expect(fila).toContainText('Inactivo', { timeout: 15_000 })
   })
 
+  test('admin ve el detalle de un tipo de excusa desde el menú de fila', async ({ page }) => {
+    await loginAs(page, { code: ADMIN })
+    await page.locator('.sidebar-nav').first().getByTitle('Tipos de excusa').click()
+    await expect(page.getByTestId('tipos-excusa-page')).toBeVisible({ timeout: 15_000 })
+
+    await page.getByTestId('data-table-search').fill(TIPO)
+    const fila = page.locator('table.data-table tbody tr', { hasText: TIPO })
+    await expect(fila).toBeVisible({ timeout: 15_000 })
+    await fila.click({ button: 'right' })
+    await page.getByTestId('tipos-excusa-ctx-ver').click()
+
+    const modal = page.getByTestId('tipo-excusa-ver')
+    await expect(modal).toBeVisible()
+    await expect(modal).toContainText(TIPO)
+    await page.getByRole('dialog', { name: 'Ver tipo de excusa' }).getByRole('button', { name: 'Cerrar' }).click()
+    await expect(modal).toHaveCount(0)
+  })
+
   test('consejería registra una excusa por rango y la desactiva', async ({ page }) => {
     await loginAs(page, { code: CONSEJERIA })
-    await page.locator('.sidebar-nav').getByTitle('Excusas', { exact: true }).click()
+    await page.locator('.sidebar-nav').first().getByTitle('Excusas', { exact: true }).click()
     await expect(page.getByTestId('excusas-page')).toBeVisible({ timeout: 15_000 })
 
     await page.getByTestId('data-table-add-button').click()
@@ -74,15 +92,15 @@ test.describe('excusas', () => {
 
   test('consejería no define tipos de excusa', async ({ page }) => {
     await loginAs(page, { code: CONSEJERIA })
-    await expect(page.locator('.sidebar-nav').getByTitle('Excusas', { exact: true })).toBeVisible({ timeout: 15_000 })
-    await expect(page.locator('.sidebar-nav').getByTitle('Tipos de excusa')).toHaveCount(0)
+    await expect(page.locator('.sidebar-nav').first().getByTitle('Excusas', { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page.locator('.sidebar-nav').first().getByTitle('Tipos de excusa')).toHaveCount(0)
     await page.goto('/excusas/tipos')
     await expect(page.getByText('No tienes permiso')).toBeVisible({ timeout: 15_000 })
   })
 
   test('caja no ve excusas', async ({ page }) => {
     await loginAs(page, { code: CAJA })
-    await expect(page.locator('.sidebar-nav').getByTitle('Excusas', { exact: true })).toHaveCount(0, { timeout: 15_000 })
+    await expect(page.locator('.sidebar-nav').first().getByTitle('Excusas', { exact: true })).toHaveCount(0, { timeout: 15_000 })
     await page.goto('/excusas')
     await expect(page.getByText('No tienes permiso')).toBeVisible({ timeout: 15_000 })
   })

@@ -34,7 +34,7 @@ async function confirmar(page: Page, titulo: string, boton: string) {
 test.describe('fichas disciplinarias', () => {
   test('admin crea un tipo con acumulación por mes y dos niveles', async ({ page }) => {
     await loginAs(page, { code: ADMIN })
-    await page.locator('.sidebar-nav').getByTitle('Tipos de ficha').click()
+    await page.locator('.sidebar-nav').first().getByTitle('Tipos de ficha').click()
     await expect(page.getByTestId('tipos-ficha-page')).toBeVisible({ timeout: 15_000 })
 
     await page.getByTestId('data-table-add-button').click()
@@ -71,9 +71,27 @@ test.describe('fichas disciplinarias', () => {
     await expect(fila).toContainText('3 días')
   })
 
+  test('admin ve el detalle de un tipo de ficha desde el menú de fila', async ({ page }) => {
+    await loginAs(page, { code: ADMIN })
+    await page.locator('.sidebar-nav').first().getByTitle('Tipos de ficha').click()
+    await expect(page.getByTestId('tipos-ficha-page')).toBeVisible({ timeout: 15_000 })
+
+    await page.getByTestId('data-table-search').fill(TITULO)
+    const fila = page.locator('table.data-table tbody tr', { hasText: TITULO })
+    await expect(fila).toBeVisible({ timeout: 15_000 })
+    await fila.click({ button: 'right' })
+    await page.getByTestId('tipos-ficha-ctx-ver').click()
+
+    const modal = page.getByTestId('tipo-ficha-ver')
+    await expect(modal).toBeVisible()
+    await expect(modal).toContainText(TITULO)
+    await page.getByRole('dialog', { name: 'Ver tipo de ficha' }).getByRole('button', { name: 'Cerrar' }).click()
+    await expect(modal).toHaveCount(0)
+  })
+
   test('consejería aplica la 1.ª y la 2.ª vez; la 2.ª trae los días y salta el fin de semana', async ({ page }) => {
     await loginAs(page, { code: CONSEJERIA })
-    await page.locator('.sidebar-nav').getByTitle('Fichas disciplinarias').click()
+    await page.locator('.sidebar-nav').first().getByTitle('Fichas disciplinarias').click()
     await expect(page.getByTestId('disciplina-page')).toBeVisible({ timeout: 15_000 })
 
     await aplicarFicha(page, '1.ª vez')
@@ -137,15 +155,15 @@ test.describe('fichas disciplinarias', () => {
 
   test('consejería no define tipos de ficha', async ({ page }) => {
     await loginAs(page, { code: CONSEJERIA })
-    await expect(page.locator('.sidebar-nav').getByTitle('Fichas disciplinarias')).toBeVisible({ timeout: 15_000 })
-    await expect(page.locator('.sidebar-nav').getByTitle('Tipos de ficha')).toHaveCount(0)
+    await expect(page.locator('.sidebar-nav').first().getByTitle('Fichas disciplinarias')).toBeVisible({ timeout: 15_000 })
+    await expect(page.locator('.sidebar-nav').first().getByTitle('Tipos de ficha')).toHaveCount(0)
     await page.goto('/disciplina/tipos')
     await expect(page.getByText('No tienes permiso')).toBeVisible({ timeout: 15_000 })
   })
 
   test('caja no ve fichas disciplinarias', async ({ page }) => {
     await loginAs(page, { code: CAJA })
-    await expect(page.locator('.sidebar-nav').getByTitle('Fichas disciplinarias')).toHaveCount(0, { timeout: 15_000 })
+    await expect(page.locator('.sidebar-nav').first().getByTitle('Fichas disciplinarias')).toHaveCount(0, { timeout: 15_000 })
     await page.goto('/disciplina')
     await expect(page.getByText('No tienes permiso')).toBeVisible({ timeout: 15_000 })
   })

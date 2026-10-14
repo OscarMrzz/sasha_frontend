@@ -24,19 +24,25 @@ export function RecuperacionModal({
   asignacionId,
   lista,
   claseLabel,
+  soloVer = false,
+  inicial,
   onClose,
 }: {
   asignacionId: string
   lista: ListaRecuperaciones
   claseLabel: string
+  soloVer?: boolean
+  inicial?: { tipo?: TipoRecuperacion; parcialId?: string; numero?: number }
   onClose: () => void
 }) {
   const { open, dismiss } = useDismiss(onClose)
   const qc = useQueryClient()
   const terminados = lista.parciales.filter((p) => p.terminado)
-  const [tipo, setTipo] = useState<TipoRecuperacion>('parcial')
-  const [parcialId, setParcialId] = useState(() => (terminados.at(-1) ?? lista.parciales.at(0))?.id ?? '')
-  const [numero, setNumero] = useState(1)
+  const [tipo, setTipo] = useState<TipoRecuperacion>(inicial?.tipo ?? 'parcial')
+  const [parcialId, setParcialId] = useState(
+    () => inicial?.parcialId ?? (terminados.at(-1) ?? lista.parciales.at(0))?.id ?? '',
+  )
+  const [numero, setNumero] = useState(inicial?.numero ?? 1)
   const [drafts, setDrafts] = useState<Partial<Record<string, string>>>({})
   const [confirm, setConfirm] = useState(false)
 
@@ -46,7 +52,7 @@ export function RecuperacionModal({
     enabled: tipo === 'periodo' || Boolean(parcialId),
   })
 
-  const soloLectura = lista.finalizado || !data?.disponible
+  const soloLectura = soloVer || lista.finalizado || !data?.disponible
 
   const cambiar = (fn: () => void) => {
     fn()
@@ -141,6 +147,7 @@ export function RecuperacionModal({
             <select
               className="field__select"
               data-testid="recuperacion-tipo"
+              disabled={soloVer}
               value={tipo}
               onChange={(e) => cambiar(() => setTipo(e.target.value as TipoRecuperacion))}
             >
@@ -153,6 +160,7 @@ export function RecuperacionModal({
               <select
                 className="field__select"
                 data-testid="recuperacion-parcial"
+                disabled={soloVer}
                 value={parcialId}
                 onChange={(e) => cambiar(() => setParcialId(e.target.value))}
               >
@@ -169,6 +177,7 @@ export function RecuperacionModal({
               <select
                 className="field__select"
                 data-testid="recuperacion-numero"
+                disabled={soloVer}
                 value={numero}
                 onChange={(e) => cambiar(() => setNumero(Number(e.target.value)))}
               >

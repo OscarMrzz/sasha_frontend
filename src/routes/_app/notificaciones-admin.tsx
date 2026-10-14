@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { NotificacionVerModal } from '#/components/notificaciones/NotificacionVerModal'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -14,9 +15,8 @@ import {
   createNotificacion,
   desactivarNotificacion,
   listNotificaciones,
-  type Notificacion,
-  type NotificacionCreate,
 } from '#/services/notificaciones'
+import type { Notificacion, NotificacionCreate } from '#/services/notificaciones'
 
 export const Route = createFileRoute('/_app/notificaciones-admin')({ component: NotificacionesAdminPage })
 
@@ -44,7 +44,8 @@ function NotificacionesAdminPage() {
   const [form, setForm] = useState<NotificacionCreate>(defaultForm)
   const [confirmSave, setConfirmSave] = useState(false)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Notificacion } | null>(null)
-  const [quitar, setQuitar] = useState<Notificacion | null>(null)
+  const [ver, setVer] = useState<Notificacion | null>(null)
+  const [desactivar, setDesactivar] = useState<Notificacion | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -70,13 +71,13 @@ function NotificacionesAdminPage() {
     onError: (e) => toast.error(userMessageFromError(e)),
   })
 
-  const quitarMut = useMutation({
+  const desactivarMut = useMutation({
     mutationFn: (id: string) => desactivarNotificacion(id),
     onSuccess: () => {
-      toast.success('Banner quitado')
+      toast.success('Notificación desactivada')
       qc.invalidateQueries({ queryKey: ['notificaciones-admin'] })
       qc.invalidateQueries({ queryKey: ['notificaciones'] })
-      setQuitar(null)
+      setDesactivar(null)
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
@@ -129,25 +130,27 @@ function NotificacionesAdminPage() {
             type="button"
             className="ctx-menu__item"
             onClick={() => {
-              toast.info(ctx.row.mensaje)
+              setVer(ctx.row)
               closeCtx()
             }}
           >
             Ver
           </button>
-          {ctx.row.es_banner && can('notificaciones:post') ? (
-            <button
-              type="button"
-              className="ctx-menu__item"
-              data-testid="notif-quitar-banner"
-              onClick={() => {
-                setQuitar(ctx.row)
-                closeCtx()
-              }}
-            >
-              Quitar banner
-            </button>
-          ) : null}
+          <Can permission="notificaciones:post">
+            {ctx.row.status === 'ACTIVE' ? (
+              <button
+                type="button"
+                className="ctx-menu__item ctx-menu__item--danger"
+                data-testid="notif-desactivar"
+                onClick={() => {
+                  setDesactivar(ctx.row)
+                  closeCtx()
+                }}
+              >
+                Desactivar notificación
+              </button>
+            ) : null}
+          </Can>
         </div>
       ) : null}
 
@@ -260,14 +263,18 @@ function NotificacionesAdminPage() {
       />
 
       <ConfirmDialog
-        open={quitar != null}
-        title="Quitar banner"
-        message={`¿Quitar el banner «${quitar?.titulo ?? ''}»? Dejará de verse en el inicio de todos.`}
+        open={desactivar != null}
+        title="Desactivar notificación"
+        message={`¿Desactivar la notificación «${desactivar?.titulo ?? ''}»? Dejará de verse para los usuarios.`}
+        danger
+        confirmLabel="Desactivar"
         onConfirm={() => {
-          if (quitar) quitarMut.mutate(quitar.id)
+          if (desactivar) desactivarMut.mutate(desactivar.id)
         }}
-        onCancel={() => setQuitar(null)}
+        onCancel={() => setDesactivar(null)}
       />
+
+      {ver ? <NotificacionVerModal notificacion={ver} onClose={() => setVer(null)} /> : null}
     </RequirePermission>
   )
 }

@@ -26,6 +26,7 @@ function TiposExcusaPage() {
   })
   const [ctx, setCtx] = useState<{ x: number; y: number; row: TipoExcusa } | null>(null)
   const [editar, setEditar] = useState<{ tipo: TipoExcusa | null } | null>(null)
+  const [ver, setVer] = useState<TipoExcusa | null>(null)
   const [toggle, setToggle] = useState<TipoExcusa | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
@@ -86,6 +87,17 @@ function TiposExcusaPage() {
 
       {ctx ? (
         <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }} data-testid="tipos-excusa-ctx">
+          <button
+            type="button"
+            className="ctx-menu__item"
+            data-testid="tipos-excusa-ctx-ver"
+            onClick={() => {
+              setVer(ctx.row)
+              closeCtx()
+            }}
+          >
+            Ver
+          </button>
           <Can permission="tipos_excusa:post">
             <button
               type="button"
@@ -113,6 +125,7 @@ function TiposExcusaPage() {
       ) : null}
 
       {editar ? <TipoExcusaModal tipo={editar.tipo} onClose={() => setEditar(null)} /> : null}
+      {ver ? <TipoExcusaModal tipo={ver} soloVer onClose={() => setVer(null)} /> : null}
 
       <ConfirmDialog
         open={Boolean(toggle)}

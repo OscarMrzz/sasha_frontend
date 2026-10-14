@@ -7,7 +7,7 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { Modal, useDismiss } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
-import { ACUMULACIONES, createTipoFicha, ordinal, updateTipoFicha } from '#/services/disciplina'
+import { ACUMULACIONES, acumulacionLabel, createTipoFicha, ordinal, updateTipoFicha } from '#/services/disciplina'
 import type { Acumulacion, TipoFicha, TipoFichaInput } from '#/services/disciplina'
 
 type NivelForm = { key: string; castigo: string; requiere_dias: boolean; dias: string }
@@ -25,7 +25,15 @@ let nivelSeq = 0
 const nuevaKey = () => `nivel-${++nivelSeq}`
 const nivelVacio = (): NivelForm => ({ key: nuevaKey(), castigo: '', requiere_dias: false, dias: '' })
 
-export function TipoFichaModal({ tipo, onClose }: { tipo: TipoFicha | null; onClose: () => void }) {
+export function TipoFichaModal({
+  tipo,
+  soloVer = false,
+  onClose,
+}: {
+  tipo: TipoFicha | null
+  soloVer?: boolean
+  onClose: () => void
+}) {
   const qc = useQueryClient()
   const { open, dismiss } = useDismiss(onClose)
   const [acumulacion, setAcumulacion] = useState<Acumulacion>(tipo?.acumulacion ?? 'mes')
@@ -104,26 +112,70 @@ export function TipoFichaModal({ tipo, onClose }: { tipo: TipoFicha | null; onCl
       <Modal
         open={open}
         xl
-        title={tipo ? 'Editar tipo de ficha' : 'Nuevo tipo de ficha'}
+        title={soloVer ? 'Ver tipo de ficha' : tipo ? 'Editar tipo de ficha' : 'Nuevo tipo de ficha'}
         onClose={dismiss}
         footer={
-          <>
-            <button type="button" className="btn btn--ghost" onClick={dismiss}>
-              Cancelar
+          soloVer ? (
+            <button type="button" className="btn btn--primary" onClick={dismiss}>
+              Cerrar
             </button>
-            <button
-              type="button"
-              className="btn btn--primary"
-              data-testid="tipo-ficha-guardar"
-              disabled={Boolean(error) || mut.isPending}
-              onClick={() => setConfirmar(true)}
-            >
-              Guardar
-            </button>
-          </>
+          ) : (
+            <>
+              <button type="button" className="btn btn--ghost" onClick={dismiss}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn--primary"
+                data-testid="tipo-ficha-guardar"
+                disabled={Boolean(error) || mut.isPending}
+                onClick={() => setConfirmar(true)}
+              >
+                Guardar
+              </button>
+            </>
+          )
         }
       >
-        <div className="expediente ficha-form" data-testid="tipo-ficha-form">
+        {soloVer ? (
+          <div className="expediente" data-testid="tipo-ficha-ver">
+            <Seccion title="Título">
+              <p style={{ margin: 0 }}>{titulo.trim() || 'Sin título'}</p>
+              {descripcion.trim() ? (
+                <p className="texto-muted" style={{ margin: '0.25rem 0 0' }}>
+                  {descripcion}
+                </p>
+              ) : null}
+            </Seccion>
+
+            <Seccion title="¿Cómo se acumulan las veces?">
+              <p style={{ margin: 0 }}>
+                <span className="badge">{acumulacionLabel(acumulacion)}</span>
+              </p>
+              <p className="texto-muted ficha-form__nota">{ayuda}</p>
+            </Seccion>
+
+            <Seccion title="Niveles de castigo">
+              <ol className="niveles-resumen">
+                {niveles.map((n, i) => (
+                  <li key={n.key}>
+                    <strong>{ordinal(i + 1)} vez</strong>: {n.castigo}
+                    {n.requiere_dias ? ` · ${n.dias} días de clase` : ''}
+                  </li>
+                ))}
+              </ol>
+            </Seccion>
+
+            <Seccion title="Estado">
+              <p style={{ margin: 0 }}>{tipo?.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}</p>
+              <p className="texto-muted" style={{ margin: '0.25rem 0 0' }}>
+                {tipo?.fichas_aplicadas ?? 0} ficha{(tipo?.fichas_aplicadas ?? 0) === 1 ? '' : 's'} aplicada
+                {(tipo?.fichas_aplicadas ?? 0) === 1 ? '' : 's'}
+              </p>
+            </Seccion>
+          </div>
+        ) : (
+          <div className="expediente ficha-form" data-testid="tipo-ficha-form">
           <Seccion title="¿Cómo se acumulan las veces?">
             <div className="segmento" role="radiogroup" aria-label="Acumulación">
               {ACUMULACIONES.map((a) => (
@@ -292,7 +344,8 @@ export function TipoFichaModal({ tipo, onClose }: { tipo: TipoFicha | null; onCl
             </div>
             {error ? <p className="field__error">{error}</p> : null}
           </Seccion>
-        </div>
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog

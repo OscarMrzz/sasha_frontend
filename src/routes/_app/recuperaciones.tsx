@@ -1,13 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
-import { useMemo, useState } from 'react'
-import { RequirePermission, useCan } from '#/components/gates/Can'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
+import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { RecuperacionModal } from '#/components/recuperaciones/RecuperacionModal'
+import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
+import { userMessageFromError } from '#/lib/api'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
-import { listRecuperaciones } from '#/services/recuperaciones'
+import { guardarRecuperaciones, listRecuperaciones } from '#/services/recuperaciones'
 import type { FilaRecuperacion } from '#/services/recuperaciones'
 
 export const Route = createFileRoute('/_app/recuperaciones')({ component: RecuperacionesPage })
@@ -16,7 +19,20 @@ const col = createColumnHelper<FilaRecuperacion>()
 
 function RecuperacionesPage() {
   const { can } = useCan()
+  const qc = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
+  const [ctx, setCtx] = useState<{ x: number; y: number; row: FilaRecuperacion } | null>(null)
+  const [modal, setModal] = useState<{ row: FilaRecuperacion; soloVer: boolean } | null>(null)
+  const [eliminar, setEliminar] = useState<FilaRecuperacion | null>(null)
+
+  const closeCtx = useCallback(() => setCtx(null), [])
+  useEffect(() => {
+    if (!ctx) return
+    const h = () => closeCtx()
+    window.addEventListener('click', h)
+    return () => window.removeEventListener('click', h)
+  }, [ctx, closeCtx])
+
   const { data: materias = [], isLoading: loadingMaterias } = useQuery({
     queryKey: ['asistencia-materias'],
     queryFn: listMateriasAsistencia,
@@ -38,6 +54,26 @@ function RecuperacionesPage() {
     enabled: Boolean(asigEffective),
   })
   const filas = lista?.filas ?? []
+
+  const eliminarMut = useMutation({
+    mutationFn: (row: FilaRecuperacion) =>
+      guardarRecuperaciones({
+        asignacion_docente_id: asigEffective,
+        tipo: row.tipo,
+        parcial_id: row.tipo === 'parcial' ? row.parcial_id ?? undefined : undefined,
+        numero: row.tipo === 'periodo' ? row.numero : undefined,
+        items: [{ alumno_id: row.alumno_id, nota: null }],
+      }),
+    onSuccess: () => {
+      toast.success('Recuperación eliminada')
+      void qc.invalidateQueries({ queryKey: ['recuperaciones', asigEffective] })
+      setEliminar(null)
+    },
+    onError: (e) => {
+      toast.error(userMessageFromError(e))
+      setEliminar(null)
+    },
+  })
 
   const columns = useMemo(
     () => [
@@ -127,8 +163,54 @@ function RecuperacionesPage() {
             'Nota que cuenta': r.cuenta,
             Estado: r.aprobo ? 'Aprobó' : 'Reprobó',
           }))}
+          onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
         />
       </div>
+
+      {ctx ? (
+        <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }}>
+          <Can permission="recuperaciones:post">
+            <button
+              type="button"
+              className="ctx-menu__item"
+              data-testid="recuperaciones-ctx-ver"
+              onClick={() => {
+                setModal({ row: ctx.row, soloVer: true })
+                closeCtx()
+              }}
+            >
+              Ver
+            </button>
+            {lista.finalizado ? null : (
+              <>
+                <button
+                  type="button"
+                  className="ctx-menu__item"
+                  data-testid="recuperaciones-ctx-editar"
+                  onClick={() => {
+                    setModal({ row: ctx.row, soloVer: false })
+                    closeCtx()
+                  }}
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="ctx-menu__item ctx-menu__item--danger"
+                  data-testid="recuperaciones-ctx-eliminar"
+                  onClick={() => {
+                    setEliminar(ctx.row)
+                    closeCtx()
+                  }}
+                >
+                  Eliminar
+                </button>
+              </>
+            )}
+          </Can>
+        </div>
+      ) : null}
+
       {modalOpen ? (
         <RecuperacionModal
           asignacionId={asigEffective}
@@ -137,6 +219,33 @@ function RecuperacionesPage() {
           onClose={() => setModalOpen(false)}
         />
       ) : null}
+
+      {modal ? (
+        <RecuperacionModal
+          asignacionId={asigEffective}
+          lista={lista}
+          claseLabel={claseLabel}
+          soloVer={modal.soloVer}
+          inicial={{
+            tipo: modal.row.tipo,
+            parcialId: modal.row.parcial_id ?? undefined,
+            numero: modal.row.numero,
+          }}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={eliminar != null}
+        title="Eliminar recuperación"
+        message={`¿Eliminar la recuperación de ${eliminar?.nombre ?? ''}? La nota del alumno volverá a su valor original.`}
+        danger
+        confirmLabel="Eliminar"
+        onConfirm={() => {
+          if (eliminar) eliminarMut.mutate(eliminar)
+        }}
+        onCancel={() => setEliminar(null)}
+      />
     </RequirePermission>
   )
 }

@@ -37,6 +37,41 @@ test.describe('pagos de caja: tabla de mensualidades', () => {
     await expect(page.getByTestId('pago-anular')).toHaveCount(0)
   })
 
+  test('Anular pago solo aparece en un mes pagado y pide confirmación', async ({ page }) => {
+    await loginAs(page, { code: CAJA })
+    await page.goto('/pagos')
+    await page.getByTestId('data-table-search').fill(ANA)
+
+    // En un mes pendiente/en mora la acción no se ofrece.
+    const sinPagar = page
+      .locator('table.data-table tbody tr', { hasText: ANA })
+      .filter({ hasText: /Pendiente|En mora/ })
+      .first()
+    await expect(sinPagar).toBeVisible({ timeout: 15_000 })
+    await sinPagar.click({ button: 'right' })
+    await expect(page.getByTestId('pagos-ctx-anular')).toHaveCount(0)
+
+    // En un mes pagado sí, y pide el motivo + ConfirmDialog.
+    const pagado = page
+      .locator('table.data-table tbody tr', { hasText: ANA })
+      .filter({ hasText: 'Pagado' })
+      .first()
+    await expect(pagado).toBeVisible({ timeout: 15_000 })
+    await pagado.click({ button: 'right' })
+    await page.getByTestId('pagos-ctx-anular').click()
+
+    const modal = page.getByTestId('pago-anular-motivo')
+    await expect(modal).toBeVisible()
+    await modal.fill('Registrado por error (e2e)')
+    await page.getByTestId('pago-anular').click()
+
+    const confirm = page.getByRole('dialog', { name: 'Anular pago', exact: true })
+    await expect(confirm).toBeVisible()
+    await expect(confirm).toContainText('¿Anular el pago de')
+    await confirm.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(confirm).toHaveCount(0)
+  })
+
   test('Registrar pago: el buscador filtra y carga el estado de cuenta', async ({ page }) => {
     await loginAs(page, { code: CAJA })
     await page.goto('/pagos')

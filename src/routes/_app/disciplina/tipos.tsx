@@ -27,6 +27,7 @@ function TiposFichaPage() {
   })
   const [ctx, setCtx] = useState<{ x: number; y: number; row: TipoFicha } | null>(null)
   const [editar, setEditar] = useState<{ tipo: TipoFicha | null } | null>(null)
+  const [ver, setVer] = useState<TipoFicha | null>(null)
   const [toggle, setToggle] = useState<TipoFicha | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
@@ -137,6 +138,17 @@ function TiposFichaPage() {
 
       {ctx ? (
         <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }} data-testid="tipos-ficha-ctx">
+          <button
+            type="button"
+            className="ctx-menu__item"
+            data-testid="tipos-ficha-ctx-ver"
+            onClick={() => {
+              setVer(ctx.row)
+              closeCtx()
+            }}
+          >
+            Ver
+          </button>
           <Can permission="tipos_ficha:put">
             <button
               type="button"
@@ -164,6 +176,7 @@ function TiposFichaPage() {
       ) : null}
 
       {editar ? <TipoFichaModal tipo={editar.tipo} onClose={() => setEditar(null)} /> : null}
+      {ver ? <TipoFichaModal tipo={ver} soloVer onClose={() => setVer(null)} /> : null}
 
       <ConfirmDialog
         open={Boolean(toggle)}

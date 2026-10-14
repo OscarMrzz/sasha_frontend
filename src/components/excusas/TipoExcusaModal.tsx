@@ -8,7 +8,15 @@ import { userMessageFromError } from '#/lib/api'
 import { createTipoExcusa, updateTipoExcusa } from '#/services/excusas'
 import type { TipoExcusa } from '#/services/excusas'
 
-export function TipoExcusaModal({ tipo, onClose }: { tipo: TipoExcusa | null; onClose: () => void }) {
+export function TipoExcusaModal({
+  tipo,
+  soloVer = false,
+  onClose,
+}: {
+  tipo: TipoExcusa | null
+  soloVer?: boolean
+  onClose: () => void
+}) {
   const qc = useQueryClient()
   const { open, dismiss } = useDismiss(onClose)
   const [nombre, setNombre] = useState(tipo?.nombre ?? '')
@@ -35,35 +43,63 @@ export function TipoExcusaModal({ tipo, onClose }: { tipo: TipoExcusa | null; on
     <>
       <Modal
         open={open}
-        title={tipo ? 'Editar tipo de excusa' : 'Nuevo tipo de excusa'}
+        title={soloVer ? 'Ver tipo de excusa' : tipo ? 'Editar tipo de excusa' : 'Nuevo tipo de excusa'}
         onClose={dismiss}
         footer={
-          <>
-            <button type="button" className="btn btn--ghost" onClick={dismiss}>
-              Cancelar
+          soloVer ? (
+            <button type="button" className="btn btn--primary" onClick={dismiss}>
+              Cerrar
             </button>
-            <button
-              type="button"
-              className="btn btn--primary"
-              data-testid="tipo-excusa-guardar"
-              disabled={!nombre.trim() || mut.isPending}
-              onClick={() => setConfirmar(true)}
-            >
-              Guardar
-            </button>
-          </>
+          ) : (
+            <>
+              <button type="button" className="btn btn--ghost" onClick={dismiss}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn--primary"
+                data-testid="tipo-excusa-guardar"
+                disabled={!nombre.trim() || mut.isPending}
+                onClick={() => setConfirmar(true)}
+              >
+                Guardar
+              </button>
+            </>
+          )
         }
       >
-        <Field label="Nombre" htmlFor="tipo-excusa-nombre">
-          <input
-            id="tipo-excusa-nombre"
-            className="field__input"
-            data-testid="tipo-excusa-nombre"
-            placeholder="Ej. Visita al doctor"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-          />
-        </Field>
+        {soloVer ? (
+          <div className="expediente" data-testid="tipo-excusa-ver">
+            <section className="expediente__seccion">
+              <h3 className="expediente__titulo">Nombre</h3>
+              <p style={{ margin: 0 }}>{tipo?.nombre ?? nombre}</p>
+            </section>
+            <section className="expediente__seccion">
+              <h3 className="expediente__titulo">Estado</h3>
+              <p style={{ margin: 0 }}>
+                <span className="badge">{tipo?.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}</span>
+              </p>
+            </section>
+            <section className="expediente__seccion">
+              <h3 className="expediente__titulo">Uso</h3>
+              <p className="texto-muted" style={{ margin: 0 }}>
+                {tipo?.usos ?? 0} excusa{(tipo?.usos ?? 0) === 1 ? '' : 's'} registrada
+                {(tipo?.usos ?? 0) === 1 ? '' : 's'} · código {tipo?.codigo ?? '—'}
+              </p>
+            </section>
+          </div>
+        ) : (
+          <Field label="Nombre" htmlFor="tipo-excusa-nombre">
+            <input
+              id="tipo-excusa-nombre"
+              className="field__input"
+              data-testid="tipo-excusa-nombre"
+              placeholder="Ej. Visita al doctor"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+            />
+          </Field>
+        )}
       </Modal>
 
       <ConfirmDialog

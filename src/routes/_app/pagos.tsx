@@ -60,6 +60,7 @@ function PagosPage() {
   const [ctx, setCtx] = useState<{ x: number; y: number; row: MensualidadFila } | null>(null)
   const [ver, setVer] = useState<MensualidadFila | null>(null)
   const [editar, setEditar] = useState<MensualidadFila | null>(null)
+  const [anular, setAnular] = useState<MensualidadFila | null>(null)
   const [registrar, setRegistrar] = useState<{ code?: string } | null>(null)
 
   useEffect(() => {
@@ -169,6 +170,19 @@ function PagosPage() {
             >
               Editar
             </button>
+            {ctx.row.estado === 'pagado' ? (
+              <button
+                type="button"
+                className="ctx-menu__item ctx-menu__item--danger"
+                data-testid="pagos-ctx-anular"
+                onClick={() => {
+                  setAnular(ctx.row)
+                  closeCtx()
+                }}
+              >
+                Anular pago
+              </button>
+            ) : null}
           </Can>
           <Can permission="pagos:post">
             {ctx.row.estado !== 'pagado' ? (
@@ -190,6 +204,7 @@ function PagosPage() {
 
       {ver ? <VerMensualidadModal fila={ver} onClose={() => setVer(null)} /> : null}
       {editar ? <EditarMensualidadModal fila={editar} onClose={() => setEditar(null)} /> : null}
+      {anular ? <AnularPagoModal fila={anular} onClose={() => setAnular(null)} /> : null}
       {registrar ? <RegistrarPagoModal initialCode={registrar.code} onClose={cerrarRegistrar} /> : null}
     </RequirePermission>
   )
@@ -279,28 +294,8 @@ function VerMensualidadModal({ fila, onClose }: { fila: MensualidadFila; onClose
 
 function EditarMensualidadModal({ fila, onClose }: { fila: MensualidadFila; onClose: () => void }) {
   const { open, dismiss } = useDismiss(onClose)
-  const qc = useQueryClient()
-  const [motivo, setMotivo] = useState('')
-  const [confirmar, setConfirmar] = useState(false)
+  const [anularOpen, setAnularOpen] = useState(false)
   const pagado = fila.estado === 'pagado'
-
-  const anular = useMutation({
-    mutationFn: () => anularMensualidad(fila.obligacion_id, motivo.trim()),
-    onSuccess: (r) => {
-      toast.success(
-        r.recibos_reabiertos
-          ? `Pago anulado. El recibo del padre volvió a "Sin revisar".`
-          : `Pago anulado. ${mesAnio(fila.anio, fila.mes)} quedó ${ESTADO_MENSUALIDAD_LABEL[r.estado].toLowerCase()}.`,
-      )
-      refrescarPagos(qc)
-      setConfirmar(false)
-      dismiss()
-    },
-    onError: (e) => {
-      setConfirmar(false)
-      toast.error(userMessageFromError(e))
-    },
-  })
 
   return (
     <>
@@ -318,9 +313,8 @@ function EditarMensualidadModal({ fila, onClose }: { fila: MensualidadFila; onCl
               <button
                 type="button"
                 className="btn btn--danger"
-                data-testid="pago-anular"
-                disabled={!motivo.trim() || anular.isPending}
-                onClick={() => setConfirmar(true)}
+                data-testid="pago-editar-anular"
+                onClick={() => setAnularOpen(true)}
               >
                 Anular pago
               </button>
@@ -330,22 +324,10 @@ function EditarMensualidadModal({ fila, onClose }: { fila: MensualidadFila; onCl
       >
         <DatosMensualidad f={fila} />
         {pagado ? (
-          <>
-            <p className="texto-muted" style={{ fontSize: '0.85rem' }}>
-              Si el pago se registró por error, anúlalo: el mes vuelve a pendiente (o en mora si ya venció)
-              {fila.origen === 'recibo' ? ' y el recibo del padre vuelve a "Sin revisar"' : ''}.
-            </p>
-            <Field label="Motivo de la anulación" htmlFor="pago-anular-motivo">
-              <textarea
-                id="pago-anular-motivo"
-                className="field__textarea"
-                rows={2}
-                data-testid="pago-anular-motivo"
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-              />
-            </Field>
-          </>
+          <p className="texto-muted" style={{ fontSize: '0.85rem' }}>
+            Si el pago se registró por error, anúlalo: el mes vuelve a pendiente (o en mora si ya venció)
+            {fila.origen === 'recibo' ? ' y el recibo del padre vuelve a "Sin revisar"' : ''}.
+          </p>
         ) : (
           <p className="texto-muted" style={{ fontSize: '0.85rem' }} data-testid="pago-editar-sin-pago">
             Este mes no tiene pago registrado; no hay nada que corregir.
@@ -353,11 +335,100 @@ function EditarMensualidadModal({ fila, onClose }: { fila: MensualidadFila; onCl
         )}
       </Modal>
 
+      {anularOpen ? (
+        <AnularPagoModal
+          fila={fila}
+          onClose={() => setAnularOpen(false)}
+          onAnulado={() => {
+            setAnularOpen(false)
+            onClose()
+          }}
+        />
+      ) : null}
+    </>
+  )
+}
+
+function AnularPagoModal({
+  fila,
+  onClose,
+  onAnulado,
+}: {
+  fila: MensualidadFila
+  onClose: () => void
+  onAnulado?: () => void
+}) {
+  const { open, dismiss } = useDismiss(onClose)
+  const qc = useQueryClient()
+  const [motivo, setMotivo] = useState('')
+  const [confirmar, setConfirmar] = useState(false)
+
+  const anular = useMutation({
+    mutationFn: () => anularMensualidad(fila.obligacion_id, motivo.trim()),
+    onSuccess: (r) => {
+      toast.success(
+        r.recibos_reabiertos
+          ? `Pago anulado. El recibo del padre volvió a "Sin revisar".`
+          : `Pago anulado. ${mesAnio(fila.anio, fila.mes)} quedó ${ESTADO_MENSUALIDAD_LABEL[r.estado].toLowerCase()}.`,
+      )
+      refrescarPagos(qc)
+      setConfirmar(false)
+      dismiss()
+      onAnulado?.()
+    },
+    onError: (e) => {
+      setConfirmar(false)
+      toast.error(userMessageFromError(e))
+    },
+  })
+
+  return (
+    <>
+      <Modal
+        open={open}
+        title={`Anular pago · ${fila.alumno_nombre} · ${mesAnio(fila.anio, fila.mes)}`}
+        onClose={dismiss}
+        wide
+        footer={
+          <>
+            <button type="button" className="btn btn--ghost" onClick={dismiss}>
+              Cerrar
+            </button>
+            <button
+              type="button"
+              className="btn btn--danger"
+              data-testid="pago-anular"
+              disabled={!motivo.trim() || anular.isPending}
+              onClick={() => setConfirmar(true)}
+            >
+              Anular pago
+            </button>
+          </>
+        }
+      >
+        <DatosMensualidad f={fila} />
+        <p className="texto-muted" style={{ fontSize: '0.85rem' }}>
+          Si el pago se registró por error, anúlalo: el mes vuelve a pendiente (o en mora si ya venció)
+          {fila.origen === 'recibo' ? ' y el recibo del padre vuelve a "Sin revisar"' : ''}.
+        </p>
+        <Field label="Motivo de la anulación" htmlFor="pago-anular-motivo">
+          <textarea
+            id="pago-anular-motivo"
+            className="field__textarea"
+            rows={2}
+            data-testid="pago-anular-motivo"
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+          />
+        </Field>
+      </Modal>
+
       <ConfirmDialog
         open={confirmar}
         title="Anular pago"
         message={`¿Anular el pago de ${mesAnio(fila.anio, fila.mes)} de ${fila.alumno_nombre}? Las calificaciones de ese mes volverán a bloquearse si corresponde.`}
         confirmLabel="Anular"
+        danger
         onCancel={() => setConfirmar(false)}
         onConfirm={() => anular.mutate()}
       />

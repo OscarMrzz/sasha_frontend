@@ -101,4 +101,62 @@ test.describe('recuperaciones', () => {
     await expect(page.getByTestId('periodo-tope-parcial')).toHaveValue('100')
     await expect(page.getByTestId('periodo-tope-periodo')).toHaveValue('100')
   })
+
+  test('menú de fila Ver/Editar/Eliminar y Ver fuerza solo lectura', async ({ page }) => {
+    await loginAs(page, { code: PEDRO })
+    await page.goto('/recuperaciones')
+    await expect(page.getByTestId('recuperaciones-page')).toBeVisible({ timeout: 20_000 })
+
+    const fila = page.locator('table.data-table tbody tr').first()
+    await expect(fila).toBeVisible({ timeout: 15_000 })
+    await fila.click({ button: 'right' })
+    await expect(page.getByTestId('recuperaciones-ctx-ver')).toBeVisible()
+    await expect(page.getByTestId('recuperaciones-ctx-editar')).toBeVisible()
+    await expect(page.getByTestId('recuperaciones-ctx-eliminar')).toBeVisible()
+
+    await page.getByTestId('recuperaciones-ctx-ver').click()
+    const modal = page.getByTestId('recuperacion-modal')
+    await expect(modal).toBeVisible()
+    // En modo Ver los selectores son de solo lectura.
+    await expect(page.getByTestId('recuperacion-tipo')).toBeDisabled()
+    if (await page.getByTestId('recuperacion-parcial').count()) {
+      await expect(page.getByTestId('recuperacion-parcial')).toBeDisabled()
+    } else {
+      await expect(page.getByTestId('recuperacion-numero')).toBeDisabled()
+    }
+    await page.getByRole('button', { name: 'Cerrar' }).click()
+    await expect(modal).toHaveCount(0)
+  })
+
+  test('Eliminar vacía la nota de la fila', async ({ page }) => {
+    // Requiere backend + DB local (fixture data_test.sql): el PUT con nota null borra la recuperación.
+    await loginAs(page, { code: PEDRO })
+    await page.goto('/recuperaciones')
+    await expect(page.getByTestId('recuperaciones-page')).toBeVisible({ timeout: 20_000 })
+
+    const fila = page.locator('table.data-table tbody tr').first()
+    await expect(fila).toBeVisible({ timeout: 15_000 })
+    await fila.click({ button: 'right' })
+    await page.getByTestId('recuperaciones-ctx-eliminar').click()
+    const confirm = page.getByRole('dialog', { name: 'Eliminar recuperación' })
+    await expect(confirm).toBeVisible()
+    await confirm.getByRole('button', { name: 'Eliminar' }).click()
+    await expect(page.getByText('Recuperación eliminada')).toBeVisible({ timeout: 15_000 })
+  })
+
+  test('con el periodo finalizado el menú solo ofrece Ver', async ({ page }) => {
+    // Requiere un periodo finalizado en la BD (data_test.sql deja el IV parcial en curso).
+    await loginAs(page, { code: PEDRO })
+    await page.goto('/recuperaciones')
+    await expect(page.getByTestId('recuperaciones-page')).toBeVisible({ timeout: 20_000 })
+    const finalizado = page.getByTestId('recuperaciones-finalizado')
+    test.skip((await finalizado.count()) === 0, 'Requiere un periodo finalizado en la BD')
+
+    const fila = page.locator('table.data-table tbody tr').first()
+    await expect(fila).toBeVisible({ timeout: 15_000 })
+    await fila.click({ button: 'right' })
+    await expect(page.getByTestId('recuperaciones-ctx-ver')).toBeVisible()
+    await expect(page.getByTestId('recuperaciones-ctx-editar')).toHaveCount(0)
+    await expect(page.getByTestId('recuperaciones-ctx-eliminar')).toHaveCount(0)
+  })
 })

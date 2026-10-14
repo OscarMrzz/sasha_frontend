@@ -109,20 +109,44 @@ test.describe('notificaciones @smoke', () => {
     })
   }
 
-  test('admin puede iniciar quitar banner y cancelar sin afectarlo', async ({ page }) => {
+  test('admin abre el detalle de una notificación desde el menú de fila', async ({ page }) => {
     await loginAs(page, { code: ADMIN })
     await page.goto('/notificaciones-admin')
     const row = page.getByRole('row').filter({ hasText: 'Aviso importante' })
     await expect(row).toBeVisible({ timeout: 15_000 })
     await row.click({ button: 'right' })
-    await page.getByTestId('notif-quitar-banner').click()
-    const dialog = page.getByRole('dialog', { name: 'Quitar banner' })
+    await page.locator('.ctx-menu').getByRole('button', { name: 'Ver', exact: true }).click()
+
+    const modal = page.getByTestId('notif-ver')
+    await expect(modal).toBeVisible()
+    await expect(modal).toContainText('Aviso importante')
+    await expect(modal).toContainText('Activa')
+    await page.getByRole('button', { name: 'Cerrar' }).click()
+    await expect(modal).toHaveCount(0)
+  })
+
+  test('admin puede iniciar desactivar notificación y cancelar sin afectarla', async ({ page }) => {
+    await loginAs(page, { code: ADMIN })
+    await page.goto('/notificaciones-admin')
+    const banner = page.getByRole('row').filter({ hasText: 'Aviso importante' })
+    await expect(banner).toBeVisible({ timeout: 15_000 })
+    await banner.click({ button: 'right' })
+    await page.getByTestId('notif-desactivar').click()
+    const dialog = page.getByRole('dialog', { name: 'Desactivar notificación' })
     await expect(dialog).toContainText('Aviso importante')
     await dialog.getByRole('button', { name: /cancelar/i }).click()
     await expect(dialog).toHaveCount(0)
 
-    await page.getByRole('row').filter({ hasText: 'Revisión de matrícula' }).click({ button: 'right' })
-    await expect(page.getByTestId('notif-quitar-banner')).toHaveCount(0)
+    // «Desactivar notificación» ya no depende de ser banner: aparece en toda fila ACTIVE.
+    const activa = page.getByRole('row').filter({ hasText: 'Revisión de matrícula' })
+    await expect(activa).toBeVisible({ timeout: 15_000 })
+    await activa.click({ button: 'right' })
+    await expect(page.getByTestId('notif-desactivar')).toBeVisible()
+    await page.getByTestId('notif-desactivar').click()
+    const dialogActiva = page.getByRole('dialog', { name: 'Desactivar notificación' })
+    await expect(dialogActiva).toContainText('Revisión de matrícula')
+    await dialogActiva.getByRole('button', { name: /cancelar/i }).click()
+    await expect(dialogActiva).toHaveCount(0)
   })
 
   test('el modal se encoge antes de desaparecer al cerrar', async ({ page }) => {
