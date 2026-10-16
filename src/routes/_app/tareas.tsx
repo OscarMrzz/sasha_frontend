@@ -351,32 +351,32 @@ function TareasStaffPage() {
           >
             Revisar
           </button>
-          {esMaestro ? (
-            <>
-              <button
-                type="button"
-                className="ctx-menu__item"
-                data-testid="tareas-staff-ctx-editar"
-                onClick={() => {
-                  setEditTarea(ctx.row)
-                  closeCtx()
-                }}
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                className="ctx-menu__item ctx-menu__item--danger"
-                data-testid="tareas-staff-ctx-eliminar"
-                onClick={() => {
-                  setConfirmDelete(ctx.row)
-                  closeCtx()
-                }}
-              >
-                Eliminar
-              </button>
-            </>
-          ) : null}
+          <Can permission="tareas:put">
+            <button
+              type="button"
+              className="ctx-menu__item"
+              data-testid="tareas-staff-ctx-editar"
+              onClick={() => {
+                setEditTarea(ctx.row)
+                closeCtx()
+              }}
+            >
+              Editar
+            </button>
+          </Can>
+          <Can permission="tareas:delete">
+            <button
+              type="button"
+              className="ctx-menu__item ctx-menu__item--danger"
+              data-testid="tareas-staff-ctx-eliminar"
+              onClick={() => {
+                setConfirmDelete(ctx.row)
+                closeCtx()
+              }}
+            >
+              Eliminar
+            </button>
+          </Can>
         </div>
       ) : null}
 
