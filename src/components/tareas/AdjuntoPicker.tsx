@@ -7,10 +7,10 @@ import { MAX_PESO_ARCHIVO_MB_DEFAULT, validarAdjunto } from '#/helpers/adjuntos'
 const ACEPTA = 'image/*,.pdf,.doc,.docx,.xls,.xlsx'
 
 /**
- * Selector de un archivo para adjuntar a una tarea: «Cargar archivo» abre el
- * explorador y «Añadir archivo» ofrece «Tomar fotografía» (cámara) o «Elegir
- * archivo». En celular usa `<input capture>`; en escritorio abre la cámara en vivo.
- * Valida tipo y peso antes de entregar el `File`.
+ * Selector de un archivo para adjuntar a una tarea: muestra siempre las dos
+ * opciones, «Tomar fotografía» (cámara) y «Elegir archivo» (explorador). En
+ * celular usa `<input capture>`; en escritorio abre la cámara en vivo. Valida
+ * tipo y peso antes de entregar el `File`.
  */
 export function AdjuntoPicker({
   onFile,
@@ -28,7 +28,6 @@ export function AdjuntoPicker({
   const camaraRef = useRef<HTMLInputElement>(null)
   const archivoRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [opciones, setOpciones] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [camaras, setCamaras] = useState<MediaDeviceInfo[]>([])
   const [camaraId, setCamaraId] = useState('')
@@ -69,7 +68,6 @@ export function AdjuntoPicker({
   }
 
   const abrirCamara = async () => {
-    setOpciones(true)
     const tactil = window.matchMedia('(pointer: coarse)').matches
     const media = navigator.mediaDevices as MediaDevices | undefined
     if (tactil || !media) {
@@ -91,7 +89,6 @@ export function AdjuntoPicker({
         if (!blob) return
         onFile(new File([blob], `foto-tarea-${Date.now()}.jpg`, { type: 'image/jpeg' }))
         setStream(null)
-        setOpciones(false)
       },
       'image/jpeg',
       0.9,
@@ -100,49 +97,26 @@ export function AdjuntoPicker({
 
   return (
     <div className="adjunto-picker" data-testid={`${testIdPrefix}-picker`}>
-      <div className="adjunto-picker__acciones">
+      <div className="recibo-subir__opciones">
         <button
           type="button"
-          className="btn btn--primary btn--sm"
-          data-testid={`${testIdPrefix}-cargar`}
+          className="app-boton-grande"
+          data-testid={`${testIdPrefix}-tomar-foto`}
+          disabled={disabled || busy}
+          onClick={() => void abrirCamara()}
+        >
+          <Camera size={22} aria-hidden /> Tomar fotografía
+        </button>
+        <button
+          type="button"
+          className="app-boton-grande app-boton-grande--sec"
+          data-testid={`${testIdPrefix}-elegir-archivo`}
           disabled={disabled || busy}
           onClick={() => archivoRef.current?.click()}
         >
-          <FileUp size={16} aria-hidden /> Cargar archivo
-        </button>
-        <button
-          type="button"
-          className="btn btn--ghost btn--sm"
-          data-testid={`${testIdPrefix}-anadir`}
-          disabled={disabled || busy}
-          onClick={() => setOpciones((v) => !v)}
-        >
-          Añadir archivo
+          <FileUp size={22} aria-hidden /> Elegir archivo
         </button>
       </div>
-
-      {opciones && !stream ? (
-        <div className="recibo-subir__opciones" style={{ marginTop: '0.6rem' }}>
-          <button
-            type="button"
-            className="app-boton-grande"
-            data-testid={`${testIdPrefix}-tomar-foto`}
-            disabled={disabled || busy}
-            onClick={() => void abrirCamara()}
-          >
-            <Camera size={22} aria-hidden /> Tomar fotografía
-          </button>
-          <button
-            type="button"
-            className="app-boton-grande app-boton-grande--sec"
-            data-testid={`${testIdPrefix}-elegir-archivo`}
-            disabled={disabled || busy}
-            onClick={() => archivoRef.current?.click()}
-          >
-            <FileUp size={22} aria-hidden /> Elegir archivo
-          </button>
-        </div>
-      ) : null}
 
       <input
         ref={camaraRef}
@@ -153,8 +127,6 @@ export function AdjuntoPicker({
         onChange={(e) => {
           aceptar(e.target.files?.[0])
           e.target.value = ''
-          // En celular la captura ocurre fuera del panel; al volver, ciérralo.
-          setOpciones(false)
         }}
       />
       <input
@@ -166,7 +138,6 @@ export function AdjuntoPicker({
         onChange={(e) => {
           aceptar(e.target.files?.[0])
           e.target.value = ''
-          setOpciones(false)
         }}
       />
 

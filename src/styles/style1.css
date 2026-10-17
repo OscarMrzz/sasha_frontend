@@ -9257,12 +9257,6 @@ body::before {
   margin-top: 0.25rem;
 }
 
-.adjunto-picker__acciones {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
 /* Visor de im�genes a pantalla completa (zoom + arrastre). */
 .visor-imagen {
   position: fixed;

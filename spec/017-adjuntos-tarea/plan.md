@@ -75,8 +75,8 @@ temporal); el resto solo ve.
 
 ### 2.5 Maestro (staff)
 
-- `src/components/tareas/AdjuntoPicker.tsx`: botones **Cargar archivo** y **Añadir archivo** que
-  despliega **Tomar fotografía** / **Elegir archivo**, con cámara (`getUserMedia`) en escritorio y
+- `src/components/tareas/AdjuntoPicker.tsx`: muestra directamente las dos opciones **Tomar fotografía**
+  y **Elegir archivo**, con cámara (`getUserMedia`) en escritorio y
   `<input accept="image/*" capture="environment">` en celular (patrón de `SubirReciboModal`).
   Valida tipo y peso antes de aceptar el `File`.
 - `src/components/tareas/AdjuntosTarea.tsx`: sección **Archivos (n/máximo)** con lista amigable

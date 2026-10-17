@@ -112,7 +112,6 @@ test.describe('adjuntos de tarea: cámara', () => {
     const dialog = await abrirVerPrimeraTarea(page)
     await borrarAdjuntosExistentes(dialog)
 
-    await dialog.getByTestId('tarea-adjunto-anadir').click()
     await dialog.getByTestId('tarea-adjunto-tomar-foto').click()
 
     const camara = dialog.getByTestId('tarea-adjunto-camara')
