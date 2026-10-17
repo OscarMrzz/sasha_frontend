@@ -53,7 +53,12 @@ export function TareaVerModal({ tarea, onClose }: { tarea: Tarea | null; onClose
           {tarea.descripcion ? (
             <p style={{ whiteSpace: 'pre-wrap', marginTop: '0.75rem' }}>{tarea.descripcion}</p>
           ) : null}
-          <AdjuntosTarea tareaId={tarea.id} maxArchivos={maxArchivos} maxPesoMB={maxPesoMB} />
+          <AdjuntosTarea
+            tareaId={tarea.id}
+            maxArchivos={maxArchivos}
+            maxPesoMB={maxPesoMB}
+            soloLectura
+          />
         </>
       ) : null}
     </Modal>

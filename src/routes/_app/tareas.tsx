@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
@@ -13,13 +13,21 @@ import { TareaVerModal } from '#/components/tareas/TareaVerModal'
 import { ClaseTareasModal } from '#/components/tareas/ClaseTareasModal'
 import { PortalTareasView } from '#/components/portal/PortalTareasView'
 import { RequirePortalClase } from '#/components/portal/RequirePortalClase'
+import { validarAdjunto } from '#/helpers/adjuntos'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
+import { useLimitesAdjuntos } from '#/hooks/use-limites-adjuntos'
 import { userMessageFromError } from '#/lib/api'
 import { isPortalRole } from '#/lib/home-path'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
-import { deleteTarea, listClasesTareas, listTareas, labelCriterioModo } from '#/services/tareas'
+import {
+  deleteTarea,
+  listClasesTareas,
+  listTareas,
+  labelCriterioModo,
+  subirAdjunto,
+} from '#/services/tareas'
 import type { ClaseResumen, Tarea } from '#/services/tareas'
-import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 /** Roles que ven las tareas por clase de todo el colegio, en solo lectura. */
 const VISTA_GENERAL = new Set(['consejeria', 'director', 'secretaria', 'coordinador'])
@@ -194,6 +202,15 @@ function TareasStaffPage() {
   const [editTarea, setEditTarea] = useState<Tarea | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Tarea | null>(null)
 
+  // Adjunto rápido desde el menú contextual: los inputs ocultos viven en la
+  // página (siempre montados) y la fila destino se guarda al pulsar el ítem.
+  // El ref da la tarea de forma síncrona; el estado solo resuelve los límites.
+  const adjuntoTareaRef = useRef<Tarea | null>(null)
+  const [adjuntoParcialId, setAdjuntoParcialId] = useState<string | undefined>(undefined)
+  const imagenRef = useRef<HTMLInputElement>(null)
+  const fotoRef = useRef<HTMLInputElement>(null)
+  const { maxPesoMB: adjuntoMaxMB } = useLimitesAdjuntos({ parcialId: adjuntoParcialId })
+
   useAccionPalette('nuevo-tarea', () => setCreateOpen(true))
 
   useEffect(() => {
@@ -218,6 +235,28 @@ function TareasStaffPage() {
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
+
+  const subirAdjuntoMut = useMutation({
+    mutationFn: ({ tareaId, file }: { tareaId: string; file: File }) =>
+      subirAdjunto(tareaId, file),
+    onSuccess: (a, vars) => {
+      toast.success(`Archivo "${a.nombre_original}" cargado`)
+      void qc.invalidateQueries({ queryKey: ['tarea-adjuntos', vars.tareaId] })
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
+
+  /** Valida tipo/peso y sube el archivo elegido a la tarea del menú contextual. */
+  const aceptarAdjuntoRapido = (file: File | undefined) => {
+    const tarea = adjuntoTareaRef.current
+    if (!file || !tarea) return
+    const error = validarAdjunto(file, adjuntoMaxMB)
+    if (error) {
+      toast.error(error)
+      return
+    }
+    subirAdjuntoMut.mutate({ tareaId: tarea.id, file })
+  }
 
   const asigEffective =
     asigId && materias.some((m) => m.asignacion_docente_id === asigId)
@@ -355,6 +394,32 @@ function TareasStaffPage() {
             <button
               type="button"
               className="ctx-menu__item"
+              data-testid="tareas-staff-ctx-cargar-imagen"
+              onClick={() => {
+                adjuntoTareaRef.current = ctx.row
+                setAdjuntoParcialId(ctx.row.parcial_id)
+                closeCtx()
+                imagenRef.current?.click()
+              }}
+            >
+              Cargar imagen
+            </button>
+            <button
+              type="button"
+              className="ctx-menu__item"
+              data-testid="tareas-staff-ctx-tomar-foto"
+              onClick={() => {
+                adjuntoTareaRef.current = ctx.row
+                setAdjuntoParcialId(ctx.row.parcial_id)
+                closeCtx()
+                fotoRef.current?.click()
+              }}
+            >
+              Tomar foto
+            </button>
+            <button
+              type="button"
+              className="ctx-menu__item"
               data-testid="tareas-staff-ctx-editar"
               onClick={() => {
                 setEditTarea(ctx.row)
@@ -432,6 +497,31 @@ function TareasStaffPage() {
         confirmLabel="Eliminar"
         onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.id)}
         onCancel={() => setConfirmDelete(null)}
+      />
+
+      {/* Inputs ocultos para el adjunto rápido (siempre montados en la página). */}
+      <input
+        ref={imagenRef}
+        type="file"
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+        hidden
+        data-testid="tareas-staff-ctx-input-archivo"
+        onChange={(e) => {
+          aceptarAdjuntoRapido(e.target.files?.[0])
+          e.target.value = ''
+        }}
+      />
+      <input
+        ref={fotoRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        data-testid="tareas-staff-ctx-input-foto"
+        onChange={(e) => {
+          aceptarAdjuntoRapido(e.target.files?.[0])
+          e.target.value = ''
+        }}
       />
     </RequirePermission>
   )

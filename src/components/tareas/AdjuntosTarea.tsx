@@ -31,19 +31,26 @@ import type { TareaAdjunto } from '#/services/tareas'
  * Sección **Archivos** de una tarea para el maestro y los roles con permisos:
  * lista con ícono y peso, previsualización (imagen/PDF), descarga, borrado y
  * subida (cámara o archivo). Respeta el máximo de archivos del periodo.
+ *
+ * Con `soloLectura` (detalle «Ver») queda en modo consulta: solo ver y
+ * descargar, sin subir ni borrar. La edición (`TareaCreateModal` con `tarea`)
+ * sigue editable.
  */
 export function AdjuntosTarea({
   tareaId,
   maxArchivos = MAX_ADJUNTOS_TAREA_DEFAULT,
   maxPesoMB = MAX_PESO_ARCHIVO_MB_DEFAULT,
+  soloLectura = false,
 }: {
   tareaId: string
   maxArchivos?: number
   maxPesoMB?: number
+  /** Si es `true`, oculta la subida y el borrado (solo ver/descargar). */
+  soloLectura?: boolean
 }) {
   const qc = useQueryClient()
   const { can } = useCan()
-  const editable = can('tareas:put')
+  const editable = !soloLectura && can('tareas:put')
   const [ver, setVer] = useState<string | null>(null)
   const [porBorrar, setPorBorrar] = useState<TareaAdjunto | null>(null)
   const [ampliada, setAmpliada] = useState<{ src: string; alt: string } | null>(null)
