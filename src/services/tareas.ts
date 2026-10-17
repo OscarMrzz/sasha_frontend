@@ -1,4 +1,5 @@
 import { apiRequest, apiRequestList } from '#/lib/api'
+import { descargarArchivo } from '#/lib/descargas'
 
 /** Modo de calificación / revisión. */
 export type TareaCriterioModo = 'simple' | 'manual' | 'criterio'
@@ -186,4 +187,49 @@ export async function listParcialesTarea(periodoAcademicoId: string) {
       status: string
     }[]
   >(`/tareas/parciales?${qs}`)
+}
+
+// -----------------------------------------------------------------------------
+// Adjuntos de tarea (documentos/fotos). El binario se lee por el endpoint
+// `.../archivo` con la sesión activa; la fila solo trae metadatos.
+// -----------------------------------------------------------------------------
+
+export interface TareaAdjunto {
+  id: string
+  tarea_id?: string
+  nombre_original: string
+  content_type: string
+  size_bytes: number
+  expira_at?: string
+  created_at?: string
+}
+
+export function listAdjuntos(tareaId: string) {
+  return apiRequestList<TareaAdjunto>(`/tareas/${encodeURIComponent(tareaId)}/adjuntos`)
+}
+
+export function subirAdjunto(tareaId: string, file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  return apiRequest<TareaAdjunto>(`/tareas/${encodeURIComponent(tareaId)}/adjuntos`, {
+    method: 'POST',
+    body: form,
+  })
+}
+
+export function deleteAdjunto(tareaId: string, adjuntoId: string) {
+  return apiRequest<void>(
+    `/tareas/${encodeURIComponent(tareaId)}/adjuntos/${encodeURIComponent(adjuntoId)}`,
+    { method: 'DELETE' },
+  )
+}
+
+/** Ruta del binario de un adjunto staff (para `useArchivoAutenticado`). */
+export function adjuntoArchivoPath(tareaId: string, adjuntoId: string) {
+  return `/tareas/${encodeURIComponent(tareaId)}/adjuntos/${encodeURIComponent(adjuntoId)}/archivo`
+}
+
+/** Descarga el binario del adjunto con su nombre original. */
+export function descargarAdjunto(tareaId: string, adjunto: TareaAdjunto) {
+  return descargarArchivo(adjuntoArchivoPath(tareaId, adjunto.id), adjunto.nombre_original)
 }

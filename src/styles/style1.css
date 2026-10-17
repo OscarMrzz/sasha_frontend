@@ -9158,3 +9158,176 @@ body::before {
     padding: 0.5rem 0.6rem;
   }
 }
+
+/* =============================================================================
+   Adjuntos de tarea (017) � lista, previsualizaci�n y visor con zoom.
+   Colores s�lidos de los tokens; sin degradados.
+   ============================================================================= */
+
+.adjunto-seccion {
+  margin-top: 1rem;
+}
+
+.adjunto-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--sasha-bg-raised);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 12px;
+}
+
+.adjunto-item__fila {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.adjunto-item__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--sasha-bg-muted);
+  color: var(--sasha-accent);
+}
+
+.adjunto-item__cuerpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.adjunto-item__titulo {
+  font-size: 0.98rem;
+  font-weight: 650;
+  color: var(--sasha-texto-title);
+  overflow-wrap: anywhere;
+}
+
+.adjunto-item__acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.adjunto-vista__miniatura {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  align-self: flex-start;
+}
+
+.adjunto-vista__img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: var(--sasha-bg-muted);
+}
+
+.adjunto-vista__pdf {
+  width: 100%;
+  height: 60vh;
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 10px;
+  background: var(--sasha-bg-muted);
+}
+
+.adjunto-vista__error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.adjunto-picker {
+  margin-top: 0.25rem;
+}
+
+.adjunto-picker__acciones {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* Visor de im�genes a pantalla completa (zoom + arrastre). */
+.visor-imagen {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.visor-imagen__lienzo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+.visor-imagen__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  transform-origin: center center;
+}
+
+.visor-imagen__barra {
+  position: absolute;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 999px;
+  background: var(--sasha-bg-overlay);
+  border: 1px solid var(--sasha-border-fuerte);
+  box-shadow: var(--sasha-shadow-modal);
+}
+
+.visor-imagen__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--sasha-bg-raised);
+  color: var(--sasha-texto-primary);
+  cursor: pointer;
+}
+
+.visor-imagen__btn:hover {
+  background: var(--sasha-bg-hover);
+}
+
+.visor-imagen__btn--cerrar {
+  background: var(--sasha-danger);
+  color: #ffffff;
+}
+
+.visor-imagen__btn--cerrar:hover {
+  background: var(--sasha-danger);
+  opacity: 0.9;
+}

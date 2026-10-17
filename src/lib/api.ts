@@ -162,6 +162,7 @@ function mensajePorEstado(status: number): string {
   if (status === 404) return 'No se encontró lo que buscas.'
   if (status === 405) return 'El servidor no reconoce esta acción. Puede que el backend esté desactualizado: reinícialo.'
   if (status === 413) return 'El archivo es demasiado grande.'
+  if (status === 415) return 'Tipo de archivo no permitido.'
   if (status >= 500) return 'El servidor tuvo un problema. Intenta de nuevo en un momento.'
   return `Error del servidor (${status}).`
 }

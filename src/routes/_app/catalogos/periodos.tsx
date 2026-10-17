@@ -21,6 +21,10 @@ import type { ParcialForm, Periodo, PeriodoCreate } from '#/services/catalogos'
 import { listContratos } from '#/services/contratos'
 import { periodoEstadoPalabra } from '#/helpers/periodos'
 import { derivarFechasPeriodo, validarParciales } from '#/helpers/parciales'
+import {
+  MAX_ADJUNTOS_TAREA_DEFAULT,
+  MAX_PESO_ARCHIVO_MB_DEFAULT,
+} from '#/helpers/adjuntos'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/catalogos/periodos')({ component: PeriodosPage })
@@ -45,6 +49,8 @@ const defaultForm: PeriodoCreate = {
   recuperaciones_periodo: 2,
   tope_recuperacion_parcial: 100,
   tope_recuperacion_periodo: 100,
+  max_archivos_tarea: 3,
+  max_peso_archivo_mb: 20,
   contrato_matricula_id: undefined,
   parciales: [parcialVacio(1)],
 }
@@ -63,6 +69,8 @@ const REGLAS: { key: keyof PeriodoCreate; label: string; testid: string; min: nu
   { key: 'recuperaciones_periodo', label: 'Recuperaciones de periodo', testid: 'periodo-recuperaciones', min: 0, max: 10 },
   { key: 'tope_recuperacion_parcial', label: 'Tope de nota en recuperación de parcial', testid: 'periodo-tope-parcial', min: 0, max: 100 },
   { key: 'tope_recuperacion_periodo', label: 'Tope de nota en recuperación de periodo', testid: 'periodo-tope-periodo', min: 0, max: 100 },
+  { key: 'max_archivos_tarea', label: 'Archivos por tarea', testid: 'periodo-max-archivos', min: 1, max: 50 },
+  { key: 'max_peso_archivo_mb', label: 'Peso máximo por archivo (MB)', testid: 'periodo-max-peso', min: 1, max: 200 },
 ]
 
 const snapshot = (form: PeriodoCreate) => JSON.stringify(form)
@@ -146,6 +154,8 @@ function PeriodosPage() {
       recuperaciones_periodo: row.recuperaciones_periodo,
       tope_recuperacion_parcial: row.tope_recuperacion_parcial,
       tope_recuperacion_periodo: row.tope_recuperacion_periodo,
+      max_archivos_tarea: row.max_archivos_tarea,
+      max_peso_archivo_mb: row.max_peso_archivo_mb,
       contrato_matricula_id: row.contrato_matricula_id ?? '',
       parciales,
     })
@@ -159,6 +169,15 @@ function PeriodosPage() {
         contrato_matricula_id: form.contrato_matricula_id
           ? form.contrato_matricula_id
           : undefined,
+        // Nunca se envían `undefined`: si el campo quedó vacío se cae al default del backend.
+        max_archivos_tarea:
+          form.max_archivos_tarea && form.max_archivos_tarea >= 1
+            ? form.max_archivos_tarea
+            : MAX_ADJUNTOS_TAREA_DEFAULT,
+        max_peso_archivo_mb:
+          form.max_peso_archivo_mb && form.max_peso_archivo_mb >= 1
+            ? form.max_peso_archivo_mb
+            : MAX_PESO_ARCHIVO_MB_DEFAULT,
       }
       if (editing) return updatePeriodo(editing.id, payload)
       return createPeriodo(payload)
@@ -183,7 +202,15 @@ function PeriodosPage() {
   })
 
   const nombreError = form.nombre.trim() ? '' : 'Escribe el nombre del periodo.'
-  const error = nombreError || validarParciales(form.parciales)
+  const archivosError =
+    form.max_archivos_tarea && form.max_archivos_tarea >= 1
+      ? ''
+      : 'Archivos por tarea debe ser al menos 1.'
+  const pesoError =
+    form.max_peso_archivo_mb && form.max_peso_archivo_mb >= 1
+      ? ''
+      : 'El peso máximo por archivo debe ser al menos 1 MB.'
+  const error = nombreError || archivosError || pesoError || validarParciales(form.parciales)
   const fechas = derivarFechasPeriodo(form.parciales)
   const dirty = snapshot(form) !== baseline
 

@@ -182,6 +182,10 @@ export interface Periodo {
   recuperaciones_periodo: number
   tope_recuperacion_parcial: number
   tope_recuperacion_periodo: number
+  /** Máximo de adjuntos por tarea (default 3 en backend). */
+  max_archivos_tarea: number
+  /** Peso máximo por adjunto en MB (default 20 en backend). */
+  max_peso_archivo_mb: number
   contrato_matricula_id?: string | null
   contrato_matricula_titulo?: string | null
   parciales: Parcial[]
@@ -201,6 +205,10 @@ export interface PeriodoCreate {
   recuperaciones_periodo?: number
   tope_recuperacion_parcial?: number
   tope_recuperacion_periodo?: number
+  /** Máximo de adjuntos por tarea. */
+  max_archivos_tarea?: number
+  /** Peso máximo por adjunto en MB. */
+  max_peso_archivo_mb?: number
   contrato_matricula_id?: string | null
   /** Arreglo anidado obligatorio (>= 1). Las fechas del periodo se derivan de aquí. */
   parciales: ParcialForm[]

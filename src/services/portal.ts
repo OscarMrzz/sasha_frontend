@@ -1,4 +1,5 @@
 import { apiRequest, apiRequestList } from '#/lib/api'
+import { descargarArchivo } from '#/lib/descargas'
 import type { Curso } from '#/services/catalogos'
 import type { EstadoRecibo, Recibo } from '#/services/pagos'
 import type { Plan } from '#/services/planestudio'
@@ -67,6 +68,16 @@ export interface PortalTarea {
   estado: 'pendiente' | 'revisada'
   entregado: boolean
   liberado: boolean
+  /** Documentos/fotos que el maestro adjuntó a la tarea. */
+  adjuntos?: PortalAdjunto[]
+}
+
+/** Adjunto de tarea visto por el alumno o el responsable. */
+export interface PortalAdjunto {
+  id: string
+  nombre_original: string
+  content_type: string
+  size_bytes: number
 }
 
 export type EstadoParcialNota = 'visible' | 'no_liberado' | 'bloqueado_pago'
@@ -281,6 +292,16 @@ export function getResultadoPeriodo(alumnoId?: string | null) {
 
 export function listTareasHijo(alumnoId?: string | null) {
   return apiRequestList<PortalTarea>(`/portal/tareas${alumnoQs(alumnoId)}`)
+}
+
+/** Ruta del binario de un adjunto en el portal (para `useArchivoAutenticado`). */
+export function adjuntoPortalArchivoPath(adjuntoId: string) {
+  return `/portal/adjuntos/${encodeURIComponent(adjuntoId)}/archivo`
+}
+
+/** Descarga el binario del adjunto con su nombre original (autoriza por matrícula). */
+export function descargarAdjuntoPortal(adjunto: PortalAdjunto) {
+  return descargarArchivo(adjuntoPortalArchivoPath(adjunto.id), adjunto.nombre_original)
 }
 
 export interface PortalMesPago {

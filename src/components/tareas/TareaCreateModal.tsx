@@ -1,13 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { toast } from 'sonner'
+import { AdjuntoIcono } from '#/components/archivos/AdjuntoIcono'
 import { Can } from '#/components/gates/Can'
+import { AdjuntoPicker } from '#/components/tareas/AdjuntoPicker'
+import { AdjuntosTarea } from '#/components/tareas/AdjuntosTarea'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { Modal, useDismiss } from '#/components/ui/Modal'
+import {
+  formatoPeso,
+} from '#/helpers/adjuntos'
+import { useLimitesAdjuntos } from '#/hooks/use-limites-adjuntos'
 import { userMessageFromError } from '#/lib/api'
-import { createTarea, listParcialesTarea, listTiposTarea, updateTarea } from '#/services/tareas'
+import {
+  createTarea,
+  listParcialesTarea,
+  listTiposTarea,
+  subirAdjunto,
+  updateTarea,
+} from '#/services/tareas'
 import type { Tarea, TareaCreate, TareaCriterioModo } from '#/services/tareas'
 
 type ParcialOpt = { id: string; nombre: string }
@@ -44,6 +58,10 @@ export function TareaCreateModal({
   const { open, dismiss } = useDismiss(onClose)
   const qc = useQueryClient()
   const [confirmSave, setConfirmSave] = useState(false)
+  const [archivos, setArchivos] = useState<File[]>([])
+  // Límites del periodo de la clase (cantidad y peso). Si aún no se resuelve
+  // (sin periodo asignado o error), el hook cae al default (3 / 20 MB).
+  const { maxArchivos, maxPesoMB } = useLimitesAdjuntos({ periodoAcademicoId })
   const [form, setForm] = useState<TareaForm>(() =>
     tarea
       ? {
@@ -88,9 +106,20 @@ export function TareaCreateModal({
   }, [parciales, periodoAcademicoId])
 
   const createMut = useMutation({
-    mutationFn: (body: TareaCreate) => (tarea ? updateTarea(tarea.id, body) : createTarea(body)),
-    onSuccess: () => {
+    mutationFn: async (body: TareaCreate) => {
+      const guardada = tarea ? await updateTarea(tarea.id, body) : await createTarea(body)
+      // Los archivos elegidos al crear se suben justo después de tener la tarea.
+      if (tarea || archivos.length === 0) return { subidos: 0, fallidos: 0 }
+      const resultados = await Promise.allSettled(
+        archivos.map((f) => subirAdjunto(guardada.id, f)),
+      )
+      const fallidos = resultados.filter((r) => r.status === 'rejected').length
+      return { subidos: archivos.length - fallidos, fallidos }
+    },
+    onSuccess: (r) => {
       toast.success(tarea ? 'Tarea actualizada' : 'Tarea creada')
+      if (r.subidos > 0) toast.success(`${r.subidos} archivo(s) cargado(s)`)
+      if (r.fallidos > 0) toast.error(`${r.fallidos} archivo(s) no se pudieron cargar`)
       void qc.invalidateQueries({ queryKey: ['tareas'] })
       void qc.invalidateQueries({ queryKey: ['maestro-dashboard'] })
       setConfirmSave(false)
@@ -153,7 +182,7 @@ export function TareaCreateModal({
                 type="button"
                 className="btn btn--primary"
                 data-testid="tarea-guardar"
-                disabled={!asignacionDocenteId || !periodoAcademicoId}
+                disabled={!asignacionDocenteId || !periodoAcademicoId || createMut.isPending}
                 onClick={() => {
                   if (!buildBody()) return
                   setConfirmSave(true)
@@ -285,6 +314,53 @@ export function TareaCreateModal({
               Al revisar un clic marca entregado con el máximo de puntos.
             </p>
           ) : null}
+
+          {tarea ? (
+            <AdjuntosTarea tareaId={tarea.id} maxArchivos={maxArchivos} maxPesoMB={maxPesoMB} />
+          ) : (
+            <div style={{ marginTop: '1rem' }} data-testid="tarea-create-archivos">
+              <p className="field__label" style={{ marginBottom: '0.35rem' }}>
+                Archivos (se suben al guardar la tarea)
+              </p>
+              {archivos.length > 0 ? (
+                <ul className="app-list" data-testid="tarea-create-archivos-lista">
+                  {archivos.map((f, i) => (
+                    <li key={`${f.name}-${i}`} className="adjunto-item">
+                      <div className="adjunto-item__fila">
+                        <span className="adjunto-item__icono">
+                          <AdjuntoIcono contentType={f.type} nombre={f.name} />
+                        </span>
+                        <div className="adjunto-item__cuerpo">
+                          <span className="adjunto-item__titulo">{f.name}</span>
+                          <span className="app-list__sub">{formatoPeso(f.size)}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          aria-label={`Quitar ${f.name}`}
+                          data-testid={`tarea-create-archivo-quitar-${i}`}
+                          onClick={() => setArchivos((a) => a.filter((_, j) => j !== i))}
+                        >
+                          <Trash2 size={16} aria-hidden />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {archivos.length >= maxArchivos ? (
+                <p className="texto-muted" data-testid="tarea-create-archivos-tope">
+                  Se alcanzó el máximo de {maxArchivos} archivos por tarea.
+                </p>
+              ) : (
+                <AdjuntoPicker
+                  onFile={(f) => setArchivos((a) => [...a, f])}
+                  maxMB={maxPesoMB}
+                  testIdPrefix="tarea-create-adjunto"
+                />
+              )}
+            </div>
+          )}
         </div>
       </Modal>
 
@@ -292,6 +368,7 @@ export function TareaCreateModal({
         open={confirmSave}
         title={tarea ? 'Guardar cambios' : 'Crear tarea'}
         message={tarea ? '¿Guardar los cambios de esta tarea?' : '¿Registrar esta tarea?'}
+        confirmDisabled={createMut.isPending}
         onConfirm={() => {
           const body = buildBody()
           if (body) createMut.mutate(body)

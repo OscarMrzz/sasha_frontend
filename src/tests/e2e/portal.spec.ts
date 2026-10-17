@@ -1,7 +1,30 @@
 ﻿import { test, expect, loginAs } from './fixtures/auth'
+import type { Page } from '@playwright/test'
 
 const ALUMNO = '1002026701'
 const RESPONSABLE = '1002026901'
+// Maestro de Español 7-1 (fixture): dueño de una tarea que ve el alumno 1002026701.
+const MAESTRO_ESPANOL = '1002026501'
+
+/** PNG de 1×1 para simular la imagen adjunta a una tarea. */
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+)
+
+/** Cierra la sesión del cliente y del servidor para poder entrar con otro usuario. */
+async function cerrarSesion(page: Page) {
+  // La sesión vive en localStorage (`sasha.session`); borrarla evita que /login redirija al home.
+  await page.evaluate(() => {
+    try {
+      localStorage.clear()
+      sessionStorage.clear()
+    } catch {
+      /* ignore */
+    }
+  })
+  await page.context().clearCookies()
+}
 
 test.describe('portal alumno y responsable @smoke', () => {
   test('alumno: inicio con bienvenida y botones; horario, clases y modo clase', async ({ page }) => {
@@ -32,7 +55,8 @@ test.describe('portal alumno y responsable @smoke', () => {
 
     await expect(page).toHaveURL(/\/tareas/, { timeout: 10_000 })
     await expect(page.getByTestId('sidebar-collapse')).toBeVisible()
-    await expect(page.getByTestId('sidebar-clase')).toContainText(curso)
+    // El sidebar arranca colapsado: el curso va en el `title` y en el breadcrumb.
+    await expect(page.getByTestId('sidebar-clase')).toHaveAttribute('title', curso)
     await expect(page.getByTestId('portal-tareas')).toContainText(`Tareas · ${curso}`, {
       timeout: 15_000,
     })
@@ -166,5 +190,67 @@ test.describe('portal alumno y responsable @smoke', () => {
     await page.getByTestId('top-inicio').click()
     await expect(page).toHaveURL(/\/responsable\/?$/, { timeout: 10_000 })
     await expect(page.getByTestId('responsable-hijos')).toBeVisible({ timeout: 10_000 })
+  })
+
+  test('alumno: ve la sección Archivos de una tarea, descarga y amplía la imagen con zoom', async ({
+    page,
+  }) => {
+    // El alumno elige una tarea de Español que ve; el maestro le adjunta una imagen por la API.
+    await loginAs(page, { code: ALUMNO })
+    const rolAlumno = { headers: { 'X-Active-Role': 'alumno' } }
+    const portalTareas = (await (
+      await page.request.get('/api/portal/tareas', rolAlumno)
+    ).json()) as Array<{
+      id: string
+      curso_nombre?: string
+    }>
+    expect(Array.isArray(portalTareas)).toBeTruthy()
+    const deEspanol = portalTareas.find((t) => t.curso_nombre === 'Español')
+    expect(deEspanol, 'el alumno debe tener al menos una tarea de Español').toBeTruthy()
+    const tareaId = deEspanol!.id
+
+    await cerrarSesion(page)
+    await loginAs(page, { code: MAESTRO_ESPANOL })
+    const rolMaestro = { headers: { 'X-Active-Role': 'maestro' } }
+    const existentes = (await (
+      await page.request.get(`/api/tareas/${tareaId}/adjuntos`, rolMaestro)
+    ).json()) as Array<{ id: string }>
+    for (const a of existentes) {
+      await page.request.delete(`/api/tareas/${tareaId}/adjuntos/${a.id}`, rolMaestro)
+    }
+    const subida = await page.request.post(`/api/tareas/${tareaId}/adjuntos`, {
+      ...rolMaestro,
+      multipart: { file: { name: 'portada.png', mimeType: 'image/png', buffer: PNG } },
+    })
+    expect(subida.ok()).toBeTruthy()
+    const adjunto = (await subida.json()) as { id: string; nombre_original: string }
+
+    await cerrarSesion(page)
+    await loginAs(page, { code: ALUMNO })
+    await page.getByTestId('alumno-tile-tareas').click()
+    await expect(page.getByTestId('alumno-tareas')).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId(`alumno-tarea-${tareaId}`).click()
+
+    const modal = page.getByTestId('portal-tarea-ver-modal')
+    const seccion = modal.getByTestId('portal-tarea-archivos-seccion')
+    await expect(seccion).toBeVisible({ timeout: 15_000 })
+    await expect(seccion).toContainText('Archivos (1)')
+    await expect(seccion).toContainText('portada.png')
+
+    // Descargar
+    const download = page.waitForEvent('download')
+    await modal.getByTestId(`portal-adjunto-descargar-${adjunto.id}`).click()
+    expect((await download).suggestedFilename()).toBe('portada.png')
+
+    // Tocar la imagen abre el visor con zoom (la previsualización es diferida: «Ver» primero).
+    await modal.getByTestId(`portal-adjunto-ver-${adjunto.id}`).click()
+    await modal.getByTestId(`portal-adjunto-vista-${adjunto.id}`).click()
+    const visor = page.getByTestId('visor-imagen')
+    await expect(visor).toBeVisible({ timeout: 10_000 })
+    await expect(visor).toHaveAttribute('data-scale', '1.00')
+    await page.getByTestId('visor-zoom-in').click()
+    await expect(visor).toHaveAttribute('data-scale', '1.75')
+    await page.getByTestId('visor-cerrar').click()
+    await expect(visor).toHaveCount(0)
   })
 })

@@ -30,9 +30,15 @@ export async function loginAs(
   const home = opts.home ?? defaultHome(code)
 
   await page.goto('/login')
-  await expect(page.getByTestId('login-form')).toHaveAttribute('data-ready', '1', {
-    timeout: 15_000,
-  })
+  const loginForm = page.getByTestId('login-form')
+  try {
+    await expect(loginForm).toHaveAttribute('data-ready', '1', { timeout: 15_000 })
+  } catch {
+    // En local, la primera navegación de un contexto nuevo puede quedarse sin
+    // hidratar el bundle cliente (dev server frío). Una recarga lo resuelve.
+    await page.reload()
+    await expect(loginForm).toHaveAttribute('data-ready', '1', { timeout: 15_000 })
+  }
   await page.getByTestId('login-code').fill(code)
   await page.getByTestId('login-password').fill(password)
   await page.getByTestId('login-submit').click()
