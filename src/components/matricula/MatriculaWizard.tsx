@@ -31,8 +31,22 @@ import {
   listProfesiones,
 } from '#/services/catalogos'
 import { getInstitucion } from '#/services/carnets'
-import { createMatricula, getCostoGrado, linkResponsable } from '#/services/matricula'
-import { createAlumno, createResponsable, getFicha, getResponsableByCode } from '#/services/personas'
+import {
+  createMatricula,
+  getCostoGrado,
+  getMatricula,
+  linkResponsable,
+  unlinkResponsable,
+  updateMatricula,
+} from '#/services/matricula'
+import type { MatriculaUpdate } from '#/services/matricula'
+import {
+  createAlumno,
+  createResponsable,
+  getFicha,
+  getResponsableByCode,
+  updatePersona,
+} from '#/services/personas'
 import type { UserFicha } from '#/services/personas'
 import { createUser } from '#/services/users'
 
@@ -56,10 +70,26 @@ type TipoBeca = 'normal' | 'media' | 'completa' | 'especial'
 
 /** Beca del alumno: aplica solo a las mensualidades, no a la cuota de matrícula. */
 const BECA_OPTIONS: { value: TipoBeca; label: string; desc: string }[] = [
-  { value: 'normal', label: 'Normal', desc: 'Paga la mensualidad completa del grado' },
-  { value: 'media', label: 'Media beca', desc: 'Paga el 50% de la mensualidad' },
-  { value: 'completa', label: 'Beca completa', desc: 'No paga mensualidades (L 0)' },
-  { value: 'especial', label: 'Especial', desc: 'Paga el monto que indiques por mes' },
+  {
+    value: 'normal',
+    label: 'Normal',
+    desc: 'Paga la mensualidad completa del grado',
+  },
+  {
+    value: 'media',
+    label: 'Media beca',
+    desc: 'Paga el 50% de la mensualidad',
+  },
+  {
+    value: 'completa',
+    label: 'Beca completa',
+    desc: 'No paga mensualidades (L 0)',
+  },
+  {
+    value: 'especial',
+    label: 'Especial',
+    desc: 'Paga el monto que indiques por mes',
+  },
 ]
 
 type BoolChoice = boolean | null
@@ -73,6 +103,9 @@ type AlumnoForm = {
   fecha_nacimiento: string
   telefono_contacto: string
   numero_identidad: string
+  // No se edita en la UI, pero se conserva y reenvía al guardar la ficha en
+  // edición para no sobreescribir el documento real con un valor fijo.
+  tipo_documento_identidad: string
 }
 
 type HistorialForm = {
@@ -114,7 +147,47 @@ type ResponsableCard = {
   direccion_trabajo: string
   telefono_trabajo: string
   es_principal: boolean
+  // Campos del perfil que no se editan en la tarjeta pero se conservan al guardar
+  // (updatePersona sobrescribe el perfil completo: si no se reenvían, quedarían NULL).
+  numero_identidad: string
+  tipo_documento_identidad: string
+  sexo: string
+  fecha_nacimiento: string
+  /**
+   * `true` cuando la ficha del responsable se cargó con `getFicha`. Si es
+   * `false`, no se debe reenviar su perfil al guardar (se conservan los valores
+   * del servidor) para no borrar datos que no se pudieron leer.
+   */
+  fichaCargada: boolean
 }
+
+/** Operación a ejecutar por cada responsable en el guardado en edición. */
+type ResponsablePlan =
+  | { kind: 'nuevo'; card: ResponsableCard }
+  | {
+      kind: 'existente'
+      card: ResponsableCard
+      userCode: string
+      responsableId: string
+    }
+
+/** Modo edición del wizard: matrícula existente a precargar. */
+export type MatriculaEdicion = { matriculaId: string; alumnoCode: string }
+
+/** Copia inmutable del estado inicial del formulario en modo edición. */
+type SnapshotEdicion = {
+  alumno: AlumnoForm
+  historial: HistorialForm
+  academico: AcademicoForm
+  responsables: ResponsableCard[]
+  tipoBeca: TipoBeca
+  montoEspecial: string
+  /** `es_reingreso` real de la matrícula (no se deriva de la ficha del alumno). */
+  esReingreso: boolean
+}
+
+type RestaurarStepId =
+  'alumno' | 'historial' | 'academico' | 'responsables' | 'foto' | 'pago'
 
 const emptyAlumno: AlumnoForm = {
   primer_nombre: '',
@@ -125,6 +198,7 @@ const emptyAlumno: AlumnoForm = {
   fecha_nacimiento: '',
   telefono_contacto: '',
   numero_identidad: '',
+  tipo_documento_identidad: '',
 }
 
 const emptyHistorial: HistorialForm = {
@@ -165,6 +239,54 @@ function newResponsable(esPrincipal = false): ResponsableCard {
     direccion_trabajo: '',
     telefono_trabajo: '',
     es_principal: esPrincipal,
+    numero_identidad: '',
+    tipo_documento_identidad: '',
+    sexo: '',
+    fecha_nacimiento: '',
+    fichaCargada: false,
+  }
+}
+
+/**
+ * Separa un nombre completo en sus partes. Es una heurística de último recurso:
+ * cuando existe la ficha real (`getFicha`) se usan sus campos y esto no se llama.
+ *
+ * Con 3 o más palabras se asumen dos apellidos al final (el caso típico
+ * hondureño) para no repartir mal «Nombre Apellido1 Apellido2» como si
+ * «Apellido1» fuera el segundo apellido.
+ */
+function parseNombre(full: string) {
+  const parts = full.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) {
+    return {
+      primer_nombre: '',
+      segundo_nombre: '',
+      primer_apellido: '',
+      segundo_apellido: '',
+    }
+  }
+  if (parts.length === 1) {
+    return {
+      primer_nombre: parts[0],
+      segundo_nombre: '',
+      primer_apellido: '',
+      segundo_apellido: '',
+    }
+  }
+  if (parts.length === 2) {
+    return {
+      primer_nombre: parts[0],
+      segundo_nombre: '',
+      primer_apellido: parts[1],
+      segundo_apellido: '',
+    }
+  }
+  const given = parts.slice(0, parts.length - 2)
+  return {
+    primer_nombre: given[0] ?? '',
+    segundo_nombre: given[1] ?? '',
+    primer_apellido: parts[parts.length - 2],
+    segundo_apellido: parts[parts.length - 1],
   }
 }
 
@@ -177,6 +299,8 @@ type Props = {
   grados: Grado[]
   modalidades: Modalidad[]
   cursos: Curso[]
+  /** Presente = modo edición; ausente = creación (comportamiento original). */
+  edicion?: MatriculaEdicion
 }
 
 function fullName(p: {
@@ -185,7 +309,12 @@ function fullName(p: {
   primer_apellido: string
   segundo_apellido?: string
 }) {
-  return [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido]
+  return [
+    p.primer_nombre,
+    p.segundo_nombre,
+    p.primer_apellido,
+    p.segundo_apellido,
+  ]
     .map((s) => s?.trim())
     .filter(Boolean)
     .join(' ')
@@ -268,7 +397,8 @@ function validateResponsable(r: ResponsableCard): string | null {
   const telTrab = validateTelefono('El teléfono de trabajo', r.telefono_trabajo)
   if (telTrab) return telTrab
   if (r.mode === 'existente') {
-    if (!r.responsable_id) return 'Busca y confirma cada responsable existente por su código'
+    if (!r.responsable_id)
+      return 'Busca y confirma cada responsable existente por su código'
   } else if (!r.primer_nombre.trim() || !r.primer_apellido.trim()) {
     return 'Primer nombre y primer apellido son obligatorios en responsables nuevos'
   }
@@ -284,13 +414,16 @@ export function MatriculaWizard({
   grados,
   modalidades,
   cursos,
+  edicion,
 }: Props) {
   const qc = useQueryClient()
   const [step, setStep] = useState(0)
   const [alumno, setAlumno] = useState<AlumnoForm>(emptyAlumno)
   const [historial, setHistorial] = useState<HistorialForm>(emptyHistorial)
   const [academico, setAcademico] = useState<AcademicoForm>(emptyAcademico)
-  const [responsables, setResponsables] = useState<ResponsableCard[]>([newResponsable(true)])
+  const [responsables, setResponsables] = useState<ResponsableCard[]>([
+    newResponsable(true),
+  ])
   const [foto, setFoto] = useState<File | null>(null)
   const [confirmSave, setConfirmSave] = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
@@ -301,6 +434,11 @@ export function MatriculaWizard({
   const [zipDescargado, setZipDescargado] = useState(false)
   const [tipoBeca, setTipoBeca] = useState<TipoBeca>('normal')
   const [montoEspecial, setMontoEspecial] = useState('')
+  const [snapshot, setSnapshot] = useState<SnapshotEdicion | null>(null)
+  // es_reingreso real de la matrícula; se controla aparte de la ficha del alumno.
+  const [esReingreso, setEsReingreso] = useState(false)
+  // Error terminal de la precarga en edición (evita quedarse en «Cargando…»).
+  const [edicionError, setEdicionError] = useState<string | null>(null)
 
   const { data: alergiasCat = [] } = useQuery({
     queryKey: ['catalogo-alergias'],
@@ -326,15 +464,32 @@ export function MatriculaWizard({
   // Costo del grado en el periodo: lo que paga el alumno sin beca. Se consulta solo
   // cuando el paso académico ya tiene periodo y grado elegidos y el wizard está abierto.
   const { data: costoGrado } = useQuery({
-    queryKey: ['matricula-costo', academico.periodo_academico_id, academico.grado_id],
-    queryFn: () => getCostoGrado(academico.periodo_academico_id, academico.grado_id),
-    enabled: open && Boolean(academico.periodo_academico_id) && Boolean(academico.grado_id),
+    queryKey: [
+      'matricula-costo',
+      academico.periodo_academico_id,
+      academico.grado_id,
+    ],
+    queryFn: () =>
+      getCostoGrado(academico.periodo_academico_id, academico.grado_id),
+    enabled:
+      open &&
+      Boolean(academico.periodo_academico_id) &&
+      Boolean(academico.grado_id),
   })
 
   const alergiaOptions = useMemo(() => listaOptions(alergiasCat), [alergiasCat])
-  const condicionOptions = useMemo(() => listaOptions(condicionesCat), [condicionesCat])
-  const parentescoOptions = useMemo(() => listaOptions(parentescosCat), [parentescosCat])
-  const profesionOptions = useMemo(() => listaOptions(profesionesCat), [profesionesCat])
+  const condicionOptions = useMemo(
+    () => listaOptions(condicionesCat),
+    [condicionesCat],
+  )
+  const parentescoOptions = useMemo(
+    () => listaOptions(parentescosCat),
+    [parentescosCat],
+  )
+  const profesionOptions = useMemo(
+    () => listaOptions(profesionesCat),
+    [profesionesCat],
+  )
 
   useEffect(() => {
     if (!foto) {
@@ -346,7 +501,237 @@ export function MatriculaWizard({
     return () => URL.revokeObjectURL(url)
   }, [foto])
 
-  const periodoOptions = useMemo(() => periodoSelectOptions(periodos), [periodos])
+  // Precarga al 100% del modo edición: ficha del alumno (perfil + alumno + historial
+  // + responsables) y la matrícula (beca, sección, periodo, reingreso). Al terminar
+  // guarda un snapshot para el botón «Restaurar» por ventana.
+  useEffect(() => {
+    if (!open || !edicion) return
+    // Los catálogos llegan como props: si aún están vacíos no se mapea
+    // grado/sección/modalidad/curso (evita resolver contra listas vacías). El
+    // efecto se relanza cuando llegan porque son dependencias.
+    if (
+      !grados.length ||
+      !secciones.length ||
+      !modalidades.length ||
+      !cursos.length
+    ) {
+      return
+    }
+    const controller = new AbortController()
+    setSnapshot(null)
+    setEdicionError(null)
+    void (async () => {
+      try {
+        const [ficha, mat] = await Promise.all([
+          getFicha(edicion.alumnoCode),
+          getMatricula(edicion.matriculaId),
+        ])
+        if (controller.signal.aborted) return
+
+        const perfil = ficha.perfil
+        const alumnoLoaded: AlumnoForm = {
+          primer_nombre: perfil?.primer_nombre ?? '',
+          segundo_nombre: perfil?.segundo_nombre ?? '',
+          primer_apellido: perfil?.primer_apellido ?? '',
+          segundo_apellido: perfil?.segundo_apellido ?? '',
+          sexo: perfil?.sexo ?? '',
+          fecha_nacimiento: perfil?.fecha_nacimiento
+            ? perfil.fecha_nacimiento.slice(0, 10)
+            : '',
+          telefono_contacto: perfil?.telefono_contacto ?? '',
+          numero_identidad: perfil?.numero_identidad ?? '',
+          // Se conserva el tipo de documento original; 'HND' solo como respaldo.
+          tipo_documento_identidad: perfil?.tipo_documento_identidad ?? 'HND',
+        }
+
+        const gradosRepetidosRaw = ficha.alumno?.grados_repetidos ?? []
+        // Se descartan las filas cuyo grado no se reconoció en el catálogo: un
+        // grado desconocido no debe bloquear el avance ni el guardado.
+        const gradosRepetidos = gradosRepetidosRaw
+          .map((g) => ({
+            grado_id: grados.find((x) => x.nombre === g.grado_nombre)?.id ?? '',
+            anio: g.anio != null ? String(g.anio) : '',
+          }))
+          .filter((g) => g.grado_id)
+        if (gradosRepetidosRaw.length > gradosRepetidos.length) {
+          toast.warning(
+            'Algunos grados repetidos no se reconocieron y se omitieron.',
+          )
+        }
+        const alergiasRaw = ficha.alumno?.alergias ?? []
+        const condicionesRaw = ficha.alumno?.condiciones_aprendizaje ?? []
+        const esReingresoLoaded = Boolean(mat.es_reingreso)
+        const historialLoaded: HistorialForm = {
+          procede_otra_institucion:
+            ficha.alumno?.procede_otra_institucion ?? false,
+          nombre_institucion_origen:
+            ficha.alumno?.nombre_institucion_origen ?? '',
+          alergias: alergiasRaw.length ? alergiasRaw : [''],
+          presenta_condicion_aprendizaje:
+            ficha.alumno?.presenta_condicion_aprendizaje ?? false,
+          condiciones_aprendizaje: condicionesRaw.length
+            ? condicionesRaw
+            : [''],
+          // Solo «ha repetido» si al menos una fila se pudo mapear.
+          ha_repetido_grado: gradosRepetidos.length > 0,
+          grados_repetidos: gradosRepetidos.length
+            ? gradosRepetidos
+            : [{ grado_id: '', anio: '' }],
+        }
+
+        const seccion = secciones.find((s) => s.id === mat.seccion_id)
+        const matriculaFicha =
+          ficha.alumno?.matriculas.find((m) => m.id === edicion.matriculaId) ??
+          ficha.alumno?.matriculas.find((m) => m.status === 'ACTIVE')
+        // La ficha trae las clases retrasadas como «Nombre (año)»: se mapea al curso
+        // del catálogo por nombre; lo que no se pueda mapear se conserva al no reenviar
+        // el campo si el usuario no toca la subsección (ver guardado en edición).
+        const cursosRetrasadosLoaded = (matriculaFicha?.cursos_retrasados ?? [])
+          .map((desc) => {
+            const parsed = /^(.*)\s+\((\d{4})\)\s*$/.exec(desc)
+            const nombre = (parsed?.[1] ?? desc).trim()
+            const anio = parsed?.[2] ?? ''
+            const curso = cursos.find((c) => c.nombre === nombre)
+            return curso ? { curso_id: curso.id, anio_previo: anio } : null
+          })
+          .filter(
+            (c): c is { curso_id: string; anio_previo: string } => c !== null,
+          )
+        const tieneRetrasadosRaw =
+          (matriculaFicha?.cursos_retrasados?.length ?? 0) > 0
+        const academicoLoaded: AcademicoForm = {
+          periodo_academico_id: mat.periodo_academico_id,
+          grado_id: seccion?.grado_id ?? mat.grado_id ?? '',
+          modalidad_id: seccion?.modalidad_id ?? '',
+          seccion_id: mat.seccion_id,
+          // En edición se trabaja con la sección concreta, no con asignación automática.
+          asignar_seccion_automatica: false,
+          tiene_cursos_retrasados: tieneRetrasadosRaw,
+          cursos_retrasados: cursosRetrasadosLoaded.length
+            ? cursosRetrasadosLoaded
+            : [{ curso_id: '', anio_previo: '' }],
+        }
+
+        const responsableCards = await Promise.all(
+          (ficha.alumno?.responsables ?? []).map(async (r) => {
+            const card = newResponsable(r.es_principal)
+            card.mode = 'existente'
+            card.user_code = r.user_code ?? ''
+            card.encontrado_nombre = r.nombre
+            card.parentesco = r.parentesco || 'Madre'
+            card.es_principal = r.es_principal
+            card.telefono_contacto = r.telefono ?? ''
+            card.profesion = r.profesion ?? ''
+            const parsed = parseNombre(r.nombre)
+            card.primer_nombre = parsed.primer_nombre
+            card.segundo_nombre = parsed.segundo_nombre
+            card.primer_apellido = parsed.primer_apellido
+            card.segundo_apellido = parsed.segundo_apellido
+            if (!r.user_code) return card
+            try {
+              const found = await getResponsableByCode(r.user_code)
+              card.responsable_id = found.id
+              card.encontrado_nombre = found.nombre || r.nombre
+            } catch {
+              toast.warning(`No se pudo resolver el vínculo de ${r.nombre}`)
+            }
+            try {
+              const rf = await getFicha(r.user_code)
+              if (rf.perfil) {
+                card.primer_nombre =
+                  rf.perfil.primer_nombre || card.primer_nombre
+                card.segundo_nombre =
+                  rf.perfil.segundo_nombre ?? card.segundo_nombre
+                card.primer_apellido =
+                  rf.perfil.primer_apellido || card.primer_apellido
+                card.segundo_apellido =
+                  rf.perfil.segundo_apellido ?? card.segundo_apellido
+                card.telefono_contacto =
+                  rf.perfil.telefono_contacto ?? card.telefono_contacto
+                card.numero_identidad = rf.perfil.numero_identidad ?? ''
+                card.tipo_documento_identidad =
+                  rf.perfil.tipo_documento_identidad ?? ''
+                card.sexo = rf.perfil.sexo ?? ''
+                card.fecha_nacimiento = rf.perfil.fecha_nacimiento
+                  ? rf.perfil.fecha_nacimiento.slice(0, 10)
+                  : ''
+              }
+              if (rf.responsable) {
+                card.responsable_id = card.responsable_id || rf.responsable.id
+                card.profesion = rf.responsable.profesion ?? card.profesion
+                card.direccion_domicilio =
+                  rf.responsable.direccion_domicilio ?? ''
+                const dirs = rf.responsable.direcciones_trabajo
+                const dir = dirs.length ? dirs[0] : undefined
+                card.direccion_trabajo = dir?.direccion ?? ''
+                card.telefono_trabajo = dir?.telefono_trabajo ?? ''
+              }
+              // La ficha se leyó completa: su perfil se puede reenviar al guardar.
+              card.fichaCargada = true
+            } catch {
+              // Sin ficha no se reenviará el perfil; se conservan los valores del servidor.
+              toast.warning(`No se pudo cargar la ficha de ${r.nombre}`)
+            }
+            return card
+          }),
+        )
+        const responsablesLoaded = responsableCards.length
+          ? responsableCards
+          : [newResponsable(true)]
+
+        const rawBeca = mat.tipo_beca ?? 'normal'
+        const tipoBecaLoaded: TipoBeca = BECA_OPTIONS.some(
+          (o) => o.value === rawBeca,
+        )
+          ? (rawBeca as TipoBeca)
+          : 'normal'
+        const montoLoaded =
+          mat.monto_especial != null ? String(mat.monto_especial) : ''
+
+        setAlumno(alumnoLoaded)
+        setHistorial(historialLoaded)
+        setAcademico(academicoLoaded)
+        setResponsables(responsablesLoaded)
+        setFoto(null)
+        setTipoBeca(tipoBecaLoaded)
+        setMontoEspecial(montoLoaded)
+        setEsReingreso(esReingresoLoaded)
+        setStep(0)
+        setSnapshot({
+          alumno: structuredClone(alumnoLoaded),
+          historial: structuredClone(historialLoaded),
+          academico: structuredClone(academicoLoaded),
+          responsables: structuredClone(responsablesLoaded),
+          tipoBeca: tipoBecaLoaded,
+          montoEspecial: montoLoaded,
+          esReingreso: esReingresoLoaded,
+        })
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          const msg = userMessageFromError(e)
+          setEdicionError(msg)
+          toast.error(msg)
+        }
+      }
+    })()
+    return () => {
+      controller.abort()
+    }
+    // Al abrir/cambiar de matrícula y cuando los catálogos (props) ya están cargados.
+  }, [
+    open,
+    edicion?.matriculaId,
+    edicion?.alumnoCode,
+    grados,
+    secciones,
+    modalidades,
+    cursos,
+  ])
+
+  const periodoOptions = useMemo(
+    () => periodoSelectOptions(periodos),
+    [periodos],
+  )
   const gradoOptions = useMemo(
     () =>
       grados.map((g) => ({
@@ -379,7 +764,8 @@ export function MatriculaWizard({
       secciones.filter(
         (s) =>
           (!academico.grado_id || s.grado_id === academico.grado_id) &&
-          (!academico.modalidad_id || s.modalidad_id === academico.modalidad_id),
+          (!academico.modalidad_id ||
+            s.modalidad_id === academico.modalidad_id),
       ),
     [secciones, academico.grado_id, academico.modalidad_id],
   )
@@ -394,14 +780,62 @@ export function MatriculaWizard({
   )
 
   const selectedSeccion = secciones.find((s) => s.id === academico.seccion_id)
-  const selectedPeriodo = periodos.find((p) => p.id === academico.periodo_academico_id)
+  const selectedPeriodo = periodos.find(
+    (p) => p.id === academico.periodo_academico_id,
+  )
   const selectedGrado = grados.find((g) => g.id === academico.grado_id)
-  const selectedModalidad = modalidades.find((m) => m.id === academico.modalidad_id)
+  const selectedModalidad = modalidades.find(
+    (m) => m.id === academico.modalidad_id,
+  )
   const edad = calcEdad(alumno.fecha_nacimiento)
 
   const updateResp = (id: string, patch: Partial<ResponsableCard>) => {
-    setResponsables((list) => list.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+    setResponsables((list) =>
+      list.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    )
   }
+
+  /** Restaura solo el slice de la ventana indicada desde el snapshot (sin tocar el servidor). */
+  const restaurarPaso = (stepId: RestaurarStepId) => {
+    if (!snapshot) return
+    if (stepId === 'alumno') setAlumno(structuredClone(snapshot.alumno))
+    else if (stepId === 'historial') {
+      setHistorial(structuredClone(snapshot.historial))
+      setEsReingreso(snapshot.esReingreso)
+    } else if (stepId === 'academico')
+      setAcademico(structuredClone(snapshot.academico))
+    else if (stepId === 'responsables')
+      setResponsables(structuredClone(snapshot.responsables))
+    else if (stepId === 'foto') setFoto(null)
+    else {
+      setTipoBeca(snapshot.tipoBeca)
+      setMontoEspecial(snapshot.montoEspecial)
+    }
+  }
+
+  /** Etiqueta accesible distinta por ventana (varios botones «Restaurar»). */
+  const restaurarLabels: Record<RestaurarStepId, string> = {
+    alumno: 'Restaurar Alumno',
+    historial: 'Restaurar Historial',
+    academico: 'Restaurar Académico',
+    responsables: 'Restaurar Responsables',
+    foto: 'Restaurar Foto',
+    pago: 'Restaurar Pago',
+  }
+
+  /** Botón «Restaurar» de una ventana; solo visible en modo edición. */
+  const botonRestaurar = (stepId: RestaurarStepId) =>
+    edicion ? (
+      <button
+        type="button"
+        className="btn btn--ghost btn--sm"
+        data-testid={`matricula-restaurar-${stepId}`}
+        aria-label={restaurarLabels[stepId]}
+        onClick={() => restaurarPaso(stepId)}
+      >
+        Restaurar
+      </button>
+    ) : null
 
   const reset = () => {
     setStep(0)
@@ -418,6 +852,9 @@ export function MatriculaWizard({
     setZipDescargado(false)
     setTipoBeca('normal')
     setMontoEspecial('')
+    setSnapshot(null)
+    setEsReingreso(false)
+    setEdicionError(null)
   }
 
   const requestClose = () => {
@@ -436,9 +873,15 @@ export function MatriculaWizard({
       }
       if (!alumno.sexo) return 'Selecciona el sexo del alumno'
       if (!alumno.fecha_nacimiento) return 'Indica la fecha de nacimiento'
-      const telAl = validateTelefono('El teléfono de contacto', alumno.telefono_contacto)
+      const telAl = validateTelefono(
+        'El teléfono de contacto',
+        alumno.telefono_contacto,
+      )
       if (telAl) return telAl
-      if (alumno.numero_identidad.trim() && !isIdentidadHN(alumno.numero_identidad.trim())) {
+      if (
+        alumno.numero_identidad.trim() &&
+        !isIdentidadHN(alumno.numero_identidad.trim())
+      ) {
         return 'El número de identidad debe tener 13 dígitos (ej. 1804199704869)'
       }
     }
@@ -462,7 +905,11 @@ export function MatriculaWizard({
       }
     }
     if (i === 2) {
-      if (!academico.periodo_academico_id || !academico.grado_id || !academico.modalidad_id) {
+      if (
+        !academico.periodo_academico_id ||
+        !academico.grado_id ||
+        !academico.modalidad_id
+      ) {
         return 'Selecciona periodo, grado y modalidad'
       }
       if (!academico.asignar_seccion_automatica && !academico.seccion_id) {
@@ -519,17 +966,22 @@ export function MatriculaWizard({
 
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
 
-  const becaOpcion = BECA_OPTIONS.find((o) => o.value === tipoBeca) ?? BECA_OPTIONS[0]
+  const becaOpcion =
+    BECA_OPTIONS.find((o) => o.value === tipoBeca) ?? BECA_OPTIONS[0]
 
   /** Monto que pagará el alumno por mes según la beca elegida; null si aún falta el dato. */
   const becaMontoMes = (): number | null => {
     if (tipoBeca === 'completa') return 0
     if (tipoBeca === 'especial') {
       const n = Number(montoEspecial)
-      return montoEspecial.trim() !== '' && Number.isFinite(n) && n >= 0 ? n : null
+      return montoEspecial.trim() !== '' && Number.isFinite(n) && n >= 0
+        ? n
+        : null
     }
     if (!costoGrado) return null
-    return tipoBeca === 'media' ? costoGrado.mensualidad * 0.5 : costoGrado.mensualidad
+    return tipoBeca === 'media'
+      ? costoGrado.mensualidad * 0.5
+      : costoGrado.mensualidad
   }
 
   const becaMonto = becaMontoMes()
@@ -551,6 +1003,239 @@ export function MatriculaWizard({
       const becaErr = validarBeca()
       if (becaErr) throw new Error(becaErr)
 
+      // ------- Rama de edición -------
+      if (edicion) {
+        // 1) Resolver y validar TODOS los responsables ANTES de la primera
+        //    escritura: así un dato inválido falla sin dejar nada a medias.
+        const respPlan: ResponsablePlan[] = responsables.map((r) =>
+          r.mode === 'nuevo'
+            ? { kind: 'nuevo', card: r }
+            : {
+                kind: 'existente',
+                card: r,
+                userCode: r.user_code.trim(),
+                responsableId: r.responsable_id,
+              },
+        )
+        for (const p of respPlan) {
+          if (p.kind === 'existente' && !p.responsableId && p.userCode) {
+            const found = await getResponsableByCode(p.userCode)
+            p.responsableId = found.id
+          }
+          if (p.kind === 'existente' && !p.responsableId) {
+            throw new Error(
+              'Falta identificar un responsable existente para vincular',
+            )
+          }
+        }
+
+        let pathImagenEdit: string | undefined
+        if (foto) {
+          try {
+            const up = await upload(foto, 'perfil_foto')
+            pathImagenEdit = up.object_key
+          } catch (err) {
+            throw new Error(uploadErrorMessage(err, 'perfil_foto'))
+          }
+        }
+
+        const alergias = historial.alergias.map((a) => a.trim()).filter(Boolean)
+        const condiciones = historial.presenta_condicion_aprendizaje
+          ? historial.condiciones_aprendizaje
+              .map((c) => c.trim())
+              .filter(Boolean)
+          : []
+        const gradosRep = historial.ha_repetido_grado
+          ? historial.grados_repetidos
+              .filter((g) => g.grado_id)
+              .map((g) => ({
+                grado_id: g.grado_id,
+                ...(g.anio.trim() && !Number.isNaN(Number(g.anio))
+                  ? { anio: Number(g.anio) }
+                  : {}),
+              }))
+          : []
+
+        const anioActual =
+          selectedPeriodo?.anio_lectivo ?? new Date().getFullYear()
+        const cursosRetrasados = academico.cursos_retrasados
+          .filter((c) => c.curso_id)
+          .map((c) => ({
+            curso_id: c.curso_id,
+            anio_previo: Number(c.anio_previo) || 0,
+            anio_actual: anioActual,
+          }))
+        // Solo se reenvían las clases retrasadas si el usuario tocó la subsección;
+        // así no se pierden las que no se pudieron mapear al catálogo.
+        const cursosTocados = snapshot
+          ? JSON.stringify(academico.cursos_retrasados) !==
+              JSON.stringify(snapshot.academico.cursos_retrasados) ||
+            academico.tiene_cursos_retrasados !==
+              snapshot.academico.tiene_cursos_retrasados
+          : true
+
+        const body: MatriculaUpdate = {
+          seccion_id: academico.seccion_id || undefined,
+          // es_reingreso real de la matrícula (no derivado de la ficha del alumno).
+          es_reingreso: esReingreso,
+          tipo_beca: tipoBeca,
+          ...(tipoBeca === 'especial'
+            ? { monto_especial: Number(montoEspecial) }
+            : {}),
+          ...(cursosTocados ? { cursos_retrasados: cursosRetrasados } : {}),
+        }
+
+        // Orden de escrituras y avance, para avisar si algo falla a mitad.
+        const avance = {
+          alumno: false,
+          matricula: false,
+          responsables: 0,
+          desvinculados: 0,
+        }
+        const totalResp = respPlan.length
+        try {
+          await updatePersona(edicion.alumnoCode, {
+            primer_nombre: alumno.primer_nombre.trim(),
+            segundo_nombre: alumno.segundo_nombre.trim() || undefined,
+            primer_apellido: alumno.primer_apellido.trim(),
+            segundo_apellido: alumno.segundo_apellido.trim() || undefined,
+            numero_identidad: alumno.numero_identidad.trim() || undefined,
+            // Se conserva el documento de la ficha; 'HND' solo como respaldo.
+            tipo_documento_identidad:
+              alumno.tipo_documento_identidad.trim() || 'HND',
+            fecha_nacimiento: alumno.fecha_nacimiento || undefined,
+            sexo: alumno.sexo || undefined,
+            telefono_contacto: alumno.telefono_contacto.trim() || undefined,
+            path_imagen: pathImagenEdit,
+            procede_otra_institucion: Boolean(
+              historial.procede_otra_institucion,
+            ),
+            nombre_institucion_origen: historial.procede_otra_institucion
+              ? historial.nombre_institucion_origen.trim() || undefined
+              : undefined,
+            presenta_condicion_aprendizaje:
+              historial.presenta_condicion_aprendizaje,
+            ha_repetido_grado: historial.ha_repetido_grado,
+            alergias,
+            condiciones_aprendizaje: condiciones,
+            grados_repetidos: gradosRep,
+          })
+          avance.alumno = true
+
+          // El periodo académico no se puede cambiar en edición: no se envía.
+          await updateMatricula(edicion.matriculaId, body)
+          avance.matricula = true
+
+          for (const p of respPlan) {
+            const r = p.card
+            if (p.kind === 'nuevo') {
+              const respUser = await createUser({
+                roles: ['responsable'],
+                statususer: 'ACTIVE',
+                primer_nombre: r.primer_nombre.trim(),
+                segundo_nombre: r.segundo_nombre.trim() || undefined,
+                primer_apellido: r.primer_apellido.trim(),
+                segundo_apellido: r.segundo_apellido.trim() || undefined,
+              })
+              if (!respUser.userId)
+                throw new Error('No se recibió el id del usuario responsable')
+              const resp = await createResponsable({
+                user_id: respUser.userId,
+                primer_nombre: r.primer_nombre.trim(),
+                segundo_nombre: r.segundo_nombre.trim() || undefined,
+                primer_apellido: r.primer_apellido.trim(),
+                segundo_apellido: r.segundo_apellido.trim() || undefined,
+                telefono_contacto: r.telefono_contacto.trim() || undefined,
+                status: 'ACTIVE',
+                profesion: r.profesion.trim() || undefined,
+                direccion_domicilio: r.direccion_domicilio.trim() || undefined,
+                direcciones_trabajo: r.direccion_trabajo.trim()
+                  ? [
+                      {
+                        direccion: r.direccion_trabajo.trim(),
+                        ...(r.telefono_trabajo.trim()
+                          ? { telefono_trabajo: r.telefono_trabajo.trim() }
+                          : {}),
+                      },
+                    ]
+                  : undefined,
+              })
+              await linkResponsable(edicion.matriculaId, {
+                responsable_id: resp.id,
+                parentesco: r.parentesco.trim(),
+                es_principal: r.es_principal,
+              })
+            } else {
+              // Solo se reenvía el perfil del responsable si su ficha se cargó.
+              // Si no, se conservan los valores del servidor (no se borran datos).
+              if (
+                r.fichaCargada &&
+                r.primer_nombre.trim() &&
+                r.primer_apellido.trim()
+              ) {
+                await updatePersona(p.userCode, {
+                  primer_nombre: r.primer_nombre.trim(),
+                  segundo_nombre: r.segundo_nombre.trim() || undefined,
+                  primer_apellido: r.primer_apellido.trim(),
+                  segundo_apellido: r.segundo_apellido.trim() || undefined,
+                  numero_identidad: r.numero_identidad.trim() || undefined,
+                  tipo_documento_identidad:
+                    r.tipo_documento_identidad.trim() || undefined,
+                  fecha_nacimiento: r.fecha_nacimiento || undefined,
+                  sexo: r.sexo || undefined,
+                  telefono_contacto: r.telefono_contacto.trim() || undefined,
+                  profesion: r.profesion.trim() || undefined,
+                  direccion_domicilio:
+                    r.direccion_domicilio.trim() || undefined,
+                  direcciones_trabajo: r.direccion_trabajo.trim()
+                    ? [
+                        {
+                          direccion: r.direccion_trabajo.trim(),
+                          ...(r.telefono_trabajo.trim()
+                            ? { telefono_trabajo: r.telefono_trabajo.trim() }
+                            : {}),
+                        },
+                      ]
+                    : [],
+                })
+              }
+              await linkResponsable(edicion.matriculaId, {
+                responsable_id: p.responsableId,
+                parentesco: r.parentesco.trim(),
+                es_principal: r.es_principal,
+              })
+            }
+            avance.responsables += 1
+          }
+
+          // Responsables que estaban en el snapshot y ya no están: se desvinculan.
+          const snapshotResps = snapshot?.responsables ?? []
+          const vigentes = new Set(
+            responsables.map((r) => r.responsable_id).filter((id) => Boolean(id)),
+          )
+          for (const s of snapshotResps) {
+            if (s.responsable_id && !vigentes.has(s.responsable_id)) {
+              await unlinkResponsable(edicion.matriculaId, s.responsable_id)
+              avance.desvinculados += 1
+            }
+          }
+        } catch (e) {
+          // Guardado no transaccional: se informa hasta dónde se llegó.
+          throw new Error(
+            `Los cambios se guardaron parcialmente (alumno: ${
+              avance.alumno ? 'sí' : 'no'
+            }, matrícula: ${avance.matricula ? 'sí' : 'no'}, responsables: ${
+              avance.responsables
+            }/${totalResp}, desvinculaciones: ${
+              avance.desvinculados
+            }). Detalle: ${userMessageFromError(e)}`,
+          )
+        }
+
+        return { modo: 'edicion' as const }
+      }
+      // ------- Fin rama de edición -------
+
       let pathImagen: string | undefined
       if (foto) {
         try {
@@ -569,7 +1254,8 @@ export function MatriculaWizard({
         primer_apellido: alumno.primer_apellido.trim(),
         segundo_apellido: alumno.segundo_apellido.trim() || undefined,
       })
-      if (!alumnoUser.userId) throw new Error('No se recibió el id del usuario alumno')
+      if (!alumnoUser.userId)
+        throw new Error('No se recibió el id del usuario alumno')
 
       const alergias = historial.alergias.map((a) => a.trim()).filter(Boolean)
       const condiciones = historial.presenta_condicion_aprendizaje
@@ -603,32 +1289,37 @@ export function MatriculaWizard({
         nombre_institucion_origen: historial.procede_otra_institucion
           ? historial.nombre_institucion_origen.trim() || undefined
           : undefined,
-        presenta_condicion_aprendizaje: historial.presenta_condicion_aprendizaje,
+        presenta_condicion_aprendizaje:
+          historial.presenta_condicion_aprendizaje,
         ha_repetido_grado: historial.ha_repetido_grado,
         alergias: alergias.length ? alergias : undefined,
         condiciones_aprendizaje: condiciones.length ? condiciones : undefined,
         grados_repetidos: gradosRep.length ? gradosRep : undefined,
       })
 
-      const anioActual = selectedPeriodo?.anio_lectivo ?? new Date().getFullYear()
-      const cursosRetrasados =
-        academico.tiene_cursos_retrasados
-          ? academico.cursos_retrasados
-              .filter((c) => c.curso_id)
-              .map((c) => ({
-                curso_id: c.curso_id,
-                anio_previo: Number(c.anio_previo),
-                anio_actual: anioActual,
-              }))
-          : []
+      const anioActual =
+        selectedPeriodo?.anio_lectivo ?? new Date().getFullYear()
+      const cursosRetrasados = academico.tiene_cursos_retrasados
+        ? academico.cursos_retrasados
+            .filter((c) => c.curso_id)
+            .map((c) => ({
+              curso_id: c.curso_id,
+              anio_previo: Number(c.anio_previo),
+              anio_actual: anioActual,
+            }))
+        : []
 
       const mat = await createMatricula({
         alumno_id: alumnoPerfil.id,
         periodo_academico_id: academico.periodo_academico_id,
         tiene_cursos_retrasados: Boolean(academico.tiene_cursos_retrasados),
-        ...(cursosRetrasados.length ? { cursos_retrasados: cursosRetrasados } : {}),
+        ...(cursosRetrasados.length
+          ? { cursos_retrasados: cursosRetrasados }
+          : {}),
         tipo_beca: tipoBeca,
-        ...(tipoBeca === 'especial' ? { monto_especial: Number(montoEspecial) } : {}),
+        ...(tipoBeca === 'especial'
+          ? { monto_especial: Number(montoEspecial) }
+          : {}),
         ...(academico.asignar_seccion_automatica
           ? {
               asignar_seccion_automatica: true,
@@ -655,7 +1346,8 @@ export function MatriculaWizard({
             primer_apellido: r.primer_apellido.trim(),
             segundo_apellido: r.segundo_apellido.trim() || undefined,
           })
-          if (!respUser.userId) throw new Error('No se recibió el id del usuario responsable')
+          if (!respUser.userId)
+            throw new Error('No se recibió el id del usuario responsable')
 
           const dirsTrabajo = r.direccion_trabajo.trim()
             ? [
@@ -685,7 +1377,10 @@ export function MatriculaWizard({
             parentesco: r.parentesco.trim(),
             es_principal: r.es_principal,
           })
-          credencialesResponsables.push({ code: respUser.code, blob: respUser.pdfBlob })
+          credencialesResponsables.push({
+            code: respUser.code,
+            blob: respUser.pdfBlob,
+          })
         }
       }
 
@@ -697,7 +1392,8 @@ export function MatriculaWizard({
         let institucion = 'INSTITUCIÓN EDUCATIVA'
         try {
           const inst = await getInstitucion()
-          if (inst.nombre_institucion.trim()) institucion = inst.nombre_institucion.trim()
+          if (inst.nombre_institucion.trim())
+            institucion = inst.nombre_institucion.trim()
         } catch {
           /* fallback a «INSTITUCIÓN EDUCATIVA» */
         }
@@ -707,7 +1403,11 @@ export function MatriculaWizard({
           try {
             const meta = await getContratoPeriodo(selectedPeriodo.id)
             const data = await getContratoPeriodoArchivo(selectedPeriodo.id)
-            contratoArchivo = { nombre: meta.archivo_nombre, mime: meta.archivo_mime, data }
+            contratoArchivo = {
+              nombre: meta.archivo_nombre,
+              mime: meta.archivo_mime,
+              data,
+            }
           } catch {
             contratoArchivo = null
           }
@@ -739,14 +1439,20 @@ export function MatriculaWizard({
 
       return code
     },
-    onSuccess: (code) => {
-      setCreatedCode(code)
+    onSuccess: (res) => {
       setConfirmSave(false)
       qc.invalidateQueries({ queryKey: ['catalogo-alergias'] })
       qc.invalidateQueries({ queryKey: ['catalogo-condiciones'] })
       qc.invalidateQueries({ queryKey: ['catalogo-parentescos'] })
       qc.invalidateQueries({ queryKey: ['catalogo-profesiones'] })
-      toast.success(`Matrícula registrada. Código alumno: ${code}`)
+      if (edicion || typeof res !== 'string') {
+        toast.success('Matrícula actualizada')
+        onCreated()
+        onClose()
+        return
+      }
+      setCreatedCode(res)
+      toast.success(`Matrícula registrada. Código alumno: ${res}`)
       onCreated()
     },
     onError: (e) => {
@@ -756,17 +1462,57 @@ export function MatriculaWizard({
   })
 
   const done = Boolean(createdCode)
+  // Señal positiva de «Cargando…»: en edición se muestra mientras no exista el
+  // snapshot (precarga completa) y la carga no haya terminado en error.
+  const edicionCargando = Boolean(edicion) && !snapshot && !edicionError
+  // En edición, los pasos no se renderizan mientras la precarga no esté lista
+  // (ni durante la carga ni si terminó en error).
+  const edicionBloqueada = Boolean(edicion) && (!snapshot || Boolean(edicionError))
 
   const buscarResponsable = (card: ResponsableCard) => {
     void (async () => {
       setBuscandoRespId(card.id)
       try {
         const found = await getResponsableByCode(card.user_code.trim())
-        updateResp(card.id, {
+        const patch: Partial<ResponsableCard> = {
+          mode: 'existente',
           responsable_id: found.id,
           encontrado_nombre: found.nombre,
           user_code: found.user_code ?? card.user_code,
-        })
+          // Hasta que la ficha no cargue, no se reenviará su perfil al guardar.
+          fichaCargada: false,
+        }
+        // Se completa la tarjeta con la ficha del responsable (nombre, contacto,
+        // profesión y direcciones) para poder editarla al guardar.
+        try {
+          const rf = await getFicha(found.user_code ?? card.user_code.trim())
+          if (rf.perfil) {
+            patch.primer_nombre = rf.perfil.primer_nombre || ''
+            patch.segundo_nombre = rf.perfil.segundo_nombre ?? ''
+            patch.primer_apellido = rf.perfil.primer_apellido || ''
+            patch.segundo_apellido = rf.perfil.segundo_apellido ?? ''
+            patch.telefono_contacto = rf.perfil.telefono_contacto ?? ''
+            patch.numero_identidad = rf.perfil.numero_identidad ?? ''
+            patch.tipo_documento_identidad =
+              rf.perfil.tipo_documento_identidad ?? ''
+            patch.sexo = rf.perfil.sexo ?? ''
+            patch.fecha_nacimiento = rf.perfil.fecha_nacimiento
+              ? rf.perfil.fecha_nacimiento.slice(0, 10)
+              : ''
+          }
+          if (rf.responsable) {
+            patch.profesion = rf.responsable.profesion ?? ''
+            patch.direccion_domicilio = rf.responsable.direccion_domicilio ?? ''
+            const dirs = rf.responsable.direcciones_trabajo
+            const dir = dirs.length ? dirs[0] : undefined
+            patch.direccion_trabajo = dir?.direccion ?? ''
+            patch.telefono_trabajo = dir?.telefono_trabajo ?? ''
+          }
+          patch.fichaCargada = true
+        } catch {
+          /* si la ficha falla, se conserva lo que ya tenía la tarjeta */
+        }
+        updateResp(card.id, patch)
         toast.success('Responsable encontrado')
       } catch (e) {
         updateResp(card.id, { responsable_id: '', encontrado_nombre: '' })
@@ -782,7 +1528,13 @@ export function MatriculaWizard({
       <Modal
         open={open}
         xl
-        title={done ? 'Matrícula lista' : 'Nueva matrícula'}
+        title={
+          done
+            ? 'Matrícula lista'
+            : edicion
+              ? 'Editar matrícula'
+              : 'Nueva matrícula'
+        }
         onClose={requestClose}
         footer={
           done ? (
@@ -798,7 +1550,11 @@ export function MatriculaWizard({
             </button>
           ) : (
             <>
-              <button type="button" className="btn btn--ghost" onClick={requestClose}>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={requestClose}
+              >
                 Cancelar
               </button>
               {step > 0 ? (
@@ -812,7 +1568,12 @@ export function MatriculaWizard({
                 </button>
               ) : null}
               {step < STEPS.length - 1 ? (
-                <button type="button" className="btn btn--primary" data-testid="matricula-wizard-next" onClick={goNext}>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  data-testid="matricula-wizard-next"
+                  onClick={goNext}
+                >
                   Siguiente
                 </button>
               ) : (
@@ -820,7 +1581,11 @@ export function MatriculaWizard({
                   type="button"
                   className="btn btn--primary"
                   data-testid="matricula-wizard-finish"
-                  disabled={saveMut.isPending || generandoDocs}
+                  disabled={
+                    saveMut.isPending ||
+                    generandoDocs ||
+                    Boolean(edicion && !snapshot)
+                  }
                   onClick={() => {
                     const err = validateStep(3)
                     if (err) {
@@ -839,7 +1604,9 @@ export function MatriculaWizard({
                     ? 'Generando documentos…'
                     : saveMut.isPending
                       ? 'Guardando…'
-                      : 'Confirmar y guardar'}
+                      : edicion
+                        ? 'Guardar cambios'
+                        : 'Confirmar y guardar'}
                 </button>
               )}
             </>
@@ -848,13 +1615,32 @@ export function MatriculaWizard({
       >
         {!done ? <WizardSteps steps={[...STEPS]} current={step} /> : null}
 
+        {!done && edicionCargando ? (
+          <div className="wizard-pane" data-testid="matricula-edicion-cargando">
+            <p className="wizard-pane__title">Cargando…</p>
+            <p className="wizard-pane__hint">
+              Se están cargando los datos de la matrícula. Espera un momento.
+            </p>
+          </div>
+        ) : null}
+
+        {!done && edicion && edicionError ? (
+          <div className="wizard-pane" data-testid="matricula-edicion-error">
+            <p className="wizard-pane__title">No se pudo cargar la matrícula</p>
+            <p className="wizard-pane__hint">{edicionError}</p>
+            <p className="wizard-pane__hint">
+              Cierra el asistente y vuelve a intentarlo.
+            </p>
+          </div>
+        ) : null}
+
         {done ? (
           <div className="wizard-success wizard-pane">
             <p className="wizard-pane__title">Alumno matriculado</p>
             <p className="wizard-pane__hint">
-              Se descargó la carpeta ZIP con los documentos (credenciales, contrato, carnet y
-              ficha). Las credenciales contienen la contraseña temporal: la contraseña no se
-              vuelve a mostrar.
+              Se descargó la carpeta ZIP con los documentos (credenciales,
+              contrato, carnet y ficha). Las credenciales contienen la
+              contraseña temporal: la contraseña no se vuelve a mostrar.
             </p>
             {zipDescargado ? (
               <p
@@ -865,20 +1651,40 @@ export function MatriculaWizard({
                 Documentos descargados
               </p>
             ) : null}
-            <div className="wizard-success__code" data-testid="matricula-created-code">
+            <div
+              className="wizard-success__code"
+              data-testid="matricula-created-code"
+            >
               {createdCode}
             </div>
-            <p className="texto-muted" style={{ fontSize: '0.8rem', margin: 0 }}>
+            <p
+              className="texto-muted"
+              style={{ fontSize: '0.8rem', margin: 0 }}
+            >
               Código del alumno
             </p>
           </div>
         ) : null}
 
-        {!done && step === 0 ? (
+        {!done && !edicionBloqueada && step === 0 ? (
           <div className="wizard-pane" key="alumno">
-            <p className="wizard-pane__title">Datos del alumno</p>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '0.35rem',
+              }}
+            >
+              <p className="wizard-pane__title" style={{ margin: 0 }}>
+                Datos del alumno
+              </p>
+              {botonRestaurar('alumno')}
+            </div>
             <p className="wizard-pane__hint">
-              Nombres, sexo, nacimiento e identidad. El código se genera al confirmar.
+              Nombres, sexo, nacimiento e identidad. El código se genera al
+              confirmar.
             </p>
             <div className="wizard-grid">
               <Field label="Primer nombre" htmlFor="wiz-al-pn">
@@ -887,14 +1693,18 @@ export function MatriculaWizard({
                   className="field__input"
                   data-testid="matricula-primer-nombre"
                   value={alumno.primer_nombre}
-                  onChange={(e) => setAlumno((f) => ({ ...f, primer_nombre: e.target.value }))}
+                  onChange={(e) =>
+                    setAlumno((f) => ({ ...f, primer_nombre: e.target.value }))
+                  }
                 />
               </Field>
               <Field label="Segundo nombre">
                 <input
                   className="field__input"
                   value={alumno.segundo_nombre}
-                  onChange={(e) => setAlumno((f) => ({ ...f, segundo_nombre: e.target.value }))}
+                  onChange={(e) =>
+                    setAlumno((f) => ({ ...f, segundo_nombre: e.target.value }))
+                  }
                 />
               </Field>
               <Field label="Primer apellido" htmlFor="wiz-al-pa">
@@ -903,14 +1713,24 @@ export function MatriculaWizard({
                   className="field__input"
                   data-testid="matricula-primer-apellido"
                   value={alumno.primer_apellido}
-                  onChange={(e) => setAlumno((f) => ({ ...f, primer_apellido: e.target.value }))}
+                  onChange={(e) =>
+                    setAlumno((f) => ({
+                      ...f,
+                      primer_apellido: e.target.value,
+                    }))
+                  }
                 />
               </Field>
               <Field label="Segundo apellido">
                 <input
                   className="field__input"
                   value={alumno.segundo_apellido}
-                  onChange={(e) => setAlumno((f) => ({ ...f, segundo_apellido: e.target.value }))}
+                  onChange={(e) =>
+                    setAlumno((f) => ({
+                      ...f,
+                      segundo_apellido: e.target.value,
+                    }))
+                  }
                 />
               </Field>
               <Field label="Sexo" htmlFor="wiz-al-sexo">
@@ -930,11 +1750,20 @@ export function MatriculaWizard({
                   className="field__input"
                   data-testid="matricula-fecha-nacimiento"
                   value={alumno.fecha_nacimiento}
-                  onChange={(e) => setAlumno((f) => ({ ...f, fecha_nacimiento: e.target.value }))}
+                  onChange={(e) =>
+                    setAlumno((f) => ({
+                      ...f,
+                      fecha_nacimiento: e.target.value,
+                    }))
+                  }
                 />
               </Field>
               <div className="wizard-grid--full">
-                <p className="texto-muted" style={{ fontSize: '0.85rem', margin: '0 0 0.5rem' }} data-testid="matricula-edad">
+                <p
+                  className="texto-muted"
+                  style={{ fontSize: '0.85rem', margin: '0 0 0.5rem' }}
+                  data-testid="matricula-edad"
+                >
                   Edad: {edad !== null ? `${edad} años` : '—'}
                 </p>
               </div>
@@ -947,7 +1776,10 @@ export function MatriculaWizard({
                   placeholder="88721992"
                   value={alumno.telefono_contacto}
                   onChange={(e) =>
-                    setAlumno((f) => ({ ...f, telefono_contacto: onlyDigits(e.target.value, 8) }))
+                    setAlumno((f) => ({
+                      ...f,
+                      telefono_contacto: onlyDigits(e.target.value, 8),
+                    }))
                   }
                 />
               </Field>
@@ -960,7 +1792,10 @@ export function MatriculaWizard({
                   placeholder="1804199704869"
                   value={alumno.numero_identidad}
                   onChange={(e) =>
-                    setAlumno((f) => ({ ...f, numero_identidad: onlyDigits(e.target.value, 13) }))
+                    setAlumno((f) => ({
+                      ...f,
+                      numero_identidad: onlyDigits(e.target.value, 13),
+                    }))
                   }
                 />
               </Field>
@@ -968,33 +1803,57 @@ export function MatriculaWizard({
           </div>
         ) : null}
 
-        {!done && step === 1 ? (
+        {!done && !edicionBloqueada && step === 1 ? (
           <div className="wizard-pane" key="historial">
-            <p className="wizard-pane__title">Historial</p>
-            <p className="wizard-pane__hint">Ingreso, alergias, condiciones y grados repetidos.</p>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '0.35rem',
+              }}
+            >
+              <p className="wizard-pane__title" style={{ margin: 0 }}>
+                Historial
+              </p>
+              {botonRestaurar('historial')}
+            </div>
+            <p className="wizard-pane__hint">
+              Ingreso, alergias, condiciones y grados repetidos.
+            </p>
 
-            <div className="wizard-choice" role="group" aria-label="Tipo de ingreso">
+            <div
+              className="wizard-choice"
+              role="group"
+              aria-label="Tipo de ingreso"
+            >
               <button
                 type="button"
                 data-testid="matricula-otra-inst-no"
-                className={`wizard-choice__btn${historial.procede_otra_institucion === false ? ' wizard-choice__btn--on' : ''}`}
-                onClick={() =>
+                className={`wizard-choice__btn${!esReingreso ? '' : ' wizard-choice__btn--on'}`}
+                onClick={() => {
+                  setEsReingreso(true)
                   setHistorial((f) => ({
                     ...f,
                     procede_otra_institucion: false,
                     nombre_institucion_origen: '',
                   }))
-                }
+                }}
               >
                 Reingreso
               </button>
               <button
                 type="button"
                 data-testid="matricula-otra-inst-si"
-                className={`wizard-choice__btn${historial.procede_otra_institucion === true ? ' wizard-choice__btn--on' : ''}`}
-                onClick={() =>
-                  setHistorial((f) => ({ ...f, procede_otra_institucion: true }))
-                }
+                className={`wizard-choice__btn${esReingreso ? '' : ' wizard-choice__btn--on'}`}
+                onClick={() => {
+                  setEsReingreso(false)
+                  setHistorial((f) => ({
+                    ...f,
+                    procede_otra_institucion: true,
+                  }))
+                }}
               >
                 Primer ingreso
               </button>
@@ -1002,14 +1861,20 @@ export function MatriculaWizard({
 
             {historial.procede_otra_institucion === true ? (
               <div className="wizard-choice-panel">
-                <Field label="Nombre de la institución anterior" htmlFor="wiz-inst">
+                <Field
+                  label="Nombre de la institución anterior"
+                  htmlFor="wiz-inst"
+                >
                   <input
                     id="wiz-inst"
                     className="field__input"
                     data-testid="matricula-institucion"
                     value={historial.nombre_institucion_origen}
                     onChange={(e) =>
-                      setHistorial((f) => ({ ...f, nombre_institucion_origen: e.target.value }))
+                      setHistorial((f) => ({
+                        ...f,
+                        nombre_institucion_origen: e.target.value,
+                      }))
                     }
                   />
                 </Field>
@@ -1018,15 +1883,29 @@ export function MatriculaWizard({
 
             {historial.procede_otra_institucion !== null ? (
               <>
-                <p className="wizard-pane__title" style={{ marginTop: '1.25rem' }}>
+                <p
+                  className="wizard-pane__title"
+                  style={{ marginTop: '1.25rem' }}
+                >
                   Alergias
                 </p>
                 {historial.alergias.map((a, idx) => (
-                  <Field key={`alergia-${idx}`} label={idx === 0 ? 'Alergia' : `Alergia ${idx + 1}`}>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                  <Field
+                    key={`alergia-${idx}`}
+                    label={idx === 0 ? 'Alergia' : `Alergia ${idx + 1}`}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '0.5rem',
+                        alignItems: 'flex-start',
+                      }}
+                    >
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <Combobox
-                          data-testid={idx === 0 ? 'matricula-alergia' : undefined}
+                          data-testid={
+                            idx === 0 ? 'matricula-alergia' : undefined
+                          }
                           allowCustom
                           value={a}
                           onChange={(v) =>
@@ -1061,12 +1940,23 @@ export function MatriculaWizard({
                   type="button"
                   className="btn btn--ghost btn--sm"
                   data-testid="matricula-add-alergia"
-                  onClick={() => setHistorial((f) => ({ ...f, alergias: [...f.alergias, ''] }))}
+                  onClick={() =>
+                    setHistorial((f) => ({
+                      ...f,
+                      alergias: [...f.alergias, ''],
+                    }))
+                  }
                 >
                   Añadir alergia
                 </button>
 
-                <label style={{ fontSize: '0.85rem', display: 'block', margin: '1.25rem 0 0.65rem' }}>
+                <label
+                  style={{
+                    fontSize: '0.85rem',
+                    display: 'block',
+                    margin: '1.25rem 0 0.65rem',
+                  }}
+                >
                   <input
                     type="checkbox"
                     data-testid="matricula-condicion-check"
@@ -1092,7 +1982,13 @@ export function MatriculaWizard({
                         key={`cond-${idx}`}
                         label={idx === 0 ? 'Condición' : `Condición ${idx + 1}`}
                       >
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '0.5rem',
+                            alignItems: 'flex-start',
+                          }}
+                        >
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <Combobox
                               allowCustom
@@ -1115,9 +2011,10 @@ export function MatriculaWizard({
                               onClick={() =>
                                 setHistorial((f) => ({
                                   ...f,
-                                  condiciones_aprendizaje: f.condiciones_aprendizaje.filter(
-                                    (_, i) => i !== idx,
-                                  ),
+                                  condiciones_aprendizaje:
+                                    f.condiciones_aprendizaje.filter(
+                                      (_, i) => i !== idx,
+                                    ),
                                 }))
                               }
                             >
@@ -1133,7 +2030,10 @@ export function MatriculaWizard({
                       onClick={() =>
                         setHistorial((f) => ({
                           ...f,
-                          condiciones_aprendizaje: [...f.condiciones_aprendizaje, ''],
+                          condiciones_aprendizaje: [
+                            ...f.condiciones_aprendizaje,
+                            '',
+                          ],
                         }))
                       }
                     >
@@ -1142,7 +2042,13 @@ export function MatriculaWizard({
                   </>
                 ) : null}
 
-                <label style={{ fontSize: '0.85rem', display: 'block', margin: '1.25rem 0 0.65rem' }}>
+                <label
+                  style={{
+                    fontSize: '0.85rem',
+                    display: 'block',
+                    margin: '1.25rem 0 0.65rem',
+                  }}
+                >
                   <input
                     type="checkbox"
                     data-testid="matricula-repetido-check"
@@ -1164,7 +2070,11 @@ export function MatriculaWizard({
                 {historial.ha_repetido_grado ? (
                   <>
                     {historial.grados_repetidos.map((g, idx) => (
-                      <div className="wizard-grid" key={`rep-${idx}`} style={{ marginBottom: '0.5rem' }}>
+                      <div
+                        className="wizard-grid"
+                        key={`rep-${idx}`}
+                        style={{ marginBottom: '0.5rem' }}
+                      >
                         <Field label="Grado" htmlFor={`wiz-rep-grado-${idx}`}>
                           <Combobox
                             id={`wiz-rep-grado-${idx}`}
@@ -1190,7 +2100,10 @@ export function MatriculaWizard({
                             onChange={(e) =>
                               setHistorial((f) => {
                                 const next = [...f.grados_repetidos]
-                                next[idx] = { ...next[idx], anio: e.target.value }
+                                next[idx] = {
+                                  ...next[idx],
+                                  anio: e.target.value,
+                                }
                                 return { ...f, grados_repetidos: next }
                               })
                             }
@@ -1204,7 +2117,9 @@ export function MatriculaWizard({
                               onClick={() =>
                                 setHistorial((f) => ({
                                   ...f,
-                                  grados_repetidos: f.grados_repetidos.filter((_, i) => i !== idx),
+                                  grados_repetidos: f.grados_repetidos.filter(
+                                    (_, i) => i !== idx,
+                                  ),
                                 }))
                               }
                             >
@@ -1221,7 +2136,10 @@ export function MatriculaWizard({
                       onClick={() =>
                         setHistorial((f) => ({
                           ...f,
-                          grados_repetidos: [...f.grados_repetidos, { grado_id: '', anio: '' }],
+                          grados_repetidos: [
+                            ...f.grados_repetidos,
+                            { grado_id: '', anio: '' },
+                          ],
                         }))
                       }
                     >
@@ -1234,22 +2152,47 @@ export function MatriculaWizard({
           </div>
         ) : null}
 
-        {!done && step === 2 ? (
+        {!done && !edicionBloqueada && step === 2 ? (
           <div className="wizard-pane" key="academico">
-            <p className="wizard-pane__title">Datos académicos</p>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '0.35rem',
+              }}
+            >
+              <p className="wizard-pane__title" style={{ margin: 0 }}>
+                Datos académicos
+              </p>
+              {botonRestaurar('academico')}
+            </div>
             <p className="wizard-pane__hint">
-              Periodo, grado y modalidad. Por defecto se asigna sección de forma balanceada.
+              Periodo, grado y modalidad. Por defecto se asigna sección de forma
+              balanceada.
             </p>
             <Field label="Periodo académico" htmlFor="wiz-periodo">
               <Combobox
                 id="wiz-periodo"
                 data-testid="matricula-periodo"
                 value={academico.periodo_academico_id}
-                onChange={(v) => setAcademico((f) => ({ ...f, periodo_academico_id: v }))}
+                onChange={(v) =>
+                  setAcademico((f) => ({ ...f, periodo_academico_id: v }))
+                }
                 options={periodoOptions}
                 placeholder="Buscar periodo…"
+                disabled={Boolean(edicion)}
               />
             </Field>
+            {edicion ? (
+              <p
+                className="texto-muted"
+                style={{ fontSize: '0.8rem', margin: '0.35rem 0 0.75rem' }}
+              >
+                En edición el periodo académico no se puede cambiar.
+              </p>
+            ) : null}
             <div className="wizard-grid">
               <Field label="Grado" htmlFor="wiz-grado">
                 <Combobox
@@ -1284,7 +2227,13 @@ export function MatriculaWizard({
                 />
               </Field>
             </div>
-            <label style={{ fontSize: '0.85rem', display: 'block', margin: '0.85rem 0 0.65rem' }}>
+            <label
+              style={{
+                fontSize: '0.85rem',
+                display: 'block',
+                margin: '0.85rem 0 0.65rem',
+              }}
+            >
               <input
                 type="checkbox"
                 data-testid="matricula-auto-seccion"
@@ -1300,8 +2249,12 @@ export function MatriculaWizard({
               Asignar sección automáticamente
             </label>
             {academico.asignar_seccion_automatica ? (
-              <p className="texto-muted" style={{ fontSize: '0.8rem', margin: '0 0 0.75rem' }}>
-                Se asignará a la sección del grado/modalidad con menos inscritos en este periodo.
+              <p
+                className="texto-muted"
+                style={{ fontSize: '0.8rem', margin: '0 0 0.75rem' }}
+              >
+                Se asignará a la sección del grado/modalidad con menos inscritos
+                en este periodo.
               </p>
             ) : (
               <Field label="Sección" htmlFor="wiz-seccion">
@@ -1309,7 +2262,9 @@ export function MatriculaWizard({
                   id="wiz-seccion"
                   data-testid="matricula-seccion"
                   value={academico.seccion_id}
-                  onChange={(v) => setAcademico((f) => ({ ...f, seccion_id: v }))}
+                  onChange={(v) =>
+                    setAcademico((f) => ({ ...f, seccion_id: v }))
+                  }
                   options={seccionOptions}
                   placeholder={
                     academico.grado_id && academico.modalidad_id
@@ -1321,12 +2276,20 @@ export function MatriculaWizard({
                 />
               </Field>
             )}
-            <p className="texto-muted" style={{ fontSize: '0.85rem', margin: '0 0 1rem' }}>
-              Al matricular se crean solas la cuota de matrícula y una mensualidad pendiente por cada mes del periodo.
+            <p
+              className="texto-muted"
+              style={{ fontSize: '0.85rem', margin: '0 0 1rem' }}
+            >
+              Al matricular se crean solas la cuota de matrícula y una
+              mensualidad pendiente por cada mes del periodo.
             </p>
 
             <p className="wizard-choice__question">¿Lleva clases retrasadas?</p>
-            <div className="wizard-choice" role="group" aria-label="¿Lleva clases retrasadas?">
+            <div
+              className="wizard-choice"
+              role="group"
+              aria-label="¿Lleva clases retrasadas?"
+            >
               <button
                 type="button"
                 data-testid="matricula-retrasados-si"
@@ -1362,11 +2325,17 @@ export function MatriculaWizard({
             {academico.tiene_cursos_retrasados === true ? (
               <div className="wizard-choice-panel">
                 {academico.cursos_retrasados.map((c, idx) => (
-                  <div className="wizard-grid" key={`cr-${idx}`} style={{ marginBottom: '0.5rem' }}>
+                  <div
+                    className="wizard-grid"
+                    key={`cr-${idx}`}
+                    style={{ marginBottom: '0.5rem' }}
+                  >
                     <Field label="Clase" htmlFor={`wiz-curso-${idx}`}>
                       <Combobox
                         id={`wiz-curso-${idx}`}
-                        data-testid={idx === 0 ? 'matricula-curso-retrasado' : undefined}
+                        data-testid={
+                          idx === 0 ? 'matricula-curso-retrasado' : undefined
+                        }
                         value={c.curso_id}
                         onChange={(v) =>
                           setAcademico((f) => {
@@ -1389,7 +2358,10 @@ export function MatriculaWizard({
                         onChange={(e) =>
                           setAcademico((f) => {
                             const next = [...f.cursos_retrasados]
-                            next[idx] = { ...next[idx], anio_previo: e.target.value }
+                            next[idx] = {
+                              ...next[idx],
+                              anio_previo: e.target.value,
+                            }
                             return { ...f, cursos_retrasados: next }
                           })
                         }
@@ -1403,7 +2375,9 @@ export function MatriculaWizard({
                           onClick={() =>
                             setAcademico((f) => ({
                               ...f,
-                              cursos_retrasados: f.cursos_retrasados.filter((_, i) => i !== idx),
+                              cursos_retrasados: f.cursos_retrasados.filter(
+                                (_, i) => i !== idx,
+                              ),
                             }))
                           }
                         >
@@ -1434,11 +2408,25 @@ export function MatriculaWizard({
           </div>
         ) : null}
 
-        {!done && step === 3 ? (
+        {!done && !edicionBloqueada && step === 3 ? (
           <div className="wizard-pane" key="responsables">
-            <p className="wizard-pane__title">Responsables</p>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '0.35rem',
+              }}
+            >
+              <p className="wizard-pane__title" style={{ margin: 0 }}>
+                Responsables
+              </p>
+              {botonRestaurar('responsables')}
+            </div>
             <p className="wizard-pane__hint">
-              Debe haber al menos uno. Puedes vincular existentes por código o registrar nuevos.
+              Debe haber al menos uno. Puedes vincular existentes por código o
+              registrar nuevos.
             </p>
 
             {responsables.map((r, idx) => (
@@ -1456,21 +2444,35 @@ export function MatriculaWizard({
                     marginBottom: '0.65rem',
                   }}
                 >
-                  <strong style={{ fontSize: '0.9rem' }}>Responsable {idx + 1}</strong>
+                  <strong style={{ fontSize: '0.9rem' }}>
+                    Responsable {idx + 1}
+                  </strong>
                   {responsables.length > 1 ? (
                     <button
                       type="button"
                       className="btn btn--ghost btn--sm"
+                      aria-label={`Quitar responsable ${idx + 1}`}
                       onClick={() =>
-                        setResponsables((list) => list.filter((x) => x.id !== r.id))
+                        setResponsables((list) =>
+                          list.filter((x) => x.id !== r.id),
+                        )
                       }
                     >
                       Quitar
                     </button>
-                  ) : null}
+                  ) : (
+                    <span
+                      className="texto-muted"
+                      style={{ fontSize: '0.75rem' }}
+                    >
+                      Debe quedar al menos un responsable
+                    </span>
+                  )}
                 </div>
 
-                <p className="wizard-choice__question">¿El responsable ya está registrado?</p>
+                <p className="wizard-choice__question">
+                  ¿El responsable ya está registrado?
+                </p>
                 <div
                   className="wizard-choice"
                   role="group"
@@ -1494,6 +2496,7 @@ export function MatriculaWizard({
                         responsable_id: '',
                         encontrado_nombre: '',
                         user_code: '',
+                        fichaCargada: false,
                       })
                     }
                   >
@@ -1517,18 +2520,26 @@ export function MatriculaWizard({
 
                 {r.mode === 'existente' ? (
                   <>
-                    <Field label="Código del responsable" htmlFor={`wiz-resp-code-${r.id}`}>
+                    <Field
+                      label="Código del responsable"
+                      htmlFor={`wiz-resp-code-${r.id}`}
+                    >
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <input
                           id={`wiz-resp-code-${r.id}`}
                           className="field__input"
-                          data-testid={idx === 0 ? 'matricula-resp-code' : undefined}
+                          data-testid={
+                            idx === 0 ? 'matricula-resp-code' : undefined
+                          }
                           value={r.user_code}
                           onChange={(e) =>
                             updateResp(r.id, {
                               user_code: e.target.value,
                               responsable_id: '',
                               encontrado_nombre: '',
+                              // El código cambió: los datos de la ficha anterior
+                              // ya no valen y no deben reenviarse al guardar.
+                              fichaCargada: false,
                             })
                           }
                           placeholder="Ej. 1002026105"
@@ -1536,7 +2547,9 @@ export function MatriculaWizard({
                         <button
                           type="button"
                           className="btn btn--ghost"
-                          disabled={buscandoRespId === r.id || !r.user_code.trim()}
+                          disabled={
+                            buscandoRespId === r.id || !r.user_code.trim()
+                          }
                           onClick={() => buscarResponsable(r)}
                         >
                           {buscandoRespId === r.id ? 'Buscando…' : 'Buscar'}
@@ -1544,15 +2557,110 @@ export function MatriculaWizard({
                       </div>
                     </Field>
                     {r.responsable_id ? (
-                      <div className="wizard-summary" style={{ marginBottom: '0.85rem' }}>
+                      <div
+                        className="wizard-summary"
+                        style={{ marginBottom: '0.85rem' }}
+                      >
                         <div className="wizard-summary__row">
-                          <span className="wizard-summary__label">Encontrado</span>
-                          <span className="wizard-summary__value">{r.encontrado_nombre}</span>
+                          <span className="wizard-summary__label">
+                            Encontrado
+                          </span>
+                          <span className="wizard-summary__value">
+                            {r.encontrado_nombre}
+                          </span>
                         </div>
                         <div className="wizard-summary__row">
                           <span className="wizard-summary__label">Código</span>
-                          <span className="wizard-summary__value">{r.user_code}</span>
+                          <span className="wizard-summary__value">
+                            {r.user_code}
+                          </span>
                         </div>
+                      </div>
+                    ) : null}
+                    {r.responsable_id && !r.fichaCargada ? (
+                      <p
+                        className="texto-muted"
+                        style={{ fontSize: '0.8rem', margin: '0 0 0.65rem' }}
+                        data-testid={
+                          idx === 0
+                            ? 'matricula-resp-ficha-no-cargada'
+                            : undefined
+                        }
+                      >
+                        No se pudo cargar la ficha de este responsable: sus datos
+                        de perfil no se modificarán al guardar (se conservan los
+                        del servidor).
+                      </p>
+                    ) : null}
+                    {r.responsable_id ? (
+                      <div className="wizard-grid">
+                        <Field label="Teléfono de contacto">
+                          <input
+                            className="field__input"
+                            inputMode="numeric"
+                            maxLength={8}
+                            placeholder="88721992"
+                            data-testid={
+                              idx === 0 ? 'matricula-resp-telefono' : undefined
+                            }
+                            value={r.telefono_contacto}
+                            onChange={(e) =>
+                              updateResp(r.id, {
+                                telefono_contacto: onlyDigits(
+                                  e.target.value,
+                                  8,
+                                ),
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field label="Profesión">
+                          <Combobox
+                            allowCustom
+                            value={r.profesion}
+                            onChange={(v) => updateResp(r.id, { profesion: v })}
+                            options={profesionOptions}
+                            placeholder="Elegir o escribir…"
+                          />
+                        </Field>
+                        <div className="wizard-grid--full">
+                          <Field label="Dirección de domicilio">
+                            <input
+                              className="field__input"
+                              value={r.direccion_domicilio}
+                              onChange={(e) =>
+                                updateResp(r.id, {
+                                  direccion_domicilio: e.target.value,
+                                })
+                              }
+                            />
+                          </Field>
+                        </div>
+                        <Field label="Dirección de trabajo">
+                          <input
+                            className="field__input"
+                            value={r.direccion_trabajo}
+                            onChange={(e) =>
+                              updateResp(r.id, {
+                                direccion_trabajo: e.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field label="Teléfono de trabajo">
+                          <input
+                            className="field__input"
+                            inputMode="numeric"
+                            maxLength={8}
+                            placeholder="88721992"
+                            value={r.telefono_trabajo}
+                            onChange={(e) =>
+                              updateResp(r.id, {
+                                telefono_trabajo: onlyDigits(e.target.value, 8),
+                              })
+                            }
+                          />
+                        </Field>
                       </div>
                     ) : null}
                     <div className="wizard-grid">
@@ -1575,7 +2683,9 @@ export function MatriculaWizard({
                         <input
                           type="checkbox"
                           checked={r.es_principal}
-                          onChange={(e) => updateResp(r.id, { es_principal: e.target.checked })}
+                          onChange={(e) =>
+                            updateResp(r.id, { es_principal: e.target.checked })
+                          }
                         />{' '}
                         Responsable principal
                       </label>
@@ -1588,30 +2698,40 @@ export function MatriculaWizard({
                     <Field label="Primer nombre">
                       <input
                         className="field__input"
-                        data-testid={idx === 0 ? 'matricula-resp-nombre' : undefined}
+                        data-testid={
+                          idx === 0 ? 'matricula-resp-nombre' : undefined
+                        }
                         value={r.primer_nombre}
-                        onChange={(e) => updateResp(r.id, { primer_nombre: e.target.value })}
+                        onChange={(e) =>
+                          updateResp(r.id, { primer_nombre: e.target.value })
+                        }
                       />
                     </Field>
                     <Field label="Segundo nombre">
                       <input
                         className="field__input"
                         value={r.segundo_nombre}
-                        onChange={(e) => updateResp(r.id, { segundo_nombre: e.target.value })}
+                        onChange={(e) =>
+                          updateResp(r.id, { segundo_nombre: e.target.value })
+                        }
                       />
                     </Field>
                     <Field label="Primer apellido">
                       <input
                         className="field__input"
                         value={r.primer_apellido}
-                        onChange={(e) => updateResp(r.id, { primer_apellido: e.target.value })}
+                        onChange={(e) =>
+                          updateResp(r.id, { primer_apellido: e.target.value })
+                        }
                       />
                     </Field>
                     <Field label="Segundo apellido">
                       <input
                         className="field__input"
                         value={r.segundo_apellido}
-                        onChange={(e) => updateResp(r.id, { segundo_apellido: e.target.value })}
+                        onChange={(e) =>
+                          updateResp(r.id, { segundo_apellido: e.target.value })
+                        }
                       />
                     </Field>
                     <Field label="Teléfono de contacto">
@@ -1622,7 +2742,9 @@ export function MatriculaWizard({
                         placeholder="88721992"
                         value={r.telefono_contacto}
                         onChange={(e) =>
-                          updateResp(r.id, { telefono_contacto: onlyDigits(e.target.value, 8) })
+                          updateResp(r.id, {
+                            telefono_contacto: onlyDigits(e.target.value, 8),
+                          })
                         }
                       />
                     </Field>
@@ -1650,7 +2772,9 @@ export function MatriculaWizard({
                           className="field__input"
                           value={r.direccion_domicilio}
                           onChange={(e) =>
-                            updateResp(r.id, { direccion_domicilio: e.target.value })
+                            updateResp(r.id, {
+                              direccion_domicilio: e.target.value,
+                            })
                           }
                         />
                       </Field>
@@ -1659,7 +2783,11 @@ export function MatriculaWizard({
                       <input
                         className="field__input"
                         value={r.direccion_trabajo}
-                        onChange={(e) => updateResp(r.id, { direccion_trabajo: e.target.value })}
+                        onChange={(e) =>
+                          updateResp(r.id, {
+                            direccion_trabajo: e.target.value,
+                          })
+                        }
                       />
                     </Field>
                     <Field label="Teléfono de trabajo">
@@ -1670,15 +2798,22 @@ export function MatriculaWizard({
                         placeholder="88721992"
                         value={r.telefono_trabajo}
                         onChange={(e) =>
-                          updateResp(r.id, { telefono_trabajo: onlyDigits(e.target.value, 8) })
+                          updateResp(r.id, {
+                            telefono_trabajo: onlyDigits(e.target.value, 8),
+                          })
                         }
                       />
                     </Field>
-                    <label className="wizard-grid--full" style={{ fontSize: '0.85rem' }}>
+                    <label
+                      className="wizard-grid--full"
+                      style={{ fontSize: '0.85rem' }}
+                    >
                       <input
                         type="checkbox"
                         checked={r.es_principal}
-                        onChange={(e) => updateResp(r.id, { es_principal: e.target.checked })}
+                        onChange={(e) =>
+                          updateResp(r.id, { es_principal: e.target.checked })
+                        }
                       />{' '}
                       Responsable principal
                     </label>
@@ -1691,31 +2826,64 @@ export function MatriculaWizard({
               type="button"
               className="btn btn--ghost"
               data-testid="matricula-add-responsable"
-              onClick={() => setResponsables((list) => [...list, newResponsable(false)])}
+              onClick={() =>
+                setResponsables((list) => [...list, newResponsable(false)])
+              }
             >
               Añadir otro responsable
             </button>
           </div>
         ) : null}
 
-        {!done && step === 4 ? (
+        {!done && !edicionBloqueada && step === 4 ? (
           <div className="wizard-pane" key="foto">
-            <p className="wizard-pane__title">Fotografía</p>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '0.35rem',
+              }}
+            >
+              <p className="wizard-pane__title" style={{ margin: 0 }}>
+                Fotografía
+              </p>
+              {botonRestaurar('foto')}
+            </div>
             <p className="wizard-pane__hint">
-              Opcional. Foto de perfil del alumno (cargar archivo o capturar con cámara).
+              Opcional. Foto de perfil del alumno (cargar archivo o capturar con
+              cámara).
             </p>
             <PhotoCapture file={foto} onChange={setFoto} />
           </div>
         ) : null}
 
-        {!done && step === 5 ? (
+        {!done && !edicionBloqueada && step === 5 ? (
           <div className="wizard-pane" key="pago">
-            <p className="wizard-pane__title">Pago</p>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '0.35rem',
+              }}
+            >
+              <p className="wizard-pane__title" style={{ margin: 0 }}>
+                Pago
+              </p>
+              {botonRestaurar('pago')}
+            </div>
             <p className="wizard-pane__hint">
-              La beca aplica solo a las mensualidades del periodo. La cuota de matrícula siempre es
-              la del grado.
+              La beca aplica solo a las mensualidades del periodo. La cuota de
+              matrícula siempre es la del grado.
             </p>
-            <div className="wizard-choice" role="group" aria-label="Tipo de beca">
+            <div
+              className="wizard-choice"
+              role="group"
+              aria-label="Tipo de beca"
+            >
               {BECA_OPTIONS.map((op) => (
                 <button
                   key={op.value}
@@ -1742,8 +2910,12 @@ export function MatriculaWizard({
                 />
               </Field>
             ) : null}
-            <p className="texto-muted" style={{ fontSize: '0.85rem', margin: '0.85rem 0 0' }}>
-              Pagará por mes: {becaMonto !== null ? `${lempiras(becaMonto)}/mes` : '—'}
+            <p
+              className="texto-muted"
+              style={{ fontSize: '0.85rem', margin: '0.85rem 0 0' }}
+            >
+              Pagará por mes:{' '}
+              {becaMonto !== null ? `${lempiras(becaMonto)}/mes` : '—'}
               {costoGrado
                 ? ` · Mensualidad normal del grado: ${lempiras(costoGrado.mensualidad)}`
                 : ''}
@@ -1751,27 +2923,42 @@ export function MatriculaWizard({
           </div>
         ) : null}
 
-        {!done && step === 6 ? (
+        {!done && !edicionBloqueada && step === 6 ? (
           <div className="wizard-pane" key="confirm">
             <p className="wizard-pane__title">Revisión final</p>
             <p className="wizard-pane__hint">
-              Al confirmar se crearán el usuario, el perfil, la matrícula y se descargará una
-              carpeta ZIP con las credenciales, el contrato, el carnet y la ficha.
+              Al confirmar se crearán el usuario, el perfil, la matrícula y se
+              descargará una carpeta ZIP con las credenciales, el contrato, el
+              carnet y la ficha.
             </p>
-            <p className="texto-muted" style={{ fontSize: '0.8rem', margin: '0 0 0.75rem' }}>
-              Los documentos se descargan una sola vez al confirmar; las credenciales contienen la
-              contraseña temporal y no se pueden volver a generar.
+            <p
+              className="texto-muted"
+              style={{ fontSize: '0.8rem', margin: '0 0 0.75rem' }}
+            >
+              Los documentos se descargan una sola vez al confirmar; las
+              credenciales contienen la contraseña temporal y no se pueden
+              volver a generar.
             </p>
             {generandoDocs ? (
-              <p className="docs-progreso" data-testid="matricula-generando-docs">
+              <p
+                className="docs-progreso"
+                data-testid="matricula-generando-docs"
+              >
                 Generando documentos…
               </p>
             ) : null}
             <div className="wizard-summary">
               {fotoUrl ? (
                 <div className="wizard-summary__photo">
-                  <div className="photo-capture__frame" aria-label="Fotografía del alumno">
-                    <img src={fotoUrl} alt="Fotografía del alumno" className="photo-capture__img" />
+                  <div
+                    className="photo-capture__frame"
+                    aria-label="Fotografía del alumno"
+                  >
+                    <img
+                      src={fotoUrl}
+                      alt="Fotografía del alumno"
+                      className="photo-capture__img"
+                    />
                   </div>
                 </div>
               ) : (
@@ -1782,7 +2969,9 @@ export function MatriculaWizard({
               )}
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Alumno</span>
-                <span className="wizard-summary__value">{fullName(alumno)}</span>
+                <span className="wizard-summary__value">
+                  {fullName(alumno)}
+                </span>
               </div>
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Sexo</span>
@@ -1802,44 +2991,58 @@ export function MatriculaWizard({
               {alumno.telefono_contacto ? (
                 <div className="wizard-summary__row">
                   <span className="wizard-summary__label">Teléfono</span>
-                  <span className="wizard-summary__value">{alumno.telefono_contacto}</span>
+                  <span className="wizard-summary__value">
+                    {alumno.telefono_contacto}
+                  </span>
                 </div>
               ) : null}
               {alumno.numero_identidad ? (
                 <div className="wizard-summary__row">
                   <span className="wizard-summary__label">Identidad</span>
                   <span className="wizard-summary__value">
-                  <span className="wizard-summary__value">{alumno.numero_identidad}</span>
+                    <span className="wizard-summary__value">
+                      {alumno.numero_identidad}
+                    </span>
                   </span>
                 </div>
               ) : null}
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Ingreso</span>
                 <span className="wizard-summary__value">
-                  {historial.procede_otra_institucion
-                    ? historial.nombre_institucion_origen
+                  {esReingreso
+                    ? 'Reingreso'
+                    : historial.procede_otra_institucion &&
+                        historial.nombre_institucion_origen
                       ? `Primer ingreso · ${historial.nombre_institucion_origen}`
-                      : 'Primer ingreso'
-                    : 'Reingreso'}
+                      : 'Primer ingreso'}
                 </span>
               </div>
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Alergias</span>
                 <span className="wizard-summary__value">
-                  {historial.alergias.map((a) => a.trim()).filter(Boolean).join(', ') || 'Ninguna'}
+                  {historial.alergias
+                    .map((a) => a.trim())
+                    .filter(Boolean)
+                    .join(', ') || 'Ninguna'}
                 </span>
               </div>
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Periodo</span>
-                <span className="wizard-summary__value">{selectedPeriodo?.nombre ?? '—'}</span>
+                <span className="wizard-summary__value">
+                  {selectedPeriodo?.nombre ?? '—'}
+                </span>
               </div>
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Grado</span>
-                <span className="wizard-summary__value">{selectedGrado?.nombre ?? '—'}</span>
+                <span className="wizard-summary__value">
+                  {selectedGrado?.nombre ?? '—'}
+                </span>
               </div>
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Modalidad</span>
-                <span className="wizard-summary__value">{selectedModalidad?.nombre ?? '—'}</span>
+                <span className="wizard-summary__value">
+                  {selectedModalidad?.nombre ?? '—'}
+                </span>
               </div>
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Sección</span>
@@ -1851,7 +3054,9 @@ export function MatriculaWizard({
               </div>
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Mensualidades</span>
-                <span className="wizard-summary__value">Se generan al matricular</span>
+                <span className="wizard-summary__value">
+                  Se generan al matricular
+                </span>
               </div>
               <div className="wizard-summary__row" data-testid="beca-resumen">
                 <span className="wizard-summary__label">Beca</span>
@@ -1864,7 +3069,9 @@ export function MatriculaWizard({
                     ? academico.cursos_retrasados
                         .filter((c) => c.curso_id)
                         .map((c) => {
-                          const nombre = cursos.find((x) => x.id === c.curso_id)?.nombre ?? '—'
+                          const nombre =
+                            cursos.find((x) => x.id === c.curso_id)?.nombre ??
+                            '—'
                           return `${nombre} (${c.anio_previo})`
                         })
                         .join(', ') || 'Sí'
@@ -1892,8 +3099,13 @@ export function MatriculaWizard({
 
       <ConfirmDialog
         open={confirmSave}
-        title="Confirmar matrícula"
-        message={`¿Registrar a ${fullName(alumno)}? Se descargará la carpeta ZIP con los documentos de la matrícula.`}
+        title={edicion ? 'Guardar cambios' : 'Confirmar matrícula'}
+        message={
+          edicion
+            ? `¿Guardar los cambios de la matrícula de ${fullName(alumno)}?`
+            : `¿Registrar a ${fullName(alumno)}? Se descargará la carpeta ZIP con los documentos de la matrícula.`
+        }
+        confirmLabel={edicion ? 'Guardar cambios' : 'Confirmar'}
         confirmDisabled={saveMut.isPending || generandoDocs}
         onConfirm={() => saveMut.mutate()}
         onCancel={() => setConfirmSave(false)}

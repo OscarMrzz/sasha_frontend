@@ -11,7 +11,9 @@ async function irAlPasoPago(page: Page) {
   await page.getByRole('link', { name: 'Matrícula' }).click()
   await expect(page).toHaveURL(/matricula/)
   await page.getByRole('button', { name: 'Nueva matrícula' }).click()
-  await expect(page.getByRole('heading', { name: 'Nueva matrícula' })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Nueva matrícula' }),
+  ).toBeVisible()
 
   // Paso 1 · Alumno
   await page.getByTestId('matricula-primer-nombre').fill('Beca')
@@ -22,12 +24,16 @@ async function irAlPasoPago(page: Page) {
   await page.getByTestId('matricula-wizard-next').click()
 
   // Paso 2 · Historial
-  await expect(page.getByTestId('matricula-otra-inst-no')).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByTestId('matricula-otra-inst-no')).toBeVisible({
+    timeout: 10_000,
+  })
   await page.getByTestId('matricula-otra-inst-no').click()
   await page.getByTestId('matricula-wizard-next').click()
 
   // Paso 3 · Académico
-  await expect(page.getByText('Datos académicos')).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText('Datos académicos')).toBeVisible({
+    timeout: 10_000,
+  })
   await elegirPrimeraOpcion(page, 'matricula-periodo')
   await elegirPrimeraOpcion(page, 'matricula-grado')
   await elegirPrimeraOpcion(page, 'matricula-modalidad')
@@ -41,8 +47,13 @@ async function irAlPasoPago(page: Page) {
   const panel = page.getByTestId('matricula-responsable-0')
   await panel.getByRole('button', { name: 'No, es nuevo' }).click()
   await page.getByTestId('matricula-resp-nombre').fill('Carlos')
-  await panel.locator('.field', { hasText: 'Primer apellido' }).locator('input').fill('Perez')
-  const parentesco = panel.locator('.field', { hasText: 'Parentesco' }).locator('input')
+  await panel
+    .locator('.field', { hasText: 'Primer apellido' })
+    .locator('input')
+    .fill('Perez')
+  const parentesco = panel
+    .locator('.field', { hasText: 'Parentesco' })
+    .locator('input')
   await parentesco.fill('Madre')
   await parentesco.press('Enter')
   await page.getByTestId('matricula-wizard-next').click()
@@ -60,16 +71,26 @@ async function irAlPasoPago(page: Page) {
 }
 
 test.describe('matricula wizard @critical', () => {
-  test('sin tipo documento, teléfono 8 dígitos y alergia combobox', async ({ page }) => {
+  test('sin tipo documento, teléfono 8 dígitos y alergia combobox', async ({
+    page,
+  }) => {
     await loginAs(page)
     await page.getByRole('link', { name: 'Matrícula' }).click()
     await expect(page).toHaveURL(/matricula/)
     await page.getByRole('button', { name: 'Nueva matrícula' }).click()
-    await expect(page.getByRole('heading', { name: 'Nueva matrícula' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Nueva matrícula' }),
+    ).toBeVisible()
 
     await expect(page.getByText('Tipo documento')).toHaveCount(0)
-    await expect(page.getByTestId('matricula-telefono')).toHaveAttribute('placeholder', '88721992')
-    await expect(page.getByTestId('matricula-identidad')).toHaveAttribute('placeholder', '1804199704869')
+    await expect(page.getByTestId('matricula-telefono')).toHaveAttribute(
+      'placeholder',
+      '88721992',
+    )
+    await expect(page.getByTestId('matricula-identidad')).toHaveAttribute(
+      'placeholder',
+      '1804199704869',
+    )
 
     await page.getByTestId('matricula-primer-nombre').fill('Ana')
     await page.getByTestId('matricula-primer-apellido').fill('Lopez')
@@ -85,41 +106,67 @@ test.describe('matricula wizard @critical', () => {
 
     await page.getByTestId('matricula-telefono').fill('88721992')
     await page.getByTestId('matricula-identidad').fill('0000000000000999')
-    await expect(page.getByTestId('matricula-identidad')).toHaveValue('0000000000000')
+    await expect(page.getByTestId('matricula-identidad')).toHaveValue(
+      '0000000000000',
+    )
 
     // el toast de error queda sobre el footer y se pausa si el mouse está encima
     await page.mouse.move(0, 0)
-    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0, { timeout: 10_000 })
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0, {
+      timeout: 10_000,
+    })
     await page.getByTestId('matricula-wizard-next').click()
-    await expect(page.getByTestId('matricula-otra-inst-no')).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByTestId('matricula-otra-inst-no')).toBeVisible({
+      timeout: 8_000,
+    })
 
     await page.getByTestId('matricula-otra-inst-no').click()
     const alergia = page.getByTestId('matricula-alergia')
     await expect(alergia).toBeVisible()
     await alergia.click()
     await alergia.fill('Maní')
-    const option = page.getByRole('button', { name: /^Maní$/ }).or(page.getByRole('button', { name: /Usar «Maní»/ }))
+    const option = page
+      .getByRole('button', { name: /^Maní$/ })
+      .or(page.getByRole('button', { name: /Usar «Maní»/ }))
     await expect(option.first()).toBeVisible({ timeout: 8_000 })
   })
 
   test('admin edita una matrícula desde el clic derecho', async ({ page }) => {
     await loginAs(page)
     await page.goto('/matricula')
-    await expect(page.getByRole('heading', { name: 'Matrícula' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Matrícula' })).toBeVisible({
+      timeout: 15_000,
+    })
 
     const row = page.locator('table.data-table tbody tr').first()
     await expect(row).toBeVisible()
     await row.click({ button: 'right' })
     await page.getByTestId('ctx-editar').click()
 
-    await expect(page.getByRole('heading', { name: 'Editar alumno' })).toBeVisible()
-    await expect(page.getByTestId('matricula-edit-seccion')).toBeVisible()
-    await expect(page.getByTestId('persona-edit-save')).toBeVisible()
+    // Ya no se abre PersonaEditModal: el clic derecho usa el wizard en edición.
+    await expect(
+      page.getByRole('heading', { name: 'Editar matrícula' }),
+    ).toBeVisible({
+      timeout: 15_000,
+    })
+    // Señal positiva de fin de precarga (no basta con que «Cargando…» no exista,
+    // porque al abrir el modal todavía no se ha renderizado).
+    await expect(page.getByTestId('matricula-primer-nombre')).not.toHaveValue(
+      '',
+      { timeout: 20_000 },
+    )
+    await expect(page.getByTestId('matricula-restaurar-alumno')).toBeVisible()
+    await expect(page.getByTestId('matricula-wizard-next')).toBeVisible()
     await page.getByRole('button', { name: 'Cancelar' }).click()
-    await expect(page.getByRole('heading', { name: 'Editar alumno' })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Sí, cancelar' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Editar matrícula' }),
+    ).toHaveCount(0)
   })
 
-  test('penúltimo paso: elige la beca inline y se refleja en el resumen', async ({ page }) => {
+  test('penúltimo paso: elige la beca inline y se refleja en el resumen', async ({
+    page,
+  }) => {
     await loginAs(page)
     await irAlPasoPago(page)
 
@@ -136,7 +183,9 @@ test.describe('matricula wizard @critical', () => {
     await page.getByTestId('beca-op-media').click()
     await page.getByTestId('matricula-wizard-next').click()
 
-    await expect(page.getByText('Revisión final')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Revisión final')).toBeVisible({
+      timeout: 10_000,
+    })
     const resumen = page.getByTestId('beca-resumen')
     await expect(resumen).toBeVisible()
     await expect(resumen).toContainText('Media beca')

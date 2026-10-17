@@ -4,7 +4,6 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { MatriculaWizard } from '#/components/matricula/MatriculaWizard'
-import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
 import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
 import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { Combobox } from '#/components/ui/Combobox'
@@ -21,36 +20,57 @@ import {
   listPeriodos,
   listSecciones,
 } from '#/services/catalogos'
-import {
-  getSugerencia,
-  listMatriculas,
-  reingreso,
-} from '#/services/matricula'
+import { getSugerencia, listMatriculas, reingreso } from '#/services/matricula'
 import type { Matricula, SugerenciaResponse } from '#/services/matricula'
 import { deletePersona } from '#/services/personas'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
-export const Route = createFileRoute('/_app/matricula')({ component: MatriculaPage })
+export const Route = createFileRoute('/_app/matricula')({
+  component: MatriculaPage,
+})
 
 const col = createColumnHelper<Matricula>()
 
 function MatriculaPage() {
   const qc = useQueryClient()
   const { can } = useCan()
-  const { data = [], isLoading } = useQuery({ queryKey: ['matriculas'], queryFn: listMatriculas })
-  const { data: secciones = [] } = useQuery({ queryKey: ['secciones'], queryFn: listSecciones })
-  const { data: periodos = [] } = useQuery({ queryKey: ['periodos'], queryFn: listPeriodos })
-  const { data: grados = [] } = useQuery({ queryKey: ['grados'], queryFn: listGrados })
-  const { data: modalidades = [] } = useQuery({ queryKey: ['modalidades'], queryFn: listModalidades })
-  const { data: cursos = [] } = useQuery({ queryKey: ['cursos'], queryFn: listCursos })
+  const { data = [], isLoading } = useQuery({
+    queryKey: ['matriculas'],
+    queryFn: listMatriculas,
+  })
+  const { data: secciones = [] } = useQuery({
+    queryKey: ['secciones'],
+    queryFn: listSecciones,
+  })
+  const { data: periodos = [] } = useQuery({
+    queryKey: ['periodos'],
+    queryFn: listPeriodos,
+  })
+  const { data: grados = [] } = useQuery({
+    queryKey: ['grados'],
+    queryFn: listGrados,
+  })
+  const { data: modalidades = [] } = useQuery({
+    queryKey: ['modalidades'],
+    queryFn: listModalidades,
+  })
+  const { data: cursos = [] } = useQuery({
+    queryKey: ['cursos'],
+    queryFn: listCursos,
+  })
 
   const [createOpen, setCreateOpen] = useState(false)
   const [reingresoOpen, setReingresoOpen] = useState(false)
   const [confirmSave, setConfirmSave] = useState(false)
-  const [ctx, setCtx] = useState<{ x: number; y: number; row: Matricula } | null>(null)
-  const [editRow, setEditRow] = useState<Matricula | null>(null)
+  const [ctx, setCtx] = useState<{
+    x: number
+    y: number
+    row: Matricula
+  } | null>(null)
+  const [editWizard, setEditWizard] = useState<Matricula | null>(null)
   const [verPersona, setVerPersona] = useState<string | null>(null)
-  const [confirmDeletePersona, setConfirmDeletePersona] = useState<Matricula | null>(null)
+  const [confirmDeletePersona, setConfirmDeletePersona] =
+    useState<Matricula | null>(null)
 
   useAccionPalette('nuevo-matricula', () => setCreateOpen(true))
 
@@ -108,7 +128,8 @@ function MatriculaPage() {
   }
 
   const seccionNombre = useCallback(
-    (m: Matricula) => secciones.find((s) => s.id === m.seccion_id)?.nombre ?? '—',
+    (m: Matricula) =>
+      secciones.find((s) => s.id === m.seccion_id)?.nombre ?? '—',
     [secciones],
   )
   const jornadaNombre = useCallback(
@@ -126,9 +147,18 @@ function MatriculaPage() {
         header: 'Código',
         cell: (i) => i.getValue() ?? '—',
       }),
-      col.accessor('alumno_username', { header: 'Usuario', cell: (i) => i.getValue() ?? '—' }),
-      col.accessor('grado_nombre', { header: 'Grado', cell: (i) => i.getValue() ?? '—' }),
-      col.accessor('seccion_id', { header: 'Sección', cell: (i) => seccionNombre(i.row.original) }),
+      col.accessor('alumno_username', {
+        header: 'Usuario',
+        cell: (i) => i.getValue() ?? '—',
+      }),
+      col.accessor('grado_nombre', {
+        header: 'Grado',
+        cell: (i) => i.getValue() ?? '—',
+      }),
+      col.accessor('seccion_id', {
+        header: 'Sección',
+        cell: (i) => seccionNombre(i.row.original),
+      }),
       col.display({
         id: 'jornada',
         header: 'Jornada',
@@ -140,9 +170,21 @@ function MatriculaPage() {
 
   const tableFilters = useMemo(
     () => [
-      { id: 'grado_nombre', label: 'Grado', getValue: (r: Matricula) => r.grado_nombre ?? '' },
-      { id: 'seccion', label: 'Sección', getValue: (r: Matricula) => seccionNombre(r) },
-      { id: 'jornada', label: 'Jornada', getValue: (r: Matricula) => jornadaNombre(r) },
+      {
+        id: 'grado_nombre',
+        label: 'Grado',
+        getValue: (r: Matricula) => r.grado_nombre ?? '',
+      },
+      {
+        id: 'seccion',
+        label: 'Sección',
+        getValue: (r: Matricula) => seccionNombre(r),
+      },
+      {
+        id: 'jornada',
+        label: 'Jornada',
+        getValue: (r: Matricula) => jornadaNombre(r),
+      },
       { id: 'status', label: 'Estado', getValue: (r: Matricula) => r.status },
     ],
     [seccionNombre, jornadaNombre],
@@ -184,14 +226,27 @@ function MatriculaPage() {
           jornada: jornadaNombre(m),
           estado: m.status,
         }))}
-        onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
+        onRowContextMenu={(row, e) =>
+          setCtx({ x: e.clientX, y: e.clientY, row })
+        }
         onRowDoubleClick={(row) => {
-          if (row.alumno_code) setEditRow(row)
+          // Mismo gate que el ítem «Editar» del menú contextual (ctx-editar).
+          if (
+            row.alumno_code &&
+            can('matricula:put') &&
+            can('personas:put')
+          ) {
+            setEditWizard(row)
+          }
         }}
       />
 
       {ctx ? (
-        <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }} data-testid="matricula-ctx">
+        <div
+          className="ctx-menu"
+          style={{ left: ctx.x, top: ctx.y }}
+          data-testid="matricula-ctx"
+        >
           {ctx.row.alumno_code ? (
             <Can permission="personas:get">
               <button
@@ -215,7 +270,7 @@ function MatriculaPage() {
                   className="ctx-menu__item"
                   data-testid="ctx-editar"
                   onClick={() => {
-                    setEditRow(ctx.row)
+                    setEditWizard(ctx.row)
                     closeCtx()
                   }}
                 >
@@ -265,7 +320,11 @@ function MatriculaPage() {
         onClose={() => setReingresoOpen(false)}
         footer={
           <>
-            <button type="button" className="btn btn--ghost" onClick={() => setReingresoOpen(false)}>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => setReingresoOpen(false)}
+            >
               Cancelar
             </button>
             <Can permission="matricula:post">
@@ -289,7 +348,11 @@ function MatriculaPage() {
               value={reingresoCode}
               onChange={(e) => setReingresoCode(e.target.value)}
             />
-            <button type="button" className="btn btn--ghost" onClick={buscarSugerencia}>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={buscarSugerencia}
+            >
               Sugerencia
             </button>
           </div>
@@ -306,29 +369,45 @@ function MatriculaPage() {
             data-testid="reingreso-sugerencia"
           >
             <p style={{ margin: '0 0 0.35rem' }}>
-              <strong>Grado actual:</strong> {sugerencia.grado_actual?.nombre ?? '—'}
+              <strong>Grado actual:</strong>{' '}
+              {sugerencia.grado_actual?.nombre ?? '—'}
             </p>
             <p style={{ margin: '0 0 0.35rem' }}>
-              <strong>Grado sugerido:</strong> {sugerencia.grado_sugerido?.nombre ?? '—'}
+              <strong>Grado sugerido:</strong>{' '}
+              {sugerencia.grado_sugerido?.nombre ?? '—'}
             </p>
             {sugerencia.resultado ? (
               <p
                 className={`reingreso-resultado reingreso-resultado--${sugerencia.resultado.aprueba ? 'aprueba' : 'repite'}`}
                 data-testid="reingreso-resultado"
               >
-                {sugerencia.resultado.periodo_nombre}: {sugerencia.resultado.mensaje}
+                {sugerencia.resultado.periodo_nombre}:{' '}
+                {sugerencia.resultado.mensaje}
               </p>
             ) : sugerencia.mensaje ? (
-              <p className="texto-muted" style={{ margin: 0 }}>{sugerencia.mensaje}</p>
-            ) : null}
-            {sugerencia.retrasadas.length > 0 ? (
-              <p style={{ margin: '0.35rem 0 0' }} data-testid="reingreso-retrasadas">
-                <strong>Clases retrasadas:</strong>{' '}
-                {sugerencia.retrasadas.map((c) => `${c.curso} (${c.final})`).join(', ')}
+              <p className="texto-muted" style={{ margin: 0 }}>
+                {sugerencia.mensaje}
               </p>
             ) : null}
-            {seccionElegida && sugerencia.grado_sugerido && seccionElegida.grado_id !== sugerencia.grado_sugerido.id ? (
-              <p className="texto-muted" style={{ margin: '0.35rem 0 0' }} data-testid="reingreso-otro-grado">
+            {sugerencia.retrasadas.length > 0 ? (
+              <p
+                style={{ margin: '0.35rem 0 0' }}
+                data-testid="reingreso-retrasadas"
+              >
+                <strong>Clases retrasadas:</strong>{' '}
+                {sugerencia.retrasadas
+                  .map((c) => `${c.curso} (${c.final})`)
+                  .join(', ')}
+              </p>
+            ) : null}
+            {seccionElegida &&
+            sugerencia.grado_sugerido &&
+            seccionElegida.grado_id !== sugerencia.grado_sugerido.id ? (
+              <p
+                className="texto-muted"
+                style={{ margin: '0.35rem 0 0' }}
+                data-testid="reingreso-otro-grado"
+              >
                 La sección elegida no es del grado sugerido.
               </p>
             ) : null}
@@ -353,7 +432,9 @@ function MatriculaPage() {
               const m = modalidades.find((x) => x.id === s.modalidad_id)
               return {
                 value: s.id,
-                label: [g?.nombre, m?.nombre, s.nombre].filter(Boolean).join(' · '),
+                label: [g?.nombre, m?.nombre, s.nombre]
+                  .filter(Boolean)
+                  .join(' · '),
                 keywords: s.codigo,
               }
             })}
@@ -364,22 +445,29 @@ function MatriculaPage() {
 
       <UserFichaModal code={verPersona} onClose={() => setVerPersona(null)} />
 
-      {editRow && editRow.alumno_code ? (
-        <PersonaEditModal
-          code={editRow.alumno_code}
-          matricula={editRow}
-          periodos={periodos}
-          grados={grados}
-          modalidades={modalidades}
-          secciones={secciones}
-          permitirRol={false}
-          onClose={() => setEditRow(null)}
-          onSaved={() => {
+      {editWizard?.alumno_code ? (
+        <MatriculaWizard
+          edicion={{
+            matriculaId: editWizard.id,
+            alumnoCode: editWizard.alumno_code,
+          }}
+          open
+          onClose={() => setEditWizard(null)}
+          onCreated={() => {
             qc.invalidateQueries({ queryKey: ['matriculas'] })
             qc.invalidateQueries({ queryKey: ['alumnos'] })
+            qc.invalidateQueries({ queryKey: ['responsables'] })
+            qc.invalidateQueries({ queryKey: ['users'] })
             qc.invalidateQueries({ queryKey: ['consejeria-alumnos'] })
-            qc.invalidateQueries({ queryKey: ['persona-ficha', editRow.alumno_code] })
+            qc.invalidateQueries({
+              queryKey: ['persona-ficha', editWizard.alumno_code],
+            })
           }}
+          periodos={periodos}
+          secciones={secciones}
+          grados={grados}
+          modalidades={modalidades}
+          cursos={cursos}
         />
       ) : null}
 

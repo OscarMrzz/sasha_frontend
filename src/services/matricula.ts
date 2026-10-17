@@ -9,7 +9,11 @@ export interface MatriculaCreate {
   asignar_seccion_automatica?: boolean
   es_reingreso?: boolean
   tiene_cursos_retrasados?: boolean
-  cursos_retrasados?: { curso_id: string; anio_previo: number; anio_actual: number }[]
+  cursos_retrasados?: {
+    curso_id: string
+    anio_previo: number
+    anio_actual: number
+  }[]
   /** Beca del alumno (solo mensualidades): normal | media | completa | especial. */
   tipo_beca?: string
   /** Monto por mes, requerido solo cuando `tipo_beca` es `especial`. */
@@ -34,6 +38,10 @@ export interface Matricula {
   grado_id?: string
   grado_nombre?: string
   grado_orden?: number
+  /** Beca del alumno (solo mensualidades): normal | media | completa | especial. */
+  tipo_beca?: string
+  /** Monto por mes, presente solo cuando `tipo_beca` es `especial`. */
+  monto_especial?: number
 }
 
 export interface GradoInfo {
@@ -118,6 +126,21 @@ export interface MatriculaUpdate {
   periodo_academico_id?: string
   es_reingreso?: boolean
   status?: string
+  /** Vacío = no cambiar la beca; `normal` limpia una beca anterior. */
+  tipo_beca?: string
+  /** Solo aplica cuando `tipo_beca` es `especial`. */
+  monto_especial?: number
+  /** `undefined` = no tocar las clases retrasadas; `[]` = limpiar. */
+  cursos_retrasados?: {
+    curso_id: string
+    anio_previo: number
+    anio_actual: number
+  }[]
+}
+
+/** Matrícula por id (incluye `tipo_beca`, `monto_especial`, `seccion_id` y `es_reingreso`). */
+export async function getMatricula(id: string) {
+  return apiRequest<Matricula>(`/matricula/${id}`)
 }
 
 export async function updateMatricula(id: string, body: MatriculaUpdate) {
@@ -130,19 +153,45 @@ export async function getSugerencia(code: string) {
 }
 
 export async function reingreso(body: ReingresoRequest) {
-  return apiRequest<Matricula | SugerenciaResponse>('/matricula/reingreso', { method: 'POST', body })
-}
-
-export async function linkResponsable(matriculaId: string, body: LinkResponsableRequest) {
-  return apiRequest<LinkResponsableResponse>(`/matricula/${matriculaId}/responsables`, {
+  return apiRequest<Matricula | SugerenciaResponse>('/matricula/reingreso', {
     method: 'POST',
     body,
   })
 }
 
-export async function addDocumento(matriculaId: string, body: DocumentoRequest) {
-  return apiRequest<DocumentoMatricula>(`/matricula/${matriculaId}/documentos`, {
-    method: 'POST',
-    body,
-  })
+export async function linkResponsable(
+  matriculaId: string,
+  body: LinkResponsableRequest,
+) {
+  return apiRequest<LinkResponsableResponse>(
+    `/matricula/${matriculaId}/responsables`,
+    {
+      method: 'POST',
+      body,
+    },
+  )
+}
+
+/** Desvincula (marca INACTIVE) a un responsable de la matrícula. */
+export async function unlinkResponsable(
+  matriculaId: string,
+  responsableId: string,
+) {
+  return apiRequest<void>(
+    `/matricula/${matriculaId}/responsables/${encodeURIComponent(responsableId)}`,
+    { method: 'DELETE' },
+  )
+}
+
+export async function addDocumento(
+  matriculaId: string,
+  body: DocumentoRequest,
+) {
+  return apiRequest<DocumentoMatricula>(
+    `/matricula/${matriculaId}/documentos`,
+    {
+      method: 'POST',
+      body,
+    },
+  )
 }
