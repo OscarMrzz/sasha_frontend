@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { Toaster } from 'sonner'
 import { SessionProvider } from '#/hooks/use-session'
+import { MantenimientoProvider } from '#/hooks/use-mantenimiento'
 import { PermissionsProvider } from '#/components/gates/Can'
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -25,19 +26,21 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <QueryClientProvider client={client}>
       <SessionProvider>
         <PermissionsProvider>
-          {children}
-          <Toaster
-            position="bottom-right"
-            duration={5000}
-            theme="dark"
-            toastOptions={{
-              style: {
-                background: 'var(--sasha-bg-overlay)',
-                border: '1px solid var(--sasha-border-suave)',
-                color: 'var(--sasha-texto-primary)',
-              },
-            }}
-          />
+          <MantenimientoProvider>
+            {children}
+            <Toaster
+              position="bottom-right"
+              duration={5000}
+              theme="dark"
+              toastOptions={{
+                style: {
+                  background: 'var(--sasha-bg-overlay)',
+                  border: '1px solid var(--sasha-border-suave)',
+                  color: 'var(--sasha-texto-primary)',
+                },
+              }}
+            />
+          </MantenimientoProvider>
         </PermissionsProvider>
       </SessionProvider>
     </QueryClientProvider>

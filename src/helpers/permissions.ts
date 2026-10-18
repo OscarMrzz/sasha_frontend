@@ -288,7 +288,14 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'notificaciones:get',
     'mis_fichas:get',
   ],
-  developer: ['auditoria:get', 'notificaciones:get', 'contratos:get', 'credenciales:get', 'credenciales:post'],
+  developer: [
+    'auditoria:get',
+    'notificaciones:get',
+    'contratos:get',
+    'credenciales:get',
+    'credenciales:post',
+    'mantenimiento:put',
+  ],
 }
 
 export function roleHasPermission(role: string | null | undefined, permission: Permission): boolean {

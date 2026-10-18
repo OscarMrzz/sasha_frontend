@@ -27,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/restablecer-password', label: 'Restablecer credenciales', permission: 'credenciales:get', icon: 'key' },
   { to: '/coordinaciones', label: 'Coordinaciones', permission: 'coordinaciones:get', icon: 'network' },
   { to: '/controladores', label: 'Controladores', permission: 'users:put', icon: 'shield' },
+  { to: '/mantenimiento-admin', label: 'Mantenimiento', permission: 'mantenimiento:put', icon: 'shield' },
   { to: '/matricula', label: 'Matrícula', permission: 'matricula:get', icon: 'clipboard' },
   { to: '/carnets', label: 'Carnets', permission: 'carnets:get', icon: 'id-card' },
   { to: '/asignacion', label: 'Asignación', permission: 'asignacion:get', icon: 'link' },

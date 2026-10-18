@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { clearPersistedSession } from '#/lib/session-storage'
+import { clearPersistedSession, parseStoredSession, readStoredSessionRaw } from '#/lib/session-storage'
 
 export const apiErrorSchema = z.object({
   message: z.string().optional(),
@@ -58,6 +58,32 @@ function handleUnauthorized(path: string) {
   window.location.assign('/login')
 }
 
+/** Evita bucles si varias peticiones reciben 503 de mantenimiento a la vez. */
+let redirectingToMaintenance = false
+
+/** El rol `developer` no se redirige: es quien puede apagar el mantenimiento desde la web. */
+function isDeveloperStored(): boolean {
+  try {
+    const parsed = parseStoredSession(readStoredSessionRaw())
+    return Boolean(parsed?.knownRoles?.includes('developer'))
+  } catch {
+    return false
+  }
+}
+
+/** Espejo de `handleUnauthorized` para el 503 de mantenimiento (`code=MANTENIMIENTO`). */
+function handleMaintenance() {
+  if (typeof window === 'undefined') return
+  // El `developer` autenticado nunca se redirige (es quien puede apagarlo desde la web).
+  if (isDeveloperStored()) return
+  const path = window.location.pathname.replace(/\/$/, '')
+  // `/login` queda exento para que el developer pueda iniciar sesión; `/mantenimiento` ya es la pantalla.
+  if (path === '/login' || path === '/mantenimiento') return
+  if (redirectingToMaintenance) return
+  redirectingToMaintenance = true
+  window.location.assign('/mantenimiento')
+}
+
 export async function apiRequest<T = unknown>(
   path: string,
   options: RequestOptions = {},
@@ -107,6 +133,10 @@ export async function apiRequest<T = unknown>(
       } catch {
         /* keep text */
       }
+      // 503 de mantenimiento (no confundir con STORAGE_* de la bóveda).
+      if (res.status === 503 && code === 'MANTENIMIENTO') {
+        handleMaintenance()
+      }
       logApiFailure(method, path, res.status, code, message, text)
       throw new ApiError(message, res.status, code, text)
     }
@@ -125,6 +155,10 @@ export async function apiRequest<T = unknown>(
     const parsed = apiErrorSchema.safeParse(data)
     const code = parsed.success ? parsed.data.code : undefined
     const message = (parsed.success && parsed.data.message) || mensajePorEstado(res.status)
+    // 503 de mantenimiento (no confundir con STORAGE_* de la bóveda).
+    if (res.status === 503 && code === 'MANTENIMIENTO') {
+      handleMaintenance()
+    }
     logApiFailure(method, path, res.status, code, message, data)
     throw new ApiError(message, res.status, code, data)
   }

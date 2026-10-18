@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MantenimientoRouteImport } from './routes/mantenimiento'
 import { Route as AppAlumnosRouteImport } from './routes/_app/alumnos'
 import { Route as AppAnaliticaPagosRouteImport } from './routes/_app/analitica-pagos'
 import { Route as AppAsignacionRouteImport } from './routes/_app/asignacion'
@@ -27,6 +28,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppEstadisticasRouteImport } from './routes/_app/estadisticas'
 import { Route as AppHorariosRouteImport } from './routes/_app/horarios'
 import { Route as AppLiberacionNotasRouteImport } from './routes/_app/liberacion-notas'
+import { Route as AppMantenimientoAdminRouteImport } from './routes/_app/mantenimiento-admin'
 import { Route as AppMatriculaRouteImport } from './routes/_app/matricula'
 import { Route as AppMiPerfilRouteImport } from './routes/_app/mi-perfil'
 import { Route as AppMonitoresRouteImport } from './routes/_app/monitores'
@@ -84,6 +86,11 @@ const AppRoute = AppRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MantenimientoRoute = MantenimientoRouteImport.update({
+  id: '/mantenimiento',
+  path: '/mantenimiento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAlumnosRoute = AppAlumnosRouteImport.update({
@@ -159,6 +166,11 @@ const AppHorariosRoute = AppHorariosRouteImport.update({
 const AppLiberacionNotasRoute = AppLiberacionNotasRouteImport.update({
   id: '/liberacion-notas',
   path: '/liberacion-notas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMantenimientoAdminRoute = AppMantenimientoAdminRouteImport.update({
+  id: '/mantenimiento-admin',
+  path: '/mantenimiento-admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMatriculaRoute = AppMatriculaRouteImport.update({
@@ -386,6 +398,7 @@ const AppMaestroClasesAsignacionIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/mantenimiento': typeof MantenimientoRoute
   '/alumnos': typeof AppAlumnosRoute
   '/analitica-pagos': typeof AppAnaliticaPagosRoute
   '/asignacion': typeof AppAsignacionRoute
@@ -401,6 +414,7 @@ export interface FileRoutesByFullPath {
   '/estadisticas': typeof AppEstadisticasRoute
   '/horarios': typeof AppHorariosRoute
   '/liberacion-notas': typeof AppLiberacionNotasRoute
+  '/mantenimiento-admin': typeof AppMantenimientoAdminRoute
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
   '/monitores': typeof AppMonitoresRoute
@@ -449,6 +463,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/mantenimiento': typeof MantenimientoRoute
   '/alumnos': typeof AppAlumnosRoute
   '/analitica-pagos': typeof AppAnaliticaPagosRoute
   '/asignacion': typeof AppAsignacionRoute
@@ -464,6 +479,7 @@ export interface FileRoutesByTo {
   '/estadisticas': typeof AppEstadisticasRoute
   '/horarios': typeof AppHorariosRoute
   '/liberacion-notas': typeof AppLiberacionNotasRoute
+  '/mantenimiento-admin': typeof AppMantenimientoAdminRoute
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
   '/monitores': typeof AppMonitoresRoute
@@ -514,6 +530,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/mantenimiento': typeof MantenimientoRoute
   '/_app/alumnos': typeof AppAlumnosRoute
   '/_app/analitica-pagos': typeof AppAnaliticaPagosRoute
   '/_app/asignacion': typeof AppAsignacionRoute
@@ -529,6 +546,7 @@ export interface FileRoutesById {
   '/_app/estadisticas': typeof AppEstadisticasRoute
   '/_app/horarios': typeof AppHorariosRoute
   '/_app/liberacion-notas': typeof AppLiberacionNotasRoute
+  '/_app/mantenimiento-admin': typeof AppMantenimientoAdminRoute
   '/_app/matricula': typeof AppMatriculaRoute
   '/_app/mi-perfil': typeof AppMiPerfilRoute
   '/_app/monitores': typeof AppMonitoresRoute
@@ -579,6 +597,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/mantenimiento'
     | '/alumnos'
     | '/analitica-pagos'
     | '/asignacion'
@@ -594,6 +613,7 @@ export interface FileRouteTypes {
     | '/estadisticas'
     | '/horarios'
     | '/liberacion-notas'
+    | '/mantenimiento-admin'
     | '/matricula'
     | '/mi-perfil'
     | '/monitores'
@@ -642,6 +662,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/mantenimiento'
     | '/alumnos'
     | '/analitica-pagos'
     | '/asignacion'
@@ -657,6 +678,7 @@ export interface FileRouteTypes {
     | '/estadisticas'
     | '/horarios'
     | '/liberacion-notas'
+    | '/mantenimiento-admin'
     | '/matricula'
     | '/mi-perfil'
     | '/monitores'
@@ -706,6 +728,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
+    | '/mantenimiento'
     | '/_app/alumnos'
     | '/_app/analitica-pagos'
     | '/_app/asignacion'
@@ -721,6 +744,7 @@ export interface FileRouteTypes {
     | '/_app/estadisticas'
     | '/_app/horarios'
     | '/_app/liberacion-notas'
+    | '/_app/mantenimiento-admin'
     | '/_app/matricula'
     | '/_app/mi-perfil'
     | '/_app/monitores'
@@ -771,6 +795,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  MantenimientoRoute: typeof MantenimientoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -794,6 +819,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mantenimiento': {
+      id: '/mantenimiento'
+      path: '/mantenimiento'
+      fullPath: '/mantenimiento'
+      preLoaderRoute: typeof MantenimientoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/alumnos': {
@@ -899,6 +931,13 @@ declare module '@tanstack/react-router' {
       path: '/liberacion-notas'
       fullPath: '/liberacion-notas'
       preLoaderRoute: typeof AppLiberacionNotasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/mantenimiento-admin': {
+      id: '/_app/mantenimiento-admin'
+      path: '/mantenimiento-admin'
+      fullPath: '/mantenimiento-admin'
+      preLoaderRoute: typeof AppMantenimientoAdminRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/matricula': {
@@ -1228,6 +1267,7 @@ interface AppRouteChildren {
   AppEstadisticasRoute: typeof AppEstadisticasRoute
   AppHorariosRoute: typeof AppHorariosRoute
   AppLiberacionNotasRoute: typeof AppLiberacionNotasRoute
+  AppMantenimientoAdminRoute: typeof AppMantenimientoAdminRoute
   AppMatriculaRoute: typeof AppMatriculaRoute
   AppMiPerfilRoute: typeof AppMiPerfilRoute
   AppMonitoresRoute: typeof AppMonitoresRoute
@@ -1290,6 +1330,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEstadisticasRoute: AppEstadisticasRoute,
   AppHorariosRoute: AppHorariosRoute,
   AppLiberacionNotasRoute: AppLiberacionNotasRoute,
+  AppMantenimientoAdminRoute: AppMantenimientoAdminRoute,
   AppMatriculaRoute: AppMatriculaRoute,
   AppMiPerfilRoute: AppMiPerfilRoute,
   AppMonitoresRoute: AppMonitoresRoute,
@@ -1342,6 +1383,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  MantenimientoRoute: MantenimientoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
