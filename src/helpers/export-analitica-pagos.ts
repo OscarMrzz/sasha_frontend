@@ -1,5 +1,5 @@
 import type { ChartRegistry } from '#/components/estadisticas/EChart'
-import { lempiras, mesAnio } from '#/lib/fechas-padre'
+import { hoyISO, lempiras, mesAnio } from '#/lib/fechas-padre'
 import type { AnaliticaPagos, GrupoPago } from '#/services/pagos'
 
 function dias(n: number) {
@@ -48,7 +48,7 @@ const filasMoroso = (data: AnaliticaPagos) =>
   ])
 
 function nombreArchivo(ext: string) {
-  return `analitica-pagos-${new Date().toISOString().slice(0, 10)}.${ext}`
+  return `analitica-pagos-${hoyISO()}.${ext}`
 }
 
 export async function descargarAnaliticaPagosPdf(data: AnaliticaPagos, registry: ChartRegistry) {

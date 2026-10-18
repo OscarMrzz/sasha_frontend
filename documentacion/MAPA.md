@@ -20,6 +20,12 @@ Subidas a la bóveda (`POST /boveda/upload`): el error se muestra con **contexto
 
 **Móvil (< 768px):** las tablas del **maestro** se ven como **cards** con botón de **3 puntos** (las mismas acciones del clic derecho) y el **horario** (maestro y alumno) como la vista por días del padre. Lo resuelven `useEsMovil()` (`src/hooks/use-media-query.ts`), `RowMenu` (`src/components/ui/RowMenu.tsx`) y las props `card` / `rowActions` de `DataTable`. **En escritorio no cambia nada** (tabla + clic derecho + mismos `data-testid`). Aplica solo a `/tareas`, `/calificaciones`, `/recuperaciones` y `/plan-estudio` del maestro, y al horario; `/asistencia` conserva la lista de alumnos y la columna para pasar lista (solo se adapta). El resto de tablas sigue igual.
 
+## Zona horaria
+
+- Los cálculos de **"hoy"** usan la fecha **local del navegador** (`getFullYear/getMonth/getDate`), nunca `new Date().toISOString()` (que da la fecha **UTC** y a partir de las 18:00 hora Honduras devuelve el día siguiente). Helper canónico: `hoyISO()` de `src/lib/fechas-padre.ts` (lo usan el horario del maestro `MaestroHorarioView` y los nombres de archivo de exportación SACE/análisis/analítica de pagos).
+- Las fechas de tarea/entrega se muestran a partir del string `YYYY-MM-DD` que manda el backend, **sin conversión** (siempre muestran el día correcto). El locale `es-HN` fija el idioma del formato, no la zona.
+- Zona de negocio del sistema: **`America/Tegucigalpa` (Honduras, UTC-6)**.
+
 ## Rutas
 
 | Ruta | Qué hace |

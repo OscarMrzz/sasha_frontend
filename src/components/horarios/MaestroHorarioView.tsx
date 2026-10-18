@@ -9,6 +9,7 @@ import { HorarioDiasView } from '#/components/horarios/HorarioDiasView'
 import type { BloqueDia } from '#/components/horarios/HorarioDiasView'
 import { useEsMovil } from '#/hooks/use-media-query'
 import { userMessageFromError } from '#/lib/api'
+import { hoyISO } from '#/lib/fechas-padre'
 import { DIA_SHORT } from '#/lib/horarioGrid'
 import {
   getHorarioMio,
@@ -20,7 +21,7 @@ import {
 const DAYS = [1, 2, 3, 4, 5, 6, 7]
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10)
+  return hoyISO()
 }
 
 function hm(t: string | undefined): string {

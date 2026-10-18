@@ -1,3 +1,4 @@
+import { hoyISO } from '#/lib/fechas-padre'
 import {
   coeficienteVariacion,
   dimensionLabel,
@@ -55,7 +56,7 @@ function variacion(b: Bloque) {
 }
 
 function nombreArchivo(data: AnalisisResponse, ext: string) {
-  const fecha = new Date().toISOString().slice(0, 10)
+  const fecha = hoyISO()
   return `analisis-${data.agrupar_por}-${fecha}.${ext}`
 }
 

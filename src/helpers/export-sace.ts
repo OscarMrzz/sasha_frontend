@@ -1,3 +1,4 @@
+import { hoyISO } from '#/lib/fechas-padre'
 import type { ClaseSace, DocumentoMaestroSace } from '#/services/sace'
 
 /** Colores sólidos de los grupos de parcial, como en la planilla oficial del SACE. */
@@ -34,7 +35,7 @@ function slug(s: string) {
 function nombreArchivo(doc: DocumentoMaestroSace, clase: ClaseSace | null, ext: string) {
   const partes = ['sace', doc.maestro.nombre]
   if (clase) partes.push(clase.materia, clase.grado, `sec${clase.seccion}`)
-  partes.push(new Date().toISOString().slice(0, 10))
+  partes.push(hoyISO())
   return `${partes.map(slug).join('-')}.${ext}`
 }
 
