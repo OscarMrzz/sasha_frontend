@@ -20,9 +20,10 @@ test.describe('tareas staff @critical', () => {
     const row = page.locator('table.data-table tbody tr').first()
     await expect(row).toBeVisible()
 
+    // «Ver» es de solo lectura; la revisión de la tarea se abre con «Revisar» o doble clic.
     await row.click({ button: 'right' })
     await expect(page.getByTestId('tareas-staff-ctx-menu')).toBeVisible()
-    await page.getByTestId('tareas-staff-ctx-ver').click()
+    await page.getByTestId('tareas-staff-ctx-revisar').click()
     const dialog = page.getByRole('dialog')
     await expect(dialog.getByTestId('tarea-revision-modal')).toBeVisible({
       timeout: 15_000,

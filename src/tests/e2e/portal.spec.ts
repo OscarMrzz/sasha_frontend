@@ -1,5 +1,4 @@
-﻿import { test, expect, loginAs } from './fixtures/auth'
-import type { Page } from '@playwright/test'
+﻿import { test, expect, loginAs, cerrarSesion } from './fixtures/auth'
 
 const ALUMNO = '1002026701'
 const RESPONSABLE = '1002026901'
@@ -11,20 +10,6 @@ const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
   'base64',
 )
-
-/** Cierra la sesión del cliente y del servidor para poder entrar con otro usuario. */
-async function cerrarSesion(page: Page) {
-  // La sesión vive en localStorage (`sasha.session`); borrarla evita que /login redirija al home.
-  await page.evaluate(() => {
-    try {
-      localStorage.clear()
-      sessionStorage.clear()
-    } catch {
-      /* ignore */
-    }
-  })
-  await page.context().clearCookies()
-}
 
 test.describe('portal alumno y responsable @smoke', () => {
   test('alumno: inicio con bienvenida y botones; horario, clases y modo clase', async ({ page }) => {

@@ -45,6 +45,20 @@ export async function loginAs(
   await expect(page).toHaveURL(home, { timeout: 15_000 })
 }
 
+/** Cierra la sesión del cliente y del servidor para poder entrar con otro usuario. */
+export async function cerrarSesion(page: Page) {
+  // La sesión vive en localStorage (`sasha.session`); borrarla evita que /login redirija al home.
+  await page.evaluate(() => {
+    try {
+      localStorage.clear()
+      sessionStorage.clear()
+    } catch {
+      /* ignore */
+    }
+  })
+  await page.context().clearCookies()
+}
+
 /** Entra como responsable y abre el inicio (botones grandes) de su primer hijo. */
 export async function entrarComoPadre(page: Page, code: string) {
   await loginAs(page, { code })

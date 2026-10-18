@@ -1,8 +1,11 @@
-import { test, expect, loginAs } from './fixtures/auth'
+import { test, expect, loginAs, entrarComoPadre, cerrarSesion } from './fixtures/auth'
 import type { Locator, Page } from '@playwright/test'
 
 // Maestro de prueba del fixture (Español 7-1): tiene tareas y permiso tareas:put.
 const MAESTRO = '1002026501'
+// data_test.sql: el alumno 701 (Ana Alvarez) y su padre 901 son de Español 7-1.
+const ALUMNO = '1002026701'
+const PADRE_ANA = '1002026901'
 
 // Cámara falsa de Chromium: el permiso se concede solo y el video es un patrón de prueba.
 test.use({
@@ -38,16 +41,19 @@ function itemsAdjuntos(dialog: Locator): Locator {
     .locator('[data-testid^="tarea-adjunto-item-"]')
 }
 
-/** Abre el detalle (modal Ver) de la primera tarea del maestro. */
-async function abrirVerPrimeraTarea(page: Page): Promise<Locator> {
+/**
+ * Abre la primera tarea del maestro en el modal **Editar**. El detalle «Ver» es de
+ * solo lectura, así que subir y borrar adjuntos se hace desde la edición.
+ */
+async function abrirEditarPrimeraTarea(page: Page): Promise<Locator> {
   await page.goto('/tareas')
   await expect(page.getByRole('columnheader', { name: 'Título' })).toBeVisible({ timeout: 15_000 })
   const row = page.locator('table.data-table tbody tr').first()
   await expect(row).toBeVisible()
   await row.click({ button: 'right' })
   await expect(page.getByTestId('tareas-staff-ctx-menu')).toBeVisible()
-  await page.getByTestId('tareas-staff-ctx-ver').click()
-  const dialog = page.getByTestId('tarea-ver-modal')
+  await page.getByTestId('tareas-staff-ctx-editar').click()
+  const dialog = page.getByTestId('tarea-create-modal')
   await expect(dialog).toBeVisible({ timeout: 15_000 })
   await expect(dialog.getByTestId('tarea-archivos')).toBeVisible({ timeout: 15_000 })
   return dialog
@@ -71,7 +77,7 @@ async function borrarAdjuntosExistentes(dialog: Locator) {
 test.describe('adjuntos de tarea (staff) @critical', () => {
   test('el maestro sube una imagen, sube un PDF y borra un adjunto', async ({ page }) => {
     await loginAs(page, { code: MAESTRO })
-    const dialog = await abrirVerPrimeraTarea(page)
+    const dialog = await abrirEditarPrimeraTarea(page)
     await borrarAdjuntosExistentes(dialog)
 
     // Imagen
@@ -109,7 +115,7 @@ test.describe('adjuntos de tarea (staff) @critical', () => {
 test.describe('adjuntos de tarea: cámara', () => {
   test('tomar fotografía abre la cámara y sube la captura', async ({ page }) => {
     await loginAs(page, { code: MAESTRO })
-    const dialog = await abrirVerPrimeraTarea(page)
+    const dialog = await abrirEditarPrimeraTarea(page)
     await borrarAdjuntosExistentes(dialog)
 
     await dialog.getByTestId('tarea-adjunto-tomar-foto').click()
@@ -200,5 +206,99 @@ test.describe('adjuntos de tarea: creación', () => {
       { timeout: 15_000 },
     )
     await expect(modal.getByTestId('tarea-create-adjunto-picker')).toHaveCount(0)
+  })
+})
+
+test.describe('adjuntos de tarea: el portal los ve', () => {
+  test('el maestro crea una tarea con imagen y PDF, y el alumno y el padre los ven', async ({
+    page,
+  }) => {
+    // 1) El maestro crea la tarea con una imagen y un PDF adjuntos.
+    await loginAs(page, { code: MAESTRO })
+    await page.goto('/tareas')
+    await expect(page.getByRole('columnheader', { name: 'Título' })).toBeVisible({
+      timeout: 15_000,
+    })
+
+    await page.getByTestId('data-table-add-button').click()
+    const modal = page.getByTestId('tarea-create-modal')
+    await expect(modal).toBeVisible({ timeout: 15_000 })
+
+    const titulo = `Tarea portal ${Date.now()}`
+    await modal.getByTestId('tarea-titulo-input').fill(titulo)
+    await modal.getByTestId('tarea-fecha-entrega').fill(hoyISO())
+    await modal.getByTestId('tarea-tipo-select').selectOption({ index: 1 })
+
+    const input = modal.getByTestId('tarea-create-adjunto-input-archivo')
+    await input.setInputFiles({ name: 'foto-portal.png', mimeType: 'image/png', buffer: PNG })
+    await input.setInputFiles({ name: 'apunte-portal.pdf', mimeType: 'application/pdf', buffer: PDF })
+    const lista = modal.getByTestId('tarea-create-archivos-lista')
+    await expect(lista).toContainText('foto-portal.png')
+    await expect(lista).toContainText('apunte-portal.pdf')
+
+    await page.getByTestId('tarea-guardar').click()
+    await page.getByRole('button', { name: 'Confirmar' }).click()
+    await expect(page.getByText('Tarea creada')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('2 archivo(s) cargado(s)')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('tarea-create-modal')).toHaveCount(0, { timeout: 15_000 })
+
+    // 2) El alumno la ve en el portal con sus dos archivos.
+    await cerrarSesion(page)
+    await loginAs(page, { code: ALUMNO })
+    const portal = (await (
+      await page.request.get('/api/portal/tareas', { headers: { 'X-Active-Role': 'alumno' } })
+    ).json()) as Array<{
+      id: string
+      titulo: string
+      adjuntos?: Array<{ id: string; nombre_original: string }>
+    }>
+    const tarea = portal.find((t) => t.titulo === titulo)
+    expect(tarea, 'el alumno debe ver la tarea recién creada').toBeTruthy()
+    const adjuntos = tarea!.adjuntos ?? []
+    expect(adjuntos.map((a) => a.nombre_original).sort()).toEqual([
+      'apunte-portal.pdf',
+      'foto-portal.png',
+    ])
+    const tareaId = tarea!.id
+    const imagen = adjuntos.find((a) => a.nombre_original === 'foto-portal.png')!
+    const pdf = adjuntos.find((a) => a.nombre_original === 'apunte-portal.pdf')!
+
+    await page.getByTestId('alumno-tile-tareas').click()
+    await expect(page.getByTestId('alumno-tareas')).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId(`alumno-tarea-${tareaId}`).click()
+    const modalAlumno = page.getByTestId('portal-tarea-ver-modal')
+    const seccionAlumno = modalAlumno.getByTestId('portal-tarea-archivos-seccion')
+    await expect(seccionAlumno).toContainText('Archivos (2)', { timeout: 15_000 })
+    await expect(seccionAlumno).toContainText('foto-portal.png')
+    await expect(seccionAlumno).toContainText('apunte-portal.pdf')
+
+    // La imagen se amplía con zoom.
+    await modalAlumno.getByTestId(`portal-adjunto-ver-${imagen.id}`).click()
+    await modalAlumno.getByTestId(`portal-adjunto-vista-${imagen.id}`).click()
+    const visor = page.getByTestId('visor-imagen')
+    await expect(visor).toBeVisible({ timeout: 10_000 })
+    await page.getByTestId('visor-cerrar').click()
+    await expect(visor).toHaveCount(0)
+
+    // El PDF se previsualiza y se descarga.
+    await modalAlumno.getByTestId(`portal-adjunto-ver-${pdf.id}`).click()
+    await expect(modalAlumno.getByTestId(`portal-adjunto-vista-${pdf.id}`)).toBeVisible({
+      timeout: 15_000,
+    })
+    const download = page.waitForEvent('download')
+    await modalAlumno.getByTestId(`portal-adjunto-descargar-${pdf.id}`).click()
+    expect((await download).suggestedFilename()).toBe('apunte-portal.pdf')
+
+    // 3) El padre del alumno ve lo mismo en el portal del hijo.
+    await cerrarSesion(page)
+    await entrarComoPadre(page, PADRE_ANA)
+    await page.getByTestId('padre-tile-tareas').click()
+    await expect(page.getByTestId('padre-tareas')).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId(`padre-tarea-${tareaId}`).click()
+    const modalPadre = page.getByTestId('portal-tarea-ver-modal')
+    const seccionPadre = modalPadre.getByTestId('portal-tarea-archivos-seccion')
+    await expect(seccionPadre).toContainText('Archivos (2)', { timeout: 15_000 })
+    await expect(seccionPadre).toContainText('foto-portal.png')
+    await expect(seccionPadre).toContainText('apunte-portal.pdf')
   })
 })
