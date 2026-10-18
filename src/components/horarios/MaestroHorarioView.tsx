@@ -5,6 +5,9 @@ import { Combobox } from '#/components/ui/Combobox'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
 import { SearchInput } from '#/components/ui/SearchInput'
+import { HorarioDiasView } from '#/components/horarios/HorarioDiasView'
+import type { BloqueDia } from '#/components/horarios/HorarioDiasView'
+import { useEsMovil } from '#/hooks/use-media-query'
 import { userMessageFromError } from '#/lib/api'
 import { DIA_SHORT } from '#/lib/horarioGrid'
 import {
@@ -33,6 +36,11 @@ function fechaDeDia(semanaInicio: string, diaSemana: number): string {
 
 function cellLabel(s: HorarioSlotDetail) {
   return `${s.curso_nombre} · ${s.grado_nombre} sec${s.seccion_nombre}`
+}
+
+/** Clave estable de un bloque (día + hora + clase) para la vista por días. */
+function claveBloque(s: HorarioSlotDetail): string {
+  return `${s.asignacion_docente_id}-${s.dia_semana}-${hm(s.hora_inicio)}-${s.seccion_id}`
 }
 
 /** Duración en horas enteras (siempre redondea hacia arriba). */
@@ -73,6 +81,7 @@ export function MaestroHorarioView({
   const [fechaRef, setFechaRef] = useState(todayISO)
   const [search, setSearch] = useState('')
   const [filterSeccion, setFilterSeccion] = useState('')
+  const esMovil = useEsMovil()
   const [ctx, setCtx] = useState<{
     x: number
     y: number
@@ -173,6 +182,27 @@ export function MaestroHorarioView({
     return { dias, materias, total }
   }, [filtered])
 
+  // Vista por días (móvil): bloques normalizados + datos del slot para la acción «Ver».
+  const bloquesDia = useMemo<BloqueDia[]>(
+    () =>
+      filtered.map((s) => ({
+        key: claveBloque(s),
+        dia: s.dia_semana,
+        inicio: hm(s.hora_inicio),
+        fin: hm(s.hora_fin),
+        titulo: s.curso_nombre,
+        sub: `${s.grado_nombre} sec${s.seccion_nombre}`,
+      })),
+    [filtered],
+  )
+  const slotPorBloque = useMemo(() => {
+    const map = new Map<string, { slot: HorarioSlotDetail; fecha: string }>()
+    for (const s of filtered) {
+      map.set(claveBloque(s), { slot: s, fecha: fechaDeDia(semanaInicio, s.dia_semana) })
+    }
+    return map
+  }, [filtered, semanaInicio])
+
   const openVer = async (slot: HorarioSlotDetail, fecha: string) => {
     setDetalleLoading(true)
     setDetalle(null)
@@ -243,7 +273,25 @@ export function MaestroHorarioView({
             </div>
           ) : null}
 
-          <div className="horario-board__grid-wrap">
+          {esMovil ? (
+            <HorarioDiasView
+              bloques={bloquesDia}
+              testIdPrefix="horario-maestro"
+              emptyText="Sin bloques con este filtro."
+              actionsFor={(b) => {
+                const info = slotPorBloque.get(b.key)
+                if (!info) return []
+                return [
+                  {
+                    label: 'Ver',
+                    testId: 'horario-maestro-ctx-ver',
+                    onClick: () => void openVer(info.slot, info.fecha),
+                  },
+                ]
+              }}
+            />
+          ) : (
+            <div className="horario-board__grid-wrap">
             <table
               className="horario-board__table horario-view__table"
               data-testid="horario-maestro-grid"
@@ -300,6 +348,7 @@ export function MaestroHorarioView({
               </tbody>
             </table>
           </div>
+          )}
 
           <div className="horario-maestro-stats" data-testid="horario-maestro-stats">
             <div className="horario-maestro-stats__row">

@@ -9325,3 +9325,155 @@ body::before {
   background: var(--sasha-danger);
   opacity: 0.9;
 }
+
+/* ==========================================================================
+   Cards en móvil (feature 018)
+   En teléfono/tablet (< 768px) las tablas del maestro se ven como cards.
+   Solo aplica donde la página pasa la prop `card` a DataTable; el escritorio
+   no cambia. Colores sólidos de los tokens, sin degradados.
+   ========================================================================== */
+
+.data-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.data-cards__vacio {
+  list-style: none;
+}
+
+.data-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  background: var(--sasha-bg-raised);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 12px;
+}
+
+.data-card--click {
+  cursor: pointer;
+}
+
+.data-card--click:hover {
+  border-color: var(--sasha-accent);
+}
+
+.data-card__cab {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.data-card__title {
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--sasha-texto-title);
+  overflow-wrap: anywhere;
+}
+
+.data-card__lado {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.data-card__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  margin: 0;
+}
+
+.data-card__field {
+  min-width: 0;
+}
+
+.data-card__field-label {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--sasha-texto-muted);
+}
+
+.data-card__field-value {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--sasha-texto-primary);
+  overflow-wrap: anywhere;
+}
+
+/* Botón de 3 puntos (RowMenu): área táctil cómoda. */
+.row-menu__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sasha-texto-primary);
+  cursor: pointer;
+}
+
+.row-menu__btn:hover {
+  background: var(--sasha-bg-hover);
+  border-color: var(--sasha-accent);
+}
+
+/* --------------------------------------------------------------------------
+   Asistencia en móvil (feature 018)
+   La lista de alumnos y la columna para pasar lista se mantienen tal cual
+   (no se convierten en cards); solo se ajusta para que se vean bien.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .asistencia-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .asistencia-toolbar > div,
+  .asistencia-toolbar .field,
+  .asistencia-toolbar .field__input,
+  .asistencia-toolbar .segmento {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .asistencia-toolbar > div {
+    margin-left: 0;
+  }
+
+  .asistencia-toolbar .segmento {
+    display: flex;
+  }
+
+  .asistencia-toolbar .segmento__item {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Celdas táctiles y código sin cortes. */
+  [data-testid='asistencia-semana-table'] .asistencia-celda {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 0.95rem;
+  }
+
+  [data-testid='asistencia-semana-table'] td:first-child {
+    white-space: nowrap;
+  }
+}

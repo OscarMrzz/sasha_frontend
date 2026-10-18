@@ -7,6 +7,7 @@ import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
+import type { RowAction } from '#/components/ui/RowMenu'
 import { TareaCreateModal } from '#/components/tareas/TareaCreateModal'
 import { TareaRevisionModal } from '#/components/tareas/TareaRevisionModal'
 import { TareaVerModal } from '#/components/tareas/TareaVerModal'
@@ -22,12 +23,13 @@ import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
 import {
   deleteTarea,
+  getClaseTareas,
   listClasesTareas,
   listTareas,
   labelCriterioModo,
   subirAdjunto,
 } from '#/services/tareas'
-import type { ClaseResumen, Tarea } from '#/services/tareas'
+import type { ClaseResumen, Tarea, TareaDetalle } from '#/services/tareas'
 
 /** Roles que ven las tareas por clase de todo el colegio, en solo lectura. */
 const VISTA_GENERAL = new Set(['consejeria', 'director', 'secretaria', 'coordinador'])
@@ -180,7 +182,7 @@ function TareasConsejeriaView() {
 
 function TareasStaffPage() {
   const qc = useQueryClient()
-  const { roles } = useCan()
+  const { roles, can } = useCan()
   const esMaestro = roles.includes('maestro')
   const { revisar: revisarFromSearch } = Route.useSearch()
   const navigate = Route.useNavigate()
@@ -267,6 +269,19 @@ function TareasStaffPage() {
   const createLabel = materiaRow
     ? `${materiaRow.curso_nombre} · ${materiaRow.grado_nombre} sec${materiaRow.seccion_nombre} · ${materiaRow.modalidad_nombre}`
     : 'Sin clase'
+
+  // El listado general no trae `revisada`: para el maestro se consulta su clase
+  // (una sola petición) y así la card puede mostrar Revisada/Sin revisar y las entregas.
+  const { data: claseDetalle } = useQuery({
+    queryKey: ['clase-tareas', asigEffective],
+    queryFn: () => getClaseTareas(asigEffective),
+    enabled: esMaestro && Boolean(asigEffective),
+  })
+  const revisionPorTarea = useMemo(() => {
+    const mapa = new Map<string, TareaDetalle>()
+    for (const t of claseDetalle?.tareas ?? []) mapa.set(t.id, t)
+    return mapa
+  }, [claseDetalle])
 
   const columns = useMemo(
     () => [
@@ -359,6 +374,73 @@ function TareasStaffPage() {
           onAdd={() => setCreateOpen(true)}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
           onRowDoubleClick={(row) => setRevisarId(row.id)}
+          card={{
+            title: (t) => t.titulo,
+            testId: (t) => `tarea-card-${t.id}`,
+            status: (t) => {
+              const d = revisionPorTarea.get(t.id)
+              if (!d) return null
+              return d.revisada
+                ? { label: 'Revisada', tone: 'ok' }
+                : { label: 'Sin revisar', tone: 'espera' }
+            },
+            fields: (t) => {
+              const d = revisionPorTarea.get(t.id)
+              return [
+                { label: 'Puntos', value: t.puntos },
+                { label: 'Entrega', value: t.fecha_entrega },
+                ...(d
+                  ? [{ label: 'Entregas', value: `${d.entregados} / ${d.alumnos_total}` }]
+                  : []),
+              ]
+            },
+          }}
+          rowActions={(t) => {
+            const items: RowAction[] = [
+              { label: 'Ver', testId: 'tareas-staff-ctx-ver', onClick: () => setVerTarea(t) },
+              {
+                label: 'Revisar',
+                testId: 'tareas-staff-ctx-revisar',
+                onClick: () => setRevisarId(t.id),
+              },
+            ]
+            if (can('tareas:put')) {
+              items.push(
+                {
+                  label: 'Cargar imagen',
+                  testId: 'tareas-staff-ctx-cargar-imagen',
+                  onClick: () => {
+                    adjuntoTareaRef.current = t
+                    setAdjuntoParcialId(t.parcial_id)
+                    imagenRef.current?.click()
+                  },
+                },
+                {
+                  label: 'Tomar foto',
+                  testId: 'tareas-staff-ctx-tomar-foto',
+                  onClick: () => {
+                    adjuntoTareaRef.current = t
+                    setAdjuntoParcialId(t.parcial_id)
+                    fotoRef.current?.click()
+                  },
+                },
+                {
+                  label: 'Editar',
+                  testId: 'tareas-staff-ctx-editar',
+                  onClick: () => setEditTarea(t),
+                },
+              )
+            }
+            if (can('tareas:delete')) {
+              items.push({
+                label: 'Eliminar',
+                danger: true,
+                testId: 'tareas-staff-ctx-eliminar',
+                onClick: () => setConfirmDelete(t),
+              })
+            }
+            return items
+          }}
         />
       )}
 

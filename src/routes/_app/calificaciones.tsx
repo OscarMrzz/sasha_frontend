@@ -450,6 +450,24 @@ function CalificacionesStaffPage() {
         filters={tableFilters}
         exportFilename={exportFilename}
         exportRows={isLoading ? undefined : exportRows}
+        card={{
+          title: (r) => r.nombre,
+          testId: (r) => `calificacion-card-${r.alumno_id}`,
+          status: (r) =>
+            r.etiqueta === 'Reprobado'
+              ? { label: r.etiqueta, tone: 'mal' }
+              : r.etiqueta === 'Sin nota'
+                ? { label: r.etiqueta }
+                : { label: r.etiqueta, tone: 'ok' },
+          fields: (r) => [
+            ...(parciales ?? []).map((p, idx) => ({
+              label: p.etiqueta,
+              value: fmtPuntos(r.puntos_parcial[idx]),
+            })),
+            { label: 'Total', value: fmtPuntos(r.total) },
+            { label: 'Promedio', value: fmtPuntos(r.promedio) },
+          ],
+        }}
       />
     </RequirePermission>
   )

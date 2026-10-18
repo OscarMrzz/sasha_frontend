@@ -11,7 +11,10 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { downloadCsv } from '#/helpers/export-csv'
 import { downloadTablePdf } from '#/helpers/export-pdf'
+import { RowMenu } from '#/components/ui/RowMenu'
+import type { RowAction } from '#/components/ui/RowMenu'
 import { SearchInput } from '#/components/ui/SearchInput'
+import { useEsMovil } from '#/hooks/use-media-query'
 
 export type DataTableFilter<T> = {
   id: string
@@ -25,6 +28,22 @@ export type DataTableFilter<T> = {
   getOptionValues?: (row: T) => string[]
   /** Si se omite, se derivan de los datos únicos. */
   options?: { value: string; label: string }[]
+}
+
+export type DataTableCardField = { label: string; value: ReactNode }
+
+export type DataTableCardStatus = { label: string; tone?: 'ok' | 'mal' | 'espera' }
+
+/** Vista de cards que reemplaza a la tabla en teléfono/tablet (`< 768px`). */
+export type DataTableCard<T> = {
+  /** Titular de la card (normalmente una columna de la tabla). */
+  title: (row: T) => ReactNode
+  /** Pares etiqueta/valor visibles en la card. */
+  fields?: (row: T) => DataTableCardField[]
+  /** Pill de estado opcional. */
+  status?: (row: T) => DataTableCardStatus | null
+  /** `data-testid` de la card (por defecto `data-card-<fila>`). */
+  testId?: (row: T) => string
 }
 
 type DataTableProps<T extends RowData> = {
@@ -60,6 +79,13 @@ type DataTableProps<T extends RowData> = {
   exportFilename?: string
   exportRows?: Record<string, unknown>[]
   pageSize?: number
+  /**
+   * Vista de cards en teléfono/tablet (`< 768px`). En escritorio la tabla se ve
+   * igual que siempre. Sin esta prop, la tabla no cambia en ningún tamaño.
+   */
+  card?: DataTableCard<T>
+  /** Acciones de fila para el botón de 3 puntos de las cards. */
+  rowActions?: (row: T) => RowAction[]
 }
 
 function isCodigoFilterId(id: string) {
@@ -104,12 +130,15 @@ export function DataTable<T extends RowData>({
   exportFilename,
   exportRows,
   pageSize = 25,
+  card,
+  rowActions,
 }: DataTableProps<T>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([])
   const [filterValues, setFilterValues] = useState<Record<string, string>>(() => initialFilters ?? {})
   const exportRef = useRef<HTMLDetailsElement>(null)
   const paginationRef = useRef({ pageIndex: 0, pageSize })
+  const esMovil = useEsMovil()
 
   const safeFilters = useMemo(
     () => filters.filter((f) => !isCodigoFilterId(f.id)),
@@ -314,6 +343,51 @@ export function DataTable<T extends RowData>({
 
       {beforeTable}
 
+      {esMovil && card ? (
+        <ul className="data-cards" data-testid="data-cards">
+          {empty ? (
+            <li className="data-cards__vacio">
+              <div className="empty-state">Sin resultados</div>
+            </li>
+          ) : (
+            rows.map((row) => {
+              const r: T = row.original
+              const est = card.status?.(r) ?? null
+              const campos = card.fields?.(r) ?? []
+              return (
+                <li
+                  key={row.id}
+                  className={`data-card${onRowClick ? ' data-card--click' : ''}`}
+                  data-testid={card.testId?.(r) ?? `data-card-${row.id}`}
+                  onClick={onRowClick ? (e) => onRowClick(r, e) : undefined}
+                >
+                  <div className="data-card__cab">
+                    <span className="data-card__title">{card.title(r)}</span>
+                    <span className="data-card__lado">
+                      {est ? (
+                        <span className={`estado-pill${est.tone ? ` estado-pill--${est.tone}` : ''}`}>
+                          {est.label}
+                        </span>
+                      ) : null}
+                      <RowMenu items={rowActions?.(r) ?? []} testId={`row-menu-${row.id}`} />
+                    </span>
+                  </div>
+                  {campos.length > 0 ? (
+                    <dl className="data-card__fields">
+                      {campos.map((f) => (
+                        <div key={f.label} className="data-card__field">
+                          <dt className="data-card__field-label">{f.label}</dt>
+                          <dd className="data-card__field-value">{f.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+                </li>
+              )
+            })
+          )}
+        </ul>
+      ) : (
       <div className="data-table-wrap">
         <table className="data-table">
           <thead>
@@ -386,6 +460,7 @@ export function DataTable<T extends RowData>({
           </tbody>
         </table>
       </div>
+      )}
 
       <div className="data-table__pager">
         <span className="texto-muted" style={{ fontSize: '0.8rem' }}>

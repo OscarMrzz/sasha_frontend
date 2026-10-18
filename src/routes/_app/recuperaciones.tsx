@@ -7,6 +7,7 @@ import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { RecuperacionModal } from '#/components/recuperaciones/RecuperacionModal'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
+import type { RowAction } from '#/components/ui/RowMenu'
 import { userMessageFromError } from '#/lib/api'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
@@ -164,6 +165,44 @@ function RecuperacionesPage() {
             Estado: r.aprobo ? 'Aprobó' : 'Reprobó',
           }))}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
+          card={{
+            title: (r) => r.nombre,
+            testId: (r) => `recuperacion-card-${r.alumno_id}`,
+            status: (r) =>
+              r.aprobo ? { label: 'Aprobó', tone: 'ok' } : { label: 'Reprobó', tone: 'mal' },
+            fields: (r) => [
+              { label: 'Recuperación', value: r.etiqueta },
+              { label: 'Original', value: r.nota_original },
+              { label: 'Nota rec.', value: r.nota },
+              { label: 'Cuenta', value: r.cuenta },
+            ],
+          }}
+          rowActions={(r) => {
+            if (!can('recuperaciones:post')) return []
+            const items: RowAction[] = [
+              {
+                label: 'Ver',
+                testId: 'recuperaciones-ctx-ver',
+                onClick: () => setModal({ row: r, soloVer: true }),
+              },
+            ]
+            if (!lista.finalizado) {
+              items.push(
+                {
+                  label: 'Editar',
+                  testId: 'recuperaciones-ctx-editar',
+                  onClick: () => setModal({ row: r, soloVer: false }),
+                },
+                {
+                  label: 'Eliminar',
+                  danger: true,
+                  testId: 'recuperaciones-ctx-eliminar',
+                  onClick: () => setEliminar(r),
+                },
+              )
+            }
+            return items
+          }}
         />
       </div>
 

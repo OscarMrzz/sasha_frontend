@@ -13,6 +13,7 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal, useDismiss } from '#/components/ui/Modal'
+import type { RowAction } from '#/components/ui/RowMenu'
 import { SearchInput } from '#/components/ui/SearchInput'
 import { labelPeriodo } from '#/helpers/periodos'
 import { userMessageFromError } from '#/lib/api'
@@ -483,6 +484,46 @@ function MaestroView({
         onRowContextMenu={(row, e) =>
           setCtx({ x: e.clientX, y: e.clientY, row })
         }
+        card={{
+          title: (p) => p.curso_nombre || '—',
+          testId: (p) => `plan-card-${p.id}`,
+          status: (p) =>
+            p.es_activo ? { label: 'Activo', tone: 'ok' } : { label: 'Inactivo' },
+          fields: (p) => [
+            { label: 'Grado', value: p.grado_nombre || '—' },
+            { label: 'Aprobación', value: labelAprobacion(p.estado_aprobacion) },
+            { label: 'Auditoría', value: labelAuditoria(p.estado_auditoria_maestro) },
+          ],
+        }}
+        rowActions={(p) => {
+          const items: RowAction[] = [
+            {
+              label: 'Ver',
+              testId: 'plan-ctx-ver',
+              onClick: () => void openVer(p),
+            },
+          ]
+          if (canPut) {
+            items.push({
+              label: 'Editar',
+              testId: 'plan-ctx-editar',
+              onClick: () => void openEdit(p),
+            })
+          }
+          items.push({
+            label: 'Auditoría',
+            testId: 'plan-auditoria',
+            onClick: () => void openAudit(p),
+          })
+          if (canPut && !p.es_activo) {
+            items.push({
+              label: 'Activar',
+              testId: 'plan-ctx-activar',
+              onClick: () => activarMut.mutate(p.id),
+            })
+          }
+          return items
+        }}
       />
 
       {ctx ? (
