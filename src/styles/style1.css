@@ -9219,6 +9219,31 @@ body::before {
   flex-wrap: wrap;
 }
 
+/* Imagen: solo la imagen y debajo el botón de descarga a todo el ancho. */
+.adjunto-item--imagen {
+  gap: 0.5rem;
+}
+
+/* Documento: ícono arriba, nombre en su fila y descarga (sin vista previa). */
+.adjunto-item--doc {
+  gap: 0.5rem;
+  align-items: center;
+  text-align: center;
+}
+
+.adjunto-item__doc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.adjunto-item__descargar-ancho {
+  width: 100%;
+  justify-content: center;
+}
+
 .adjunto-vista__miniatura {
   display: block;
   padding: 0;

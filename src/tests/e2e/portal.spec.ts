@@ -220,7 +220,11 @@ test.describe('portal alumno y responsable @smoke', () => {
     const seccion = modal.getByTestId('portal-tarea-archivos-seccion')
     await expect(seccion).toBeVisible({ timeout: 15_000 })
     await expect(seccion).toContainText('Archivos (1)')
-    await expect(seccion).toContainText('portada.png')
+    // En imágenes no se muestra el nombre: el botón de descarga lo conserva en su aria-label.
+    await expect(modal.getByTestId(`portal-adjunto-descargar-${adjunto.id}`)).toHaveAttribute(
+      'aria-label',
+      'Descargar portada.png',
+    )
 
     // Descargar
     const download = page.waitForEvent('download')

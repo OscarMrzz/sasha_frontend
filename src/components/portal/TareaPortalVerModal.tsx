@@ -1,4 +1,4 @@
-import { Download, Eye, EyeOff } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { useState } from 'react'
 import { AdjuntoIcono } from '#/components/archivos/AdjuntoIcono'
 import { AdjuntoVista } from '#/components/archivos/AdjuntoVista'
@@ -23,8 +23,9 @@ function estadoLabel(e: PortalTarea['estado']) {
 }
 
 /**
- * Fila de un adjunto en el portal: ícono, título, peso, descargar y previsualización.
- * Las imágenes se cargan solas al abrir la tarea; los PDF se abren con «Ver».
+ * Adjunto en el portal. Las imágenes se ven solas (solo imagen + descarga).
+ * Los documentos muestran el ícono arriba, el nombre en su fila y solo se descargan
+ * (sin vista previa).
  */
 function AdjuntoItem({
   adjunto,
@@ -38,61 +39,67 @@ function AdjuntoItem({
 }) {
   const cat = categoriaAdjunto(adjunto.content_type, adjunto.nombre_original)
   const imagen = esImagenAdjunto(adjunto.content_type, adjunto.nombre_original)
-  // Las imágenes se ven al abrir la tarea; los PDF mantienen «Ver» (decisión del usuario).
-  const [ver, setVer] = useState(imagen)
-  const mostrarVista = imagen || ver
 
-  return (
-    <li className="adjunto-item" data-testid={`portal-adjunto-${adjunto.id}`}>
-      <div className="adjunto-item__fila">
-        <span className="adjunto-item__icono">
-          <AdjuntoIcono contentType={adjunto.content_type} nombre={adjunto.nombre_original} />
-        </span>
-        <div className="adjunto-item__cuerpo">
-          <span className="adjunto-item__titulo">{adjunto.nombre_original}</span>
-          <span className="app-list__sub">
-            {etiquetaCategoria(cat)} · {formatoPeso(adjunto.size_bytes)}
-          </span>
-        </div>
-        <div className="adjunto-item__acciones">
-          {cat === 'pdf' ? (
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              data-testid={`portal-adjunto-ver-${adjunto.id}`}
-              onClick={() => setVer((v) => !v)}
-            >
-              {ver ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
-              <span>{ver ? 'Ocultar' : 'Ver'}</span>
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            data-testid={`portal-adjunto-descargar-${adjunto.id}`}
-            onClick={() => {
-              void descargarAdjuntoPortal(adjunto, alumnoId).catch((e) =>
-                toastApiError(e, {
-                  method: 'GET',
-                  path: adjuntoPortalArchivoPath(adjunto.id, alumnoId),
-                  contexto: `Descargar adjunto "${adjunto.nombre_original}"`,
-                }),
-              )
-            }}
-          >
-            <Download size={16} aria-hidden /> Descargar
-          </button>
-        </div>
-      </div>
-      {mostrarVista ? (
+  const descargar = () => {
+    void descargarAdjuntoPortal(adjunto, alumnoId).catch((e) =>
+      toastApiError(e, {
+        method: 'GET',
+        path: adjuntoPortalArchivoPath(adjunto.id, alumnoId),
+        contexto: `Descargar adjunto "${adjunto.nombre_original}"`,
+      }),
+    )
+  }
+
+  // Imagen: sin ícono, nombre ni peso. Solo la imagen y el botón de descarga a todo el ancho.
+  if (imagen) {
+    return (
+      <li
+        className="adjunto-item adjunto-item--imagen"
+        data-testid={`portal-adjunto-${adjunto.id}`}
+      >
         <AdjuntoVista
           path={adjuntoPortalArchivoPath(adjunto.id, alumnoId)}
           contentType={adjunto.content_type}
           nombre={adjunto.nombre_original}
-          onAmpliar={imagen ? (src, alt) => onAmpliar({ src, alt }) : undefined}
+          onAmpliar={(src, alt) => onAmpliar({ src, alt })}
           testId={`portal-adjunto-vista-${adjunto.id}`}
         />
-      ) : null}
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm adjunto-item__descargar-ancho"
+          data-testid={`portal-adjunto-descargar-${adjunto.id}`}
+          aria-label={`Descargar ${adjunto.nombre_original}`}
+          onClick={descargar}
+        >
+          <Download size={16} aria-hidden /> Descargar
+        </button>
+      </li>
+    )
+  }
+
+  // Documentos (PDF/Word/Excel): ícono arriba, nombre en su propia fila y solo descarga.
+  return (
+    <li
+      className="adjunto-item adjunto-item--doc"
+      data-testid={`portal-adjunto-${adjunto.id}`}
+    >
+      <div className="adjunto-item__doc">
+        <span className="adjunto-item__icono">
+          <AdjuntoIcono contentType={adjunto.content_type} nombre={adjunto.nombre_original} />
+        </span>
+        <span className="adjunto-item__titulo">{adjunto.nombre_original}</span>
+        <span className="app-list__sub">
+          {etiquetaCategoria(cat)} · {formatoPeso(adjunto.size_bytes)}
+        </span>
+      </div>
+      <button
+        type="button"
+        className="btn btn--ghost btn--sm adjunto-item__descargar-ancho"
+        data-testid={`portal-adjunto-descargar-${adjunto.id}`}
+        onClick={descargar}
+      >
+        <Download size={16} aria-hidden /> Descargar
+      </button>
     </li>
   )
 }
