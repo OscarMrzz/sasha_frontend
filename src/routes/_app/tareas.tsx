@@ -369,7 +369,7 @@ function TareasStaffPage() {
           columns={columns}
           filters={tableFilters}
           initialFilters={{ entrega: 'semana' }}
-          canAdd={esMaestro}
+          canAdd={can('tareas:post')}
           addLabel="Nueva tarea"
           onAdd={() => setCreateOpen(true)}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}

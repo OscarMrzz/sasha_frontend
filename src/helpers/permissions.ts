@@ -215,6 +215,8 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'fichas:delete',
     'excusas:get',
     'excusas:post',
+    'boveda:get',
+    'boveda:post',
   ],
   // Únicamente matricula (DEC-019): catálogos y personas solo para el asistente.
   admisiones: [
@@ -266,6 +268,8 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'mi_sace:get',
     'recuperaciones:get',
     'recuperaciones:post',
+    'boveda:get',
+    'boveda:post',
   ],
   responsable: [
     'tareas:get',

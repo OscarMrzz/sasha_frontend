@@ -68,6 +68,20 @@ test.describe('mi perfil', () => {
     await expect(carga).toContainText(/horas por semana/)
   })
 
+  test('maestro: puede subir su foto de perfil', async ({ page }) => {
+    await loginAs(page, { code: MAESTRO_PEDRO })
+    await page.goto('/mi-perfil')
+    await expect(page.getByTestId('mi-perfil-page')).toBeVisible({ timeout: 15_000 })
+
+    await page.getByTestId('perfil-foto-input').setInputFiles({
+      name: 'foto-maestro.png',
+      mimeType: 'image/png',
+      buffer: PNG_1PX,
+    })
+    await expect(page.getByText('Foto de perfil actualizada')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('perfil-foto-btn').locator('img')).toBeVisible()
+  })
+
   test('cambiar contraseña se abre en un modal y valida', async ({ page }) => {
     await loginAs(page, { code: PADRE_ANA })
     await page.goto('/mi-perfil')

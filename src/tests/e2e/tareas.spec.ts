@@ -80,4 +80,29 @@ test.describe('tareas staff @critical', () => {
       await expect(card).toContainText(tipoNombre)
     }
   })
+
+  test('admin crea una tarea eligiendo materia, grado y sección', async ({ page }) => {
+    await loginAs(page)
+    await page.goto('/tareas')
+    await expect(page.getByTestId('data-table-add-button')).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId('data-table-add-button').click()
+
+    await expect(page.getByTestId('tarea-create-modal')).toBeVisible()
+    // El admin elige la clase (materia · grado · sección) de todo el colegio.
+    await expect(page.getByTestId('tarea-asignacion-select')).toBeVisible()
+    await page.getByTestId('tarea-titulo-input').fill('Tarea admin e2e')
+    await page.getByTestId('tarea-fecha-entrega').fill('2026-12-15')
+
+    const tipo = page.getByTestId('tarea-tipo-select')
+    await expect(tipo.locator('option').nth(1)).toBeAttached({ timeout: 15_000 })
+    const tipoValores = await tipo.locator('option').evaluateAll((opts) =>
+      opts.map((o) => (o as HTMLOptionElement).value).filter(Boolean),
+    )
+    expect(tipoValores.length).toBeGreaterThan(0)
+    await tipo.selectOption(tipoValores[0])
+
+    await page.getByTestId('tarea-guardar').click()
+    await page.getByRole('button', { name: 'Confirmar' }).click()
+    await expect(page.getByText('Tarea creada')).toBeVisible({ timeout: 15_000 })
+  })
 })
