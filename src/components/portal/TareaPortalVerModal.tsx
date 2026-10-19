@@ -1,6 +1,5 @@
 import { Download, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 import { AdjuntoIcono } from '#/components/archivos/AdjuntoIcono'
 import { AdjuntoVista } from '#/components/archivos/AdjuntoVista'
 import { VisorImagen } from '#/components/portal/VisorImagen'
@@ -11,7 +10,7 @@ import {
   etiquetaCategoria,
   formatoPeso,
 } from '#/helpers/adjuntos'
-import { userMessageFromError } from '#/lib/api'
+import { toastApiError } from '#/lib/api'
 import { fechaLarga } from '#/services/disciplina'
 import {
   adjuntoPortalArchivoPath,
@@ -23,20 +22,25 @@ function estadoLabel(e: PortalTarea['estado']) {
   return e === 'revisada' ? 'Revisada' : 'Pendiente'
 }
 
-/** Fila de un adjunto en el portal: ícono, título, peso, descargar y previsualización diferida. */
+/**
+ * Fila de un adjunto en el portal: ícono, título, peso, descargar y previsualización.
+ * Las imágenes se cargan solas al abrir la tarea; los PDF se abren con «Ver».
+ */
 function AdjuntoItem({
   adjunto,
+  alumnoId,
   onAmpliar,
 }: {
   adjunto: PortalAdjunto
+  /** Obligatorio para el rol `responsable`: el backend exige el hijo en el binario. */
+  alumnoId?: string | null
   onAmpliar: (img: { src: string; alt: string }) => void
 }) {
-  // La previsualización es diferida: no monta el fetch hasta que se pulsa «Ver»
-  // (evita lanzar un fetch por cada adjunto al abrir la tarea).
-  const [ver, setVer] = useState(false)
   const cat = categoriaAdjunto(adjunto.content_type, adjunto.nombre_original)
   const imagen = esImagenAdjunto(adjunto.content_type, adjunto.nombre_original)
-  const previsualiza = imagen || cat === 'pdf'
+  // Las imágenes se ven al abrir la tarea; los PDF mantienen «Ver» (decisión del usuario).
+  const [ver, setVer] = useState(imagen)
+  const mostrarVista = imagen || ver
 
   return (
     <li className="adjunto-item" data-testid={`portal-adjunto-${adjunto.id}`}>
@@ -51,7 +55,7 @@ function AdjuntoItem({
           </span>
         </div>
         <div className="adjunto-item__acciones">
-          {previsualiza ? (
+          {cat === 'pdf' ? (
             <button
               type="button"
               className="btn btn--ghost btn--sm"
@@ -67,8 +71,12 @@ function AdjuntoItem({
             className="btn btn--ghost btn--sm"
             data-testid={`portal-adjunto-descargar-${adjunto.id}`}
             onClick={() => {
-              void descargarAdjuntoPortal(adjunto).catch((e) =>
-                toast.error(userMessageFromError(e)),
+              void descargarAdjuntoPortal(adjunto, alumnoId).catch((e) =>
+                toastApiError(e, {
+                  method: 'GET',
+                  path: adjuntoPortalArchivoPath(adjunto.id, alumnoId),
+                  contexto: `Descargar adjunto "${adjunto.nombre_original}"`,
+                }),
               )
             }}
           >
@@ -76,9 +84,9 @@ function AdjuntoItem({
           </button>
         </div>
       </div>
-      {previsualiza && ver ? (
+      {mostrarVista ? (
         <AdjuntoVista
-          path={adjuntoPortalArchivoPath(adjunto.id)}
+          path={adjuntoPortalArchivoPath(adjunto.id, alumnoId)}
           contentType={adjunto.content_type}
           nombre={adjunto.nombre_original}
           onAmpliar={imagen ? (src, alt) => onAmpliar({ src, alt }) : undefined}
@@ -90,7 +98,16 @@ function AdjuntoItem({
 }
 
 /** Detalle de una tarea para el portal (padre/alumno). No muestra los puntos. */
-export function TareaPortalVerModal({ tarea, onClose }: { tarea: PortalTarea | null; onClose: () => void }) {
+export function TareaPortalVerModal({
+  tarea,
+  alumnoId,
+  onClose,
+}: {
+  tarea: PortalTarea | null
+  /** Hijo elegido por el responsable; `null`/vacío = el propio alumno. */
+  alumnoId?: string | null
+  onClose: () => void
+}) {
   const [ampliada, setAmpliada] = useState<{ src: string; alt: string } | null>(null)
 
   const filas: [string, string][] = tarea
@@ -152,7 +169,12 @@ export function TareaPortalVerModal({ tarea, onClose }: { tarea: PortalTarea | n
               ) : (
                 <ul className="app-list" data-testid="portal-tarea-archivos">
                   {adjuntos.map((a) => (
-                    <AdjuntoItem key={a.id} adjunto={a} onAmpliar={setAmpliada} />
+                    <AdjuntoItem
+                      key={a.id}
+                      adjunto={a}
+                      alumnoId={alumnoId}
+                      onAmpliar={setAmpliada}
+                    />
                   ))}
                 </ul>
               )}

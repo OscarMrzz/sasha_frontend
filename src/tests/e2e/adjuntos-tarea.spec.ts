@@ -272,15 +272,19 @@ test.describe('adjuntos de tarea: el portal los ve', () => {
     await expect(seccionAlumno).toContainText('foto-portal.png')
     await expect(seccionAlumno).toContainText('apunte-portal.pdf')
 
-    // La imagen se amplía con zoom.
-    await modalAlumno.getByTestId(`portal-adjunto-ver-${imagen.id}`).click()
+    // La imagen se ve sola al abrir la tarea (sin pulsar «Ver») y se amplía con zoom.
+    await expect(modalAlumno.getByTestId(`portal-adjunto-vista-${imagen.id}`)).toBeVisible({
+      timeout: 15_000,
+    })
+    await expect(modalAlumno.getByTestId(`portal-adjunto-ver-${imagen.id}`)).toHaveCount(0)
     await modalAlumno.getByTestId(`portal-adjunto-vista-${imagen.id}`).click()
     const visor = page.getByTestId('visor-imagen')
     await expect(visor).toBeVisible({ timeout: 10_000 })
     await page.getByTestId('visor-cerrar').click()
     await expect(visor).toHaveCount(0)
 
-    // El PDF se previsualiza y se descarga.
+    // El PDF sigue necesitando «Ver»; después se previsualiza y se descarga.
+    await expect(modalAlumno.getByTestId(`portal-adjunto-vista-${pdf.id}`)).toHaveCount(0)
     await modalAlumno.getByTestId(`portal-adjunto-ver-${pdf.id}`).click()
     await expect(modalAlumno.getByTestId(`portal-adjunto-vista-${pdf.id}`)).toBeVisible({
       timeout: 15_000,
@@ -300,5 +304,23 @@ test.describe('adjuntos de tarea: el portal los ve', () => {
     await expect(seccionPadre).toContainText('Archivos (2)', { timeout: 15_000 })
     await expect(seccionPadre).toContainText('foto-portal.png')
     await expect(seccionPadre).toContainText('apunte-portal.pdf')
+
+    // El padre (rol responsable) ve la imagen sin pulsar «Ver»: el binario ya lleva alumno_id.
+    await expect(modalPadre.getByTestId(`portal-adjunto-vista-${imagen.id}`)).toBeVisible({
+      timeout: 15_000,
+    })
+    await expect(modalPadre.getByTestId(`portal-adjunto-ver-${imagen.id}`)).toHaveCount(0)
+
+    // Y la descarga funciona con el alumno del hijo.
+    const downloadImagenPadre = page.waitForEvent('download')
+    await modalPadre.getByTestId(`portal-adjunto-descargar-${imagen.id}`).click()
+    expect((await downloadImagenPadre).suggestedFilename()).toBe('foto-portal.png')
+
+    // El PDF del padre sigue abriéndose con «Ver».
+    await expect(modalPadre.getByTestId(`portal-adjunto-vista-${pdf.id}`)).toHaveCount(0)
+    await modalPadre.getByTestId(`portal-adjunto-ver-${pdf.id}`).click()
+    await expect(modalPadre.getByTestId(`portal-adjunto-vista-${pdf.id}`)).toBeVisible({
+      timeout: 15_000,
+    })
   })
 })

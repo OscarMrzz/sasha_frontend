@@ -105,7 +105,11 @@ export function TareasLista({ alumnoId, prefix }: { alumnoId: string | null; pre
         )}
       </section>
 
-      <TareaPortalVerModal tarea={verTarea} onClose={() => setVerTarea(null)} />
+      <TareaPortalVerModal
+        tarea={verTarea}
+        alumnoId={alumnoId}
+        onClose={() => setVerTarea(null)}
+      />
     </>
   )
 }

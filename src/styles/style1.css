@@ -9253,6 +9253,13 @@ body::before {
   margin-top: 0.5rem;
 }
 
+.adjunto-vista__error-acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
 .adjunto-picker {
   margin-top: 0.25rem;
 }

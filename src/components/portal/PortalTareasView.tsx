@@ -75,7 +75,11 @@ export function PortalTareasView({
         onRowClick={(row) => setVerTarea(row)}
       />
 
-      <TareaPortalVerModal tarea={verTarea} onClose={() => setVerTarea(null)} />
+      <TareaPortalVerModal
+        tarea={verTarea}
+        alumnoId={alumnoId}
+        onClose={() => setVerTarea(null)}
+      />
     </div>
   )
 }

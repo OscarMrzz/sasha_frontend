@@ -8,6 +8,8 @@ export type ArchivoAutenticado = {
   /** Object URL listo para `img`/`iframe`; `null` mientras carga o si falla. */
   src: string | null
   estado: EstadoArchivo
+  /** Error real de la última carga fallida; `null` si aún no hay error. */
+  error: unknown
   /** Vuelve a intentar la carga (p. ej. tras un error de red o de sesión). */
   reintentar: () => void
 }
@@ -21,17 +23,20 @@ export type ArchivoAutenticado = {
 export function useArchivoAutenticado(path: string | null | undefined): ArchivoAutenticado {
   const [src, setSrc] = useState<string | null>(null)
   const [estado, setEstado] = useState<EstadoArchivo>(path ? 'loading' : 'error')
+  const [error, setError] = useState<unknown>(null)
   const [intento, setIntento] = useState(0)
 
   useEffect(() => {
     if (!path) {
       setSrc(null)
       setEstado('error')
+      setError(null)
       return
     }
 
     setSrc(null)
     setEstado('loading')
+    setError(null)
     const interno = { objectUrl: null as string | null, cancelado: false }
     const controller = new AbortController()
 
@@ -47,9 +52,10 @@ export function useArchivoAutenticado(path: string | null | undefined): ArchivoA
         interno.objectUrl = url
         setSrc(url)
         setEstado('ready')
-      } catch {
+      } catch (e) {
         if (!interno.cancelado) {
           setSrc(null)
+          setError(e)
           setEstado('error')
         }
       }
@@ -64,5 +70,5 @@ export function useArchivoAutenticado(path: string | null | undefined): ArchivoA
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), [])
 
-  return { src, estado, reintentar }
+  return { src, estado, error, reintentar }
 }

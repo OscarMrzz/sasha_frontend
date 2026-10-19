@@ -295,13 +295,16 @@ export function listTareasHijo(alumnoId?: string | null) {
 }
 
 /** Ruta del binario de un adjunto en el portal (para `useArchivoAutenticado`). */
-export function adjuntoPortalArchivoPath(adjuntoId: string) {
-  return `/portal/adjuntos/${encodeURIComponent(adjuntoId)}/archivo`
+export function adjuntoPortalArchivoPath(adjuntoId: string, alumnoId?: string | null) {
+  return `/portal/adjuntos/${encodeURIComponent(adjuntoId)}/archivo${alumnoQs(alumnoId)}`
 }
 
 /** Descarga el binario del adjunto con su nombre original (autoriza por matrícula). */
-export function descargarAdjuntoPortal(adjunto: PortalAdjunto) {
-  return descargarArchivo(adjuntoPortalArchivoPath(adjunto.id), adjunto.nombre_original)
+export function descargarAdjuntoPortal(adjunto: PortalAdjunto, alumnoId?: string | null) {
+  return descargarArchivo(
+    adjuntoPortalArchivoPath(adjunto.id, alumnoId),
+    adjunto.nombre_original,
+  )
 }
 
 export interface PortalMesPago {

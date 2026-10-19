@@ -1,11 +1,13 @@
+import { Copy } from 'lucide-react'
 import { useState } from 'react'
 import { useArchivoAutenticado } from '#/hooks/use-archivo-autenticado'
 import { categoriaAdjunto } from '#/helpers/adjuntos'
+import { copyErrorReport } from '#/lib/api'
 
 /**
  * Previsualiza un adjunto: imagen inline (tocable para ampliar) o PDF en `iframe`.
  * Carga el binario con la sesión activa. No se usa con Word/Excel (solo se descargan).
- * Si la carga falla (red, sesión o imagen corrupta) ofrece reintentar.
+ * Si la carga falla (red, sesión o imagen corrupta) ofrece copiar el detalle y reintentar.
  */
 export function AdjuntoVista({
   path,
@@ -21,7 +23,7 @@ export function AdjuntoVista({
   onAmpliar?: (src: string, alt: string) => void
   testId?: string
 }) {
-  const { src, estado, reintentar } = useArchivoAutenticado(path)
+  const { src, estado, error, reintentar } = useArchivoAutenticado(path)
   const [falloImagen, setFalloImagen] = useState(false)
 
   const reintentarTodo = () => {
@@ -38,6 +40,13 @@ export function AdjuntoVista({
   }
 
   if (estado === 'error' || falloImagen || !src) {
+    const detalle =
+      error ??
+      new Error(
+        falloImagen
+          ? `No se pudo mostrar la imagen "${nombre}".`
+          : `No se pudo cargar "${nombre}".`,
+      )
     return (
       <div
         className="adjunto-vista__error"
@@ -46,9 +55,25 @@ export function AdjuntoVista({
         <p className="texto-muted" style={{ margin: 0 }}>
           No se pudo cargar el archivo.
         </p>
-        <button type="button" className="btn btn--ghost btn--sm" onClick={reintentarTodo}>
-          Reintentar
-        </button>
+        <div className="adjunto-vista__error-acciones">
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            data-testid={testId ? `${testId}-copiar` : undefined}
+            onClick={() =>
+              void copyErrorReport(detalle, {
+                method: 'GET',
+                path,
+                contexto: `Previsualizar adjunto "${nombre}"`,
+              })
+            }
+          >
+            <Copy size={16} aria-hidden /> Copiar detalle
+          </button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={reintentarTodo}>
+            Reintentar
+          </button>
+        </div>
       </div>
     )
   }

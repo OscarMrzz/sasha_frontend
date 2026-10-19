@@ -227,8 +227,10 @@ test.describe('portal alumno y responsable @smoke', () => {
     await modal.getByTestId(`portal-adjunto-descargar-${adjunto.id}`).click()
     expect((await download).suggestedFilename()).toBe('portada.png')
 
-    // Tocar la imagen abre el visor con zoom (la previsualización es diferida: «Ver» primero).
-    await modal.getByTestId(`portal-adjunto-ver-${adjunto.id}`).click()
+    // La imagen se ve sola al abrir la tarea; tocarla abre el visor con zoom.
+    await expect(modal.getByTestId(`portal-adjunto-vista-${adjunto.id}`)).toBeVisible({
+      timeout: 15_000,
+    })
     await modal.getByTestId(`portal-adjunto-vista-${adjunto.id}`).click()
     const visor = page.getByTestId('visor-imagen')
     await expect(visor).toBeVisible({ timeout: 10_000 })
