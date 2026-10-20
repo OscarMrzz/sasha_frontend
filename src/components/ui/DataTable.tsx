@@ -1,14 +1,16 @@
-import { flexRender, type RowData } from '@tanstack/react-table'
+import { flexRender } from '@tanstack/react-table'
+import type { RowData } from '@tanstack/react-table'
 import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useLegacyTable,
-  type LegacyColumnDef,
 } from '@tanstack/react-table/legacy'
+import type { LegacyColumnDef } from '@tanstack/react-table/legacy'
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown } from 'lucide-react'
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { downloadCsv } from '#/helpers/export-csv'
 import { downloadTablePdf } from '#/helpers/export-pdf'
 import { RowMenu } from '#/components/ui/RowMenu'
@@ -86,6 +88,8 @@ type DataTableProps<T extends RowData> = {
   card?: DataTableCard<T>
   /** Acciones de fila para el botón de 3 puntos de las cards. */
   rowActions?: (row: T) => RowAction[]
+  /** Clase extra por fila (por ejemplo, `fila-baja` para atenuar inactivos). */
+  rowClassName?: (row: T) => string | undefined
 }
 
 function isCodigoFilterId(id: string) {
@@ -132,6 +136,7 @@ export function DataTable<T extends RowData>({
   pageSize = 25,
   card,
   rowActions,
+  rowClassName,
 }: DataTableProps<T>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([])
@@ -154,9 +159,9 @@ export function DataTable<T extends RowData>({
       }
       const seen = new Map<string, string>()
       for (const row of data) {
-        const values = f.getOptionValues?.(row) ?? [String(f.getValue(row) ?? '').trim()]
+        const values = f.getOptionValues?.(row) ?? [String(f.getValue(row)).trim()]
         for (const raw of values) {
-          const value = String(raw ?? '').trim()
+          const value = String(raw).trim()
           if (!value) continue
           if (!seen.has(value)) seen.set(value, f.getLabel?.(row) ?? value)
         }
@@ -175,7 +180,7 @@ export function DataTable<T extends RowData>({
         if (!selected) continue
         if (f.matches) {
           if (!f.matches(row, selected)) return false
-        } else if (String(f.getValue(row) ?? '') !== selected) {
+        } else if (String(f.getValue(row)) !== selected) {
           return false
         }
       }
@@ -199,7 +204,7 @@ export function DataTable<T extends RowData>({
         id: SEARCH_COL_ID,
         header: '',
         enableSorting: false,
-        accessorFn: (row) => searchText(row as T),
+        accessorFn: (row) => searchText(row),
         cell: () => null,
         meta: { searchOnly: true },
       })
@@ -357,7 +362,9 @@ export function DataTable<T extends RowData>({
               return (
                 <li
                   key={row.id}
-                  className={`data-card${onRowClick ? ' data-card--click' : ''}`}
+                  className={`data-card${onRowClick ? ' data-card--click' : ''}${
+                    rowClassName?.(r) ? ` ${rowClassName(r)}` : ''
+                  }`}
                   data-testid={card.testId?.(r) ?? `data-card-${row.id}`}
                   onClick={onRowClick ? (e) => onRowClick(r, e) : undefined}
                 >
@@ -436,19 +443,20 @@ export function DataTable<T extends RowData>({
               rows.map((row) => (
                 <tr
                   key={row.id}
+                  className={rowClassName?.(row.original)}
                   style={onRowClick || onRowDoubleClick ? { cursor: 'pointer' } : undefined}
                   onClick={(e) => {
                     if (!onRowClick) return
-                    onRowClick(row.original as T, e)
+                    onRowClick(row.original, e)
                   }}
                   onDoubleClick={(e) => {
                     if (!onRowDoubleClick) return
-                    onRowDoubleClick(row.original as T, e)
+                    onRowDoubleClick(row.original, e)
                   }}
                   onContextMenu={(e) => {
                     if (!onRowContextMenu) return
                     e.preventDefault()
-                    onRowContextMenu(row.original as T, e)
+                    onRowContextMenu(row.original, e)
                   }}
                 >
                   {row.getVisibleCells().filter((cell) => !isSearchOnly(cell.column.columnDef)).map((cell) => (

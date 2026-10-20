@@ -12,18 +12,18 @@ import { Modal } from '#/components/ui/Modal'
 import { CoordinacionesSelect } from '#/components/coordinaciones/CoordinacionesSelect'
 import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
 import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
-import { ROLES, roleLabel, type RoleName } from '#/helpers/permissions'
-import { userMessageFromError, ApiError } from '#/lib/api'
+import { ROLES, roleLabel } from '#/helpers/permissions'
+import type { RoleName } from '#/helpers/permissions'
+import { userMessageFromError } from '#/lib/api'
 import {
   createUser,
   listUsers,
-  softDelete,
-  type CreateUserRequest,
-  type ResponseUser,
 } from '#/services/users'
-import { createAlumno, createMaestro, createResponsable } from '#/services/personas'
+import type { CreateUserRequest, ResponseUser } from '#/services/users'
+import { createAlumno, createMaestro, createResponsable, darDeBajaPersona, restaurarPersona } from '#/services/personas'
 import { asignarCoordinaciones } from '#/services/coordinaciones'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
+import { esBaja, puedeVerInactivos } from '#/helpers/visibilidad'
 
 export const Route = createFileRoute('/_app/usuarios')({ component: UsuariosPage })
 
@@ -53,17 +53,18 @@ const STATUS_OPTIONS = [
 
 function UsuariosPage() {
   const qc = useQueryClient()
-  const { can } = useCan()
+  const { can, roles } = useCan()
+  const verInactivos = puedeVerInactivos(roles)
   const { data = [], isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['users'],
-    queryFn: listUsers,
+    queryKey: ['users', verInactivos],
+    queryFn: () => listUsers({ incluirInactivos: verInactivos }),
   })
 
   const [modalOpen, setModalOpen] = useState(false)
   const [createForm, setCreateForm] = useState<CreateUserRequest>(defaultForm)
   const [confirmSave, setConfirmSave] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState<ResponseUser | null>(null)
-  const [aviso, setAviso] = useState<string | null>(null)
+  const [confirmBaja, setConfirmBaja] = useState<ResponseUser | null>(null)
+  const [confirmRestore, setConfirmRestore] = useState<ResponseUser | null>(null)
   const [createdCode, setCreatedCode] = useState<string | null>(null)
   const [viewCode, setViewCode] = useState<string | null>(null)
   const [editarPersona, setEditarPersona] = useState<ResponseUser | null>(null)
@@ -140,21 +141,34 @@ function UsuariosPage() {
     onError: (e) => toast.error(userMessageFromError(e)),
   })
 
-  const deleteMut = useMutation({
-    mutationFn: (code: string) => softDelete(code),
+  const invalidarPersonas = () => {
+    qc.invalidateQueries({ queryKey: ['users'] })
+    qc.invalidateQueries({ queryKey: ['alumnos'] })
+    qc.invalidateQueries({ queryKey: ['maestros'] })
+    qc.invalidateQueries({ queryKey: ['responsables'] })
+    qc.invalidateQueries({ queryKey: ['consejeria-alumnos'] })
+    qc.invalidateQueries({ queryKey: ['consejeria-maestros'] })
+    qc.invalidateQueries({ queryKey: ['matriculas'] })
+  }
+
+  const bajaMut = useMutation({
+    mutationFn: (code: string) => darDeBajaPersona(code),
     onSuccess: () => {
-      toast.success('Usuario eliminado')
-      setConfirmDelete(null)
-      qc.invalidateQueries({ queryKey: ['users'] })
+      toast.success('Usuario dado de baja')
+      setConfirmBaja(null)
+      invalidarPersonas()
     },
-    onError: (e) => {
-      setConfirmDelete(null)
-      if (e instanceof ApiError && e.status === 409) {
-        setAviso(e.message)
-      } else {
-        toast.error(userMessageFromError(e))
-      }
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
+
+  const restoreMut = useMutation({
+    mutationFn: (code: string) => restaurarPersona(code),
+    onSuccess: () => {
+      toast.success('Usuario restaurado')
+      setConfirmRestore(null)
+      invalidarPersonas()
     },
+    onError: (e) => toast.error(userMessageFromError(e)),
   })
 
   const columns = useMemo(
@@ -167,7 +181,12 @@ function UsuariosPage() {
       }),
       col.accessor('statususer', {
         header: 'Estado',
-        cell: (i) => <span className="badge">{i.getValue()}</span>,
+        cell: (i) =>
+          esBaja(i.row.original) ? (
+            <span className="badge badge--baja">Dado de baja</span>
+          ) : (
+            <span className="badge">{i.getValue()}</span>
+          ),
       }),
     ],
     [],
@@ -221,8 +240,9 @@ function UsuariosPage() {
           codigo: u.code,
           username: u.username,
           roles: u.roles.join('|'),
-          status: u.statususer,
+          status: esBaja(u) ? 'Dado de baja' : u.statususer,
         }))}
+        rowClassName={(u) => (esBaja(u) ? 'fila-baja' : undefined)}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
       />
 
@@ -240,38 +260,55 @@ function UsuariosPage() {
           >
             Ver
           </button>
-          {!hasAdminRole(ctx.row.roles) ? (
+          {esBaja(ctx.row) ? (
+            <Can permission="personas:put">
+              <button
+                type="button"
+                className="ctx-menu__item"
+                data-testid="ctx-restaurar"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setConfirmRestore(ctx.row)
+                  closeCtx()
+                }}
+              >
+                Restaurar
+              </button>
+            </Can>
+          ) : (
             <>
+              {!hasAdminRole(ctx.row.roles) ? (
+                <Can permission="personas:put">
+                  <button
+                    type="button"
+                    className="ctx-menu__item"
+                    data-testid="ctx-editar"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditarPersona(ctx.row)
+                      closeCtx()
+                    }}
+                  >
+                    Editar
+                  </button>
+                </Can>
+              ) : null}
               <Can permission="personas:put">
                 <button
                   type="button"
-                  className="ctx-menu__item"
-                  data-testid="ctx-editar"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setEditarPersona(ctx.row)
-                    closeCtx()
-                  }}
-                >
-                  Editar
-                </button>
-              </Can>
-              <Can permission="users:delete">
-                <button
-                  type="button"
                   className="ctx-menu__item ctx-menu__item--danger"
-                  data-testid="ctx-eliminar"
+                  data-testid="ctx-dar-de-baja"
                   onClick={(e) => {
                     e.stopPropagation()
-                    setConfirmDelete(ctx.row)
+                    setConfirmBaja(ctx.row)
                     closeCtx()
                   }}
                 >
-                  Eliminar
+                  Dar de baja
                 </button>
               </Can>
             </>
-          ) : null}
+          )}
         </div>
       ) : null}
 
@@ -392,29 +429,23 @@ function UsuariosPage() {
         onCancel={() => setConfirmSave(false)}
       />
       <ConfirmDialog
-        open={Boolean(confirmDelete)}
-        title="Eliminar usuario"
-        message={`¿Dar de baja al usuario ${confirmDelete?.code} (${confirmDelete?.username})? Es una eliminación lógica: el registro no se borra, queda inactivo.`}
+        open={Boolean(confirmBaja)}
+        title="Dar de baja"
+        message={`¿Dar de baja al usuario ${confirmBaja?.code} (${confirmBaja?.username})? Se ocultará de los listados y se conservará todo su historial. Podrás restaurarlo cuando quieras.`}
         danger
-        confirmLabel="Eliminar"
-        onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.code)}
-        onCancel={() => setConfirmDelete(null)}
+        confirmLabel="Dar de baja"
+        onConfirm={() => confirmBaja && bajaMut.mutate(confirmBaja.code)}
+        onCancel={() => setConfirmBaja(null)}
       />
 
-      <Modal
-        open={Boolean(aviso)}
-        title="No se puede eliminar"
-        onClose={() => setAviso(null)}
-        footer={
-          <button type="button" className="btn btn--primary" onClick={() => setAviso(null)}>
-            Entendido
-          </button>
-        }
-      >
-        <p className="texto-primary" style={{ margin: 0 }}>
-          {aviso}
-        </p>
-      </Modal>
+      <ConfirmDialog
+        open={Boolean(confirmRestore)}
+        title="Restaurar usuario"
+        message={`¿Restaurar al usuario ${confirmRestore?.code} (${confirmRestore?.username})? Volverá a aparecer en los listados y podrá iniciar sesión.`}
+        confirmLabel="Restaurar"
+        onConfirm={() => confirmRestore && restoreMut.mutate(confirmRestore.code)}
+        onCancel={() => setConfirmRestore(null)}
+      />
     </RequirePermission>
   )
 }

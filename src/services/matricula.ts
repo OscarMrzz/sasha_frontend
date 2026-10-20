@@ -42,6 +42,9 @@ export interface Matricula {
   tipo_beca?: string
   /** Monto por mes, presente solo cuando `tipo_beca` es `especial`. */
   monto_especial?: number
+  /** Estado del alumno (ACTIVE/INACTIVE), independiente del estado de la matrícula. */
+  alumno_status?: string
+  dado_de_baja?: boolean
 }
 
 export interface GradoInfo {
@@ -107,8 +110,9 @@ export interface DocumentoMatricula {
   status: string
 }
 
-export async function listMatriculas() {
-  return apiRequestList<Matricula>('/matricula/')
+export async function listMatriculas(opts?: { incluirInactivos?: boolean }) {
+  const qs = opts?.incluirInactivos ? '?incluir_inactivos=true' : ''
+  return apiRequestList<Matricula>(`/matricula/${qs}`)
 }
 
 export async function createMatricula(body: MatriculaCreate) {

@@ -4,14 +4,15 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { ExpedienteAlumnoModal } from '#/components/consejeria/ExpedienteAlumnoModal'
-import { RequirePermission, Can } from '#/components/gates/Can'
+import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { userMessageFromError } from '#/lib/api'
 import { listAlumnosConsejeria  } from '#/services/consejeria'
 import type {AlumnoConsejeria} from '#/services/consejeria';
-import { deletePersona } from '#/services/personas'
+import { darDeBajaPersona, restaurarPersona } from '#/services/personas'
+import { esBaja, puedeVerInactivos } from '#/helpers/visibilidad'
 
 export const Route = createFileRoute('/_app/consejeria/alumnos')({ component: AlumnosConsejeriaPage })
 
@@ -35,11 +36,17 @@ const estadoMatricula = (r: AlumnoConsejeria) => ESTADO_MATRICULA[r.estado_matri
 
 function AlumnosConsejeriaPage() {
   const qc = useQueryClient()
-  const { data = [], isLoading } = useQuery({ queryKey: ['consejeria-alumnos'], queryFn: listAlumnosConsejeria })
+  const { roles } = useCan()
+  const verInactivos = puedeVerInactivos(roles)
+  const { data = [], isLoading } = useQuery({
+    queryKey: ['consejeria-alumnos', verInactivos],
+    queryFn: () => listAlumnosConsejeria({ incluirInactivos: verInactivos }),
+  })
   const [ctx, setCtx] = useState<{ x: number; y: number; row: AlumnoConsejeria } | null>(null)
   const [ver, setVer] = useState<string | null>(null)
   const [editar, setEditar] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<AlumnoConsejeria | null>(null)
+  const [confirmBaja, setConfirmBaja] = useState<AlumnoConsejeria | null>(null)
+  const [confirmRestore, setConfirmRestore] = useState<AlumnoConsejeria | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -48,14 +55,29 @@ function AlumnosConsejeriaPage() {
     return () => window.removeEventListener('click', closeCtx)
   }, [ctx, closeCtx])
 
-  const deleteMut = useMutation({
-    mutationFn: (code: string) => deletePersona(code),
+  const invalidar = () => {
+    qc.invalidateQueries({ queryKey: ['consejeria-alumnos'] })
+    qc.invalidateQueries({ queryKey: ['alumnos'] })
+    qc.invalidateQueries({ queryKey: ['matriculas'] })
+    qc.invalidateQueries({ queryKey: ['users'] })
+  }
+
+  const bajaMut = useMutation({
+    mutationFn: (code: string) => darDeBajaPersona(code),
     onSuccess: () => {
-      toast.success('Alumno eliminado')
-      setConfirmDelete(null)
-      qc.invalidateQueries({ queryKey: ['consejeria-alumnos'] })
-      qc.invalidateQueries({ queryKey: ['alumnos'] })
-      qc.invalidateQueries({ queryKey: ['matriculas'] })
+      toast.success('Alumno dado de baja')
+      setConfirmBaja(null)
+      invalidar()
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
+
+  const restoreMut = useMutation({
+    mutationFn: (code: string) => restaurarPersona(code),
+    onSuccess: () => {
+      toast.success('Alumno restaurado')
+      setConfirmRestore(null)
+      invalidar()
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
@@ -71,6 +93,16 @@ function AlumnosConsejeriaPage() {
             <Subtexto>{i.row.original.codigo}</Subtexto>
           </>
         ),
+      }),
+      col.display({
+        id: 'estado_persona',
+        header: 'Estado',
+        cell: (i) =>
+          esBaja(i.row.original) ? (
+            <span className="badge badge--baja">Dado de baja</span>
+          ) : (
+            <span className="badge badge--ok">Activo</span>
+          ),
       }),
       col.accessor((r) => `${r.grado} ${r.seccion}`, {
         id: 'grado',
@@ -154,7 +186,9 @@ function AlumnosConsejeriaPage() {
             responsable: a.responsable_nombre,
             parentesco: a.parentesco,
             telefono: a.responsable_telefono,
+            estado_persona: esBaja(a) ? 'Dado de baja' : 'Activo',
           }))}
+          rowClassName={(a) => (esBaja(a) ? 'fila-baja' : undefined)}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
           onRowDoubleClick={(row) => setVer(row.codigo)}
         />
@@ -173,32 +207,50 @@ function AlumnosConsejeriaPage() {
           >
             Ver
           </button>
-          <Can permission="personas:put">
-            <button
-              type="button"
-              className="ctx-menu__item"
-              data-testid="ctx-editar"
-              onClick={() => {
-                setEditar(ctx.row.codigo)
-                closeCtx()
-              }}
-            >
-              Editar
-            </button>
-          </Can>
-          <Can permission="personas:delete">
-            <button
-              type="button"
-              className="ctx-menu__item ctx-menu__item--danger"
-              data-testid="ctx-eliminar"
-              onClick={() => {
-                setConfirmDelete(ctx.row)
-                closeCtx()
-              }}
-            >
-              Eliminar
-            </button>
-          </Can>
+          {esBaja(ctx.row) ? (
+            <Can permission="personas:put">
+              <button
+                type="button"
+                className="ctx-menu__item"
+                data-testid="ctx-restaurar"
+                onClick={() => {
+                  setConfirmRestore(ctx.row)
+                  closeCtx()
+                }}
+              >
+                Restaurar
+              </button>
+            </Can>
+          ) : (
+            <>
+              <Can permission="personas:put">
+                <button
+                  type="button"
+                  className="ctx-menu__item"
+                  data-testid="ctx-editar"
+                  onClick={() => {
+                    setEditar(ctx.row.codigo)
+                    closeCtx()
+                  }}
+                >
+                  Editar
+                </button>
+              </Can>
+              <Can permission="personas:put">
+                <button
+                  type="button"
+                  className="ctx-menu__item ctx-menu__item--danger"
+                  data-testid="ctx-dar-de-baja"
+                  onClick={() => {
+                    setConfirmBaja(ctx.row)
+                    closeCtx()
+                  }}
+                >
+                  Dar de baja
+                </button>
+              </Can>
+            </>
+          )}
         </div>
       ) : null}
 
@@ -216,13 +268,22 @@ function AlumnosConsejeriaPage() {
       ) : null}
 
       <ConfirmDialog
-        open={Boolean(confirmDelete)}
-        title="Eliminar alumno"
-        message={`¿Dar de baja al alumno ${confirmDelete?.codigo} (${confirmDelete?.nombre})? Es una eliminación lógica: el registro no se borra, queda inactivo.`}
+        open={Boolean(confirmBaja)}
+        title="Dar de baja"
+        message={`¿Dar de baja al alumno ${confirmBaja?.codigo} (${confirmBaja?.nombre})? Se ocultará de los listados y se conservará todo su historial. Podrás restaurarlo cuando quieras.`}
         danger
-        confirmLabel="Eliminar"
-        onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.codigo)}
-        onCancel={() => setConfirmDelete(null)}
+        confirmLabel="Dar de baja"
+        onConfirm={() => confirmBaja && bajaMut.mutate(confirmBaja.codigo)}
+        onCancel={() => setConfirmBaja(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirmRestore)}
+        title="Restaurar alumno"
+        message={`¿Restaurar al alumno ${confirmRestore?.codigo} (${confirmRestore?.nombre})? Volverá a aparecer en los listados.`}
+        confirmLabel="Restaurar"
+        onConfirm={() => confirmRestore && restoreMut.mutate(confirmRestore.codigo)}
+        onCancel={() => setConfirmRestore(null)}
       />
     </RequirePermission>
   )

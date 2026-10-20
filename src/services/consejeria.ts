@@ -15,6 +15,7 @@ export interface AlumnoConsejeria {
   responsable_nombre: string
   responsable_telefono: string
   parentesco: string
+  dado_de_baja?: boolean
 }
 
 export interface MaestroConsejeria {
@@ -25,6 +26,7 @@ export interface MaestroConsejeria {
   clases: number
   cursos: string[]
   grados: string[]
+  dado_de_baja?: boolean
 }
 
 export interface BloqueHorario {
@@ -93,12 +95,14 @@ export interface HorariosConsejeria {
 
 export const DIAS_SEMANA = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
-export async function listAlumnosConsejeria() {
-  return apiRequestList<AlumnoConsejeria>('/consejeria/alumnos')
+export async function listAlumnosConsejeria(opts?: { incluirInactivos?: boolean }) {
+  const qs = opts?.incluirInactivos ? '?incluir_inactivos=true' : ''
+  return apiRequestList<AlumnoConsejeria>(`/consejeria/alumnos${qs}`)
 }
 
-export async function listMaestrosConsejeria() {
-  return apiRequestList<MaestroConsejeria>('/consejeria/maestros')
+export async function listMaestrosConsejeria(opts?: { incluirInactivos?: boolean }) {
+  const qs = opts?.incluirInactivos ? '?incluir_inactivos=true' : ''
+  return apiRequestList<MaestroConsejeria>(`/consejeria/maestros${qs}`)
 }
 
 export async function getRendimientoAlumno(code: string, periodoId?: string) {

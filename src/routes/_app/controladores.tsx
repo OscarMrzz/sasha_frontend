@@ -8,8 +8,10 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { roleLabel } from '#/helpers/permissions'
 import { userMessageFromError } from '#/lib/api'
-import { listRoles, updateRoleStatus, type RoleItem } from '#/services/roles'
-import { listUsers, updateStatus, type ResponseUser } from '#/services/users'
+import { listRoles, updateRoleStatus  } from '#/services/roles'
+import type {RoleItem} from '#/services/roles';
+import { listUsers, updateStatus  } from '#/services/users'
+import type {ResponseUser} from '#/services/users';
 
 export const Route = createFileRoute('/_app/controladores')({ component: ControladoresPage })
 
@@ -49,7 +51,7 @@ function ControladoresPage() {
   const { can } = useCan()
 
   const rolesQuery = useQuery({ queryKey: ['roles'], queryFn: listRoles })
-  const usersQuery = useQuery({ queryKey: ['users'], queryFn: listUsers })
+  const usersQuery = useQuery({ queryKey: ['users'], queryFn: () => listUsers() })
 
   const [confirmRole, setConfirmRole] = useState<RoleItem | null>(null)
   const [confirmUser, setConfirmUser] = useState<ResponseUser | null>(null)

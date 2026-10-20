@@ -3035,6 +3035,31 @@ input.field__input,
   color: var(--sasha-success);
 }
 
+.badge--baja {
+  background: var(--sasha-bg-muted);
+  color: var(--sasha-texto-muted);
+  border: 1px solid var(--sasha-border-fuerte);
+}
+
+/* Personas dadas de baja: se ven, pero atenuadas y sin confundirse con activas. */
+.data-table tr.fila-baja {
+  opacity: 0.55;
+}
+
+.data-table tr.fila-baja .badge--baja,
+.data-table tr.fila-baja .badge {
+  opacity: 1;
+}
+
+.data-card.fila-baja {
+  opacity: 0.55;
+}
+
+.data-card.fila-baja .badge--baja,
+.data-card.fila-baja .badge {
+  opacity: 1;
+}
+
 .badge--warn {
   background: rgba(201, 162, 39, 0.2);
   color: var(--sasha-warning);

@@ -128,6 +128,22 @@ export async function deletePersona(code: string) {
   return apiRequest<{ status: string }>(`/personas/${encodeURIComponent(code)}`, { method: 'DELETE' })
 }
 
+/** Baja lógica forzada: conserva el historial y se puede restaurar. */
+export async function darDeBajaPersona(code: string) {
+  return apiRequest<{ status: string; code: string }>(
+    `/personas/${encodeURIComponent(code)}/baja`,
+    { method: 'POST' },
+  )
+}
+
+/** Reactiva la cadena completa de una persona dada de baja. */
+export async function restaurarPersona(code: string) {
+  return apiRequest<{ status: string; code: string }>(
+    `/personas/${encodeURIComponent(code)}/restaurar`,
+    { method: 'POST' },
+  )
+}
+
 export interface UserFicha {
   user: {
     code: string

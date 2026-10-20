@@ -22,7 +22,8 @@ import {
 } from '#/services/catalogos'
 import { getSugerencia, listMatriculas, reingreso } from '#/services/matricula'
 import type { Matricula, SugerenciaResponse } from '#/services/matricula'
-import { deletePersona } from '#/services/personas'
+import { darDeBajaPersona, restaurarPersona } from '#/services/personas'
+import { esBaja, puedeVerInactivos } from '#/helpers/visibilidad'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/matricula')({
@@ -33,10 +34,11 @@ const col = createColumnHelper<Matricula>()
 
 function MatriculaPage() {
   const qc = useQueryClient()
-  const { can } = useCan()
+  const { can, roles } = useCan()
+  const verInactivos = puedeVerInactivos(roles)
   const { data = [], isLoading } = useQuery({
-    queryKey: ['matriculas'],
-    queryFn: listMatriculas,
+    queryKey: ['matriculas', verInactivos],
+    queryFn: () => listMatriculas({ incluirInactivos: verInactivos }),
   })
   const { data: secciones = [] } = useQuery({
     queryKey: ['secciones'],
@@ -69,8 +71,8 @@ function MatriculaPage() {
   } | null>(null)
   const [editWizard, setEditWizard] = useState<Matricula | null>(null)
   const [verPersona, setVerPersona] = useState<string | null>(null)
-  const [confirmDeletePersona, setConfirmDeletePersona] =
-    useState<Matricula | null>(null)
+  const [confirmBaja, setConfirmBaja] = useState<Matricula | null>(null)
+  const [confirmRestore, setConfirmRestore] = useState<Matricula | null>(null)
 
   useAccionPalette('nuevo-matricula', () => setCreateOpen(true))
 
@@ -105,13 +107,29 @@ function MatriculaPage() {
     onError: (e) => toast.error(userMessageFromError(e)),
   })
 
-  const deletePersonaMut = useMutation({
-    mutationFn: (code: string) => deletePersona(code),
+  const invalidarPersonas = () => {
+    qc.invalidateQueries({ queryKey: ['matriculas'] })
+    qc.invalidateQueries({ queryKey: ['alumnos'] })
+    qc.invalidateQueries({ queryKey: ['users'] })
+    qc.invalidateQueries({ queryKey: ['consejeria-alumnos'] })
+  }
+
+  const bajaMut = useMutation({
+    mutationFn: (code: string) => darDeBajaPersona(code),
     onSuccess: () => {
-      toast.success('Alumno eliminado')
-      setConfirmDeletePersona(null)
-      qc.invalidateQueries({ queryKey: ['matriculas'] })
-      qc.invalidateQueries({ queryKey: ['alumnos'] })
+      toast.success('Alumno dado de baja')
+      setConfirmBaja(null)
+      invalidarPersonas()
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
+
+  const restoreMut = useMutation({
+    mutationFn: (code: string) => restaurarPersona(code),
+    onSuccess: () => {
+      toast.success('Alumno restaurado')
+      setConfirmRestore(null)
+      invalidarPersonas()
     },
     onError: (e) => toast.error(userMessageFromError(e)),
   })
@@ -163,6 +181,16 @@ function MatriculaPage() {
         id: 'jornada',
         header: 'Jornada',
         cell: (i) => jornadaNombre(i.row.original),
+      }),
+      col.display({
+        id: 'estado_alumno',
+        header: 'Alumno',
+        cell: (i) =>
+          esBaja(i.row.original) ? (
+            <span className="badge badge--baja">Dado de baja</span>
+          ) : (
+            <span className="badge badge--ok">Activo</span>
+          ),
       }),
     ],
     [seccionNombre, jornadaNombre],
@@ -225,13 +253,16 @@ function MatriculaPage() {
           seccion: seccionNombre(m),
           jornada: jornadaNombre(m),
           estado: m.status,
+          estado_persona: esBaja(m) ? 'Dado de baja' : 'Activo',
         }))}
+        rowClassName={(m) => (esBaja(m) ? 'fila-baja' : undefined)}
         onRowContextMenu={(row, e) =>
           setCtx({ x: e.clientX, y: e.clientY, row })
         }
         onRowDoubleClick={(row) => {
           // Mismo gate que el ítem «Editar» del menú contextual (ctx-editar).
           if (
+            !esBaja(row) &&
             row.alumno_code &&
             can('matricula:put') &&
             can('personas:put')
@@ -262,37 +293,52 @@ function MatriculaPage() {
               </button>
             </Can>
           ) : null}
-          {ctx.row.alumno_code ? (
+          {ctx.row.alumno_code && esBaja(ctx.row) ? (
             <Can permission="personas:put">
-              <Can permission="matricula:put">
-                <button
-                  type="button"
-                  className="ctx-menu__item"
-                  data-testid="ctx-editar"
-                  onClick={() => {
-                    setEditWizard(ctx.row)
-                    closeCtx()
-                  }}
-                >
-                  Editar
-                </button>
-              </Can>
-            </Can>
-          ) : null}
-          {ctx.row.alumno_code ? (
-            <Can permission="personas:delete">
               <button
                 type="button"
-                className="ctx-menu__item ctx-menu__item--danger"
-                data-testid="ctx-eliminar"
+                className="ctx-menu__item"
+                data-testid="ctx-restaurar"
                 onClick={() => {
-                  setConfirmDeletePersona(ctx.row)
+                  setConfirmRestore(ctx.row)
                   closeCtx()
                 }}
               >
-                Eliminar
+                Restaurar
               </button>
             </Can>
+          ) : null}
+          {ctx.row.alumno_code && !esBaja(ctx.row) ? (
+            <>
+              <Can permission="personas:put">
+                <Can permission="matricula:put">
+                  <button
+                    type="button"
+                    className="ctx-menu__item"
+                    data-testid="ctx-editar"
+                    onClick={() => {
+                      setEditWizard(ctx.row)
+                      closeCtx()
+                    }}
+                  >
+                    Editar
+                  </button>
+                </Can>
+              </Can>
+              <Can permission="personas:put">
+                <button
+                  type="button"
+                  className="ctx-menu__item ctx-menu__item--danger"
+                  data-testid="ctx-dar-de-baja"
+                  onClick={() => {
+                    setConfirmBaja(ctx.row)
+                    closeCtx()
+                  }}
+                >
+                  Dar de baja
+                </button>
+              </Can>
+            </>
           ) : null}
         </div>
       ) : null}
@@ -472,16 +518,28 @@ function MatriculaPage() {
       ) : null}
 
       <ConfirmDialog
-        open={Boolean(confirmDeletePersona)}
-        title="Eliminar alumno"
-        message={`¿Dar de baja al alumno ${confirmDeletePersona?.alumno_code ?? confirmDeletePersona?.alumno_id}? Es una eliminación lógica: el registro no se borra, queda inactivo.`}
+        open={Boolean(confirmBaja)}
+        title="Dar de baja"
+        message={`¿Dar de baja al alumno ${confirmBaja?.alumno_code ?? confirmBaja?.alumno_id}? Se ocultará de los listados y se conservará todo su historial. Podrás restaurarlo cuando quieras.`}
         danger
-        confirmLabel="Eliminar"
+        confirmLabel="Dar de baja"
         onConfirm={() => {
-          const code = confirmDeletePersona?.alumno_code
-          if (code) deletePersonaMut.mutate(code)
+          const code = confirmBaja?.alumno_code
+          if (code) bajaMut.mutate(code)
         }}
-        onCancel={() => setConfirmDeletePersona(null)}
+        onCancel={() => setConfirmBaja(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirmRestore)}
+        title="Restaurar alumno"
+        message={`¿Restaurar al alumno ${confirmRestore?.alumno_code ?? confirmRestore?.alumno_id}? Volverá a aparecer en los listados.`}
+        confirmLabel="Restaurar"
+        onConfirm={() => {
+          const code = confirmRestore?.alumno_code
+          if (code) restoreMut.mutate(code)
+        }}
+        onCancel={() => setConfirmRestore(null)}
       />
 
       <ConfirmDialog

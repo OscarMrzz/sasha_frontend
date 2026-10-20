@@ -3,16 +3,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { RequirePermission, Can } from '#/components/gates/Can'
+import { RequirePermission, Can, useCan } from '#/components/gates/Can'
 import { PersonaEditModal } from '#/components/personas/PersonaEditModal'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
-import { Modal } from '#/components/ui/Modal'
 import { UserFichaModal } from '#/components/usuarios/UserFichaModal'
-import { ApiError, userMessageFromError } from '#/lib/api'
+import { userMessageFromError } from '#/lib/api'
 import { listMaestrosConsejeria  } from '#/services/consejeria'
 import type {MaestroConsejeria} from '#/services/consejeria';
-import { deletePersona } from '#/services/personas'
+import { darDeBajaPersona, restaurarPersona } from '#/services/personas'
+import { esBaja, puedeVerInactivos } from '#/helpers/visibilidad'
 
 export const Route = createFileRoute('/_app/consejeria/maestros')({ component: MaestrosConsejeriaPage })
 
@@ -20,15 +20,17 @@ const col = createColumnHelper<MaestroConsejeria>()
 
 function MaestrosConsejeriaPage() {
   const qc = useQueryClient()
-  const { data = [], isLoading } = useQuery({ queryKey: ['consejeria-maestros'], queryFn: listMaestrosConsejeria })
+  const { roles } = useCan()
+  const verInactivos = puedeVerInactivos(roles)
+  const { data = [], isLoading } = useQuery({
+    queryKey: ['consejeria-maestros', verInactivos],
+    queryFn: () => listMaestrosConsejeria({ incluirInactivos: verInactivos }),
+  })
   const [ctx, setCtx] = useState<{ x: number; y: number; row: MaestroConsejeria } | null>(null)
   const [ver, setVer] = useState<string | null>(null)
   const [editar, setEditar] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<MaestroConsejeria | null>(null)
-  const [aviso, setAviso] = useState<string | null>(null)
-
-  const mensajeVinculado = (m: MaestroConsejeria) =>
-    `No se puede eliminar a ${m.nombre} (${m.codigo}) porque tiene clases asignadas. Quita primero sus asignaciones en «Asignación docente».`
+  const [confirmBaja, setConfirmBaja] = useState<MaestroConsejeria | null>(null)
+  const [confirmRestore, setConfirmRestore] = useState<MaestroConsejeria | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -37,22 +39,30 @@ function MaestrosConsejeriaPage() {
     return () => window.removeEventListener('click', closeCtx)
   }, [ctx, closeCtx])
 
-  const deleteMut = useMutation({
-    mutationFn: (code: string) => deletePersona(code),
+  const invalidar = () => {
+    qc.invalidateQueries({ queryKey: ['consejeria-maestros'] })
+    qc.invalidateQueries({ queryKey: ['maestros'] })
+    qc.invalidateQueries({ queryKey: ['users'] })
+  }
+
+  const bajaMut = useMutation({
+    mutationFn: (code: string) => darDeBajaPersona(code),
     onSuccess: () => {
-      toast.success('Maestro eliminado')
-      setConfirmDelete(null)
-      qc.invalidateQueries({ queryKey: ['consejeria-maestros'] })
-      qc.invalidateQueries({ queryKey: ['maestros'] })
+      toast.success('Maestro dado de baja')
+      setConfirmBaja(null)
+      invalidar()
     },
-    onError: (e) => {
-      setConfirmDelete(null)
-      if (e instanceof ApiError && e.status === 409) {
-        setAviso(e.message)
-      } else {
-        toast.error(userMessageFromError(e))
-      }
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
+
+  const restoreMut = useMutation({
+    mutationFn: (code: string) => restaurarPersona(code),
+    onSuccess: () => {
+      toast.success('Maestro restaurado')
+      setConfirmRestore(null)
+      invalidar()
     },
+    onError: (e) => toast.error(userMessageFromError(e)),
   })
 
   const columns = useMemo(
@@ -68,6 +78,16 @@ function MaestrosConsejeriaPage() {
             </span>
           </>
         ),
+      }),
+      col.display({
+        id: 'estado_persona',
+        header: 'Estado',
+        cell: (i) =>
+          esBaja(i.row.original) ? (
+            <span className="badge badge--baja">Dado de baja</span>
+          ) : (
+            <span className="badge badge--ok">Activo</span>
+          ),
       }),
       col.accessor('telefono', { header: 'Teléfono', cell: (i) => i.getValue() || '—' }),
       col.accessor((r) => r.cursos.join(', '), {
@@ -132,7 +152,9 @@ function MaestrosConsejeriaPage() {
             clases: m.clases,
             cursos: m.cursos.join('; '),
             grados: m.grados.join('; '),
+            estado_persona: esBaja(m) ? 'Dado de baja' : 'Activo',
           }))}
+          rowClassName={(m) => (esBaja(m) ? 'fila-baja' : undefined)}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
           onRowDoubleClick={(row) => setVer(row.codigo)}
         />
@@ -151,36 +173,50 @@ function MaestrosConsejeriaPage() {
           >
             Ver
           </button>
-          <Can permission="personas:put">
-            <button
-              type="button"
-              className="ctx-menu__item"
-              data-testid="ctx-editar"
-              onClick={() => {
-                setEditar(ctx.row.codigo)
-                closeCtx()
-              }}
-            >
-              Editar
-            </button>
-          </Can>
-          <Can permission="personas:delete">
-            <button
-              type="button"
-              className="ctx-menu__item ctx-menu__item--danger"
-              data-testid="ctx-eliminar"
-              onClick={() => {
-                if (ctx.row.clases > 0) {
-                  setAviso(mensajeVinculado(ctx.row))
-                } else {
-                  setConfirmDelete(ctx.row)
-                }
-                closeCtx()
-              }}
-            >
-              Eliminar
-            </button>
-          </Can>
+          {esBaja(ctx.row) ? (
+            <Can permission="personas:put">
+              <button
+                type="button"
+                className="ctx-menu__item"
+                data-testid="ctx-restaurar"
+                onClick={() => {
+                  setConfirmRestore(ctx.row)
+                  closeCtx()
+                }}
+              >
+                Restaurar
+              </button>
+            </Can>
+          ) : (
+            <>
+              <Can permission="personas:put">
+                <button
+                  type="button"
+                  className="ctx-menu__item"
+                  data-testid="ctx-editar"
+                  onClick={() => {
+                    setEditar(ctx.row.codigo)
+                    closeCtx()
+                  }}
+                >
+                  Editar
+                </button>
+              </Can>
+              <Can permission="personas:put">
+                <button
+                  type="button"
+                  className="ctx-menu__item ctx-menu__item--danger"
+                  data-testid="ctx-dar-de-baja"
+                  onClick={() => {
+                    setConfirmBaja(ctx.row)
+                    closeCtx()
+                  }}
+                >
+                  Dar de baja
+                </button>
+              </Can>
+            </>
+          )}
         </div>
       ) : null}
 
@@ -198,30 +234,23 @@ function MaestrosConsejeriaPage() {
       ) : null}
 
       <ConfirmDialog
-        open={Boolean(confirmDelete)}
-        title="Eliminar maestro"
-        message={`¿Dar de baja al maestro ${confirmDelete?.codigo} (${confirmDelete?.nombre})? Es una eliminación lógica: el registro no se borra, queda inactivo.`}
+        open={Boolean(confirmBaja)}
+        title="Dar de baja"
+        message={`¿Dar de baja al maestro ${confirmBaja?.codigo} (${confirmBaja?.nombre})? Se ocultará de los listados y se conservará todo su historial. Podrás restaurarlo cuando quieras.`}
         danger
-        confirmLabel="Eliminar"
-        onConfirm={() => confirmDelete && deleteMut.mutate(confirmDelete.codigo)}
-        onCancel={() => setConfirmDelete(null)}
+        confirmLabel="Dar de baja"
+        onConfirm={() => confirmBaja && bajaMut.mutate(confirmBaja.codigo)}
+        onCancel={() => setConfirmBaja(null)}
       />
 
-      <Modal
-        open={Boolean(aviso)}
-        title="No se puede eliminar"
-        onClose={() => setAviso(null)}
-        testId="maestro-no-eliminar-modal"
-        footer={
-          <button type="button" className="btn btn--primary" onClick={() => setAviso(null)}>
-            Entendido
-          </button>
-        }
-      >
-        <p className="texto-primary" style={{ margin: 0 }}>
-          {aviso}
-        </p>
-      </Modal>
+      <ConfirmDialog
+        open={Boolean(confirmRestore)}
+        title="Restaurar maestro"
+        message={`¿Restaurar al maestro ${confirmRestore?.codigo} (${confirmRestore?.nombre})? Volverá a aparecer en los listados y en los comboboxes.`}
+        confirmLabel="Restaurar"
+        onConfirm={() => confirmRestore && restoreMut.mutate(confirmRestore.codigo)}
+        onCancel={() => setConfirmRestore(null)}
+      />
     </RequirePermission>
   )
 }

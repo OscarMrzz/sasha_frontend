@@ -23,6 +23,7 @@ export interface ResponseUser {
   roles: string[]
   statususer: string
   statusrol: string
+  dado_de_baja?: boolean
   message?: string
 }
 
@@ -33,8 +34,9 @@ export interface PermisoUsuario {
   permitido: boolean
 }
 
-export async function listUsers() {
-  return apiRequestList<ResponseUser>('/users/')
+export async function listUsers(opts?: { incluirInactivos?: boolean }) {
+  const qs = opts?.incluirInactivos ? '?incluir_inactivos=true' : ''
+  return apiRequestList<ResponseUser>(`/users/${qs}`)
 }
 
 export interface CredencialInfo {
