@@ -375,6 +375,12 @@
     padding: 0 1rem;
   }
 
+  /* El logo del gato se oculta en móvil: deja espacio para los botones
+     Anterior / Ahora / Siguiente sin amontonarse con la marca y la campana. */
+  .app-shell__top-brand-cat {
+    display: none;
+  }
+
   .app-shell__burger {
     display: inline-flex;
   }
