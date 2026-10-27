@@ -4,13 +4,15 @@ import { CheckSquare, Clock, FilePlus, MoreVertical, StickyNote, Users, BookOpen
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AsistenciaGridModal } from '#/components/asistencia/AsistenciaGridModal'
+import { AsistenciaSeccionModal } from '#/components/asistencia/AsistenciaSeccionModal'
 import { RequirePermission, useCan } from '#/components/gates/Can'
 import { NotasDrawer } from '#/components/maestro/NotasDrawer'
 import { TareaRevisionModal } from '#/components/tareas/TareaRevisionModal'
 import { writeLastAsignacionId } from '#/lib/last-asignacion'
 import { userMessageFromError } from '#/lib/api'
 import { getMaestroDashboard } from '#/services/maestro-dashboard'
-import { listMateriasAsistencia, type AsistenciaMateria } from '#/services/asistencia'
+import { listMateriasAsistencia } from '#/services/asistencia'
+import type { AsistenciaSeccion } from '#/services/asistencia'
 import { createNota, listNotas } from '#/services/notas'
 import { updatePlanItem } from '#/services/planestudio'
 
@@ -132,6 +134,10 @@ function MaestroDashboardPage() {
   const { can } = useCan()
   const qc = useQueryClient()
   const [pasar, setPasar] = useState(false)
+  const [pasarSeccion, setPasarSeccion] = useState<{
+    seccion: AsistenciaSeccion
+    mode: 'pasar' | 'ver'
+  } | null>(null)
   const [notasOpen, setNotasOpen] = useState(false)
   const [notaFocusId, setNotaFocusId] = useState<string | null>(null)
   const [revisarId, setRevisarId] = useState<string | null>(null)
@@ -180,9 +186,7 @@ function MaestroDashboardPage() {
     queryKey: ['asistencia-materias'],
     queryFn: listMateriasAsistencia,
   })
-  const materiaRow = materias.find((m) => m.asignacion_docente_id === asignacionId) as
-    | AsistenciaMateria
-    | undefined
+  const materiaRow = materias.find((m) => m.asignacion_docente_id === asignacionId)
 
   const { data, isLoading, error, isError } = useQuery({
     queryKey: ['maestro-dashboard', asignacionId, clock.fecha],
@@ -229,6 +233,32 @@ function MaestroDashboardPage() {
         return 'Sin bloque hoy en el horario'
     }
   })()
+
+  const general = data?.asistencia_general
+  const esSeccion = (data?.materia.modo_asistencia ?? 'CLASE') === 'SECCION'
+  const seccionGeneral: AsistenciaSeccion | null =
+    general
+      ? {
+          seccion_id: general.seccion_id,
+          seccion_nombre: general.seccion_nombre,
+          grado_nombre: data.materia.grado_nombre,
+          modalidad_nombre: data.materia.modalidad_nombre,
+          periodo_academico_id: '',
+          periodo_nombre: data.materia.periodo_nombre,
+          alumnos: general.alumnos,
+          clases_hoy: general.clases_afectadas,
+          modo_asistencia: 'SECCION',
+          responsable: general.responsable_code
+            ? {
+                codigo: general.responsable_code,
+                nombre: general.responsable_nombre ?? '',
+              }
+            : undefined,
+          puede_editar: general.puede_editar,
+          marcas_hoy: general.marcas,
+          estado_hoy: general.pasada ? 'lista' : 'pendiente',
+        }
+      : null
 
   const openNota = (id?: string) => {
     setNotaFocusId(id ?? null)
@@ -381,7 +411,43 @@ function MaestroDashboardPage() {
                   testId="mdash-asistencia-ratio"
                 />
               </div>
-              {can('asistencia:post') ? (
+              {esSeccion ? (
+                <>
+                  {general?.puede_editar ? (
+                    <button
+                      type="button"
+                      className="btn btn--primary btn--sm"
+                      data-testid="mdash-pasar-asistencia-seccion"
+                      onClick={() =>
+                        seccionGeneral && setPasarSeccion({ seccion: seccionGeneral, mode: 'pasar' })
+                      }
+                    >
+                      <CheckSquare size={14} /> Pasar asistencia
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        data-testid="mdash-ver-asistencia-seccion"
+                        onClick={() =>
+                          seccionGeneral && setPasarSeccion({ seccion: seccionGeneral, mode: 'ver' })
+                        }
+                      >
+                        Ver asistencia
+                      </button>
+                      <p
+                        className="texto-muted"
+                        style={{ margin: '0.4rem 0 0', fontSize: '0.78rem' }}
+                        data-testid="mdash-asistencia-responsable"
+                      >
+                        La asistencia de esta sección la registra{' '}
+                        {general?.responsable_nombre || 'el responsable'}.
+                      </p>
+                    </>
+                  )}
+                </>
+              ) : can('asistencia:post') ? (
                 <button
                   type="button"
                   className="btn btn--primary btn--sm"
@@ -573,6 +639,14 @@ function MaestroDashboardPage() {
 
       {pasar && materiaRow ? (
         <AsistenciaGridModal materia={materiaRow} mode="pasar" onClose={() => setPasar(false)} />
+      ) : null}
+
+      {pasarSeccion ? (
+        <AsistenciaSeccionModal
+          seccion={pasarSeccion.seccion}
+          mode={pasarSeccion.mode}
+          onClose={() => setPasarSeccion(null)}
+        />
       ) : null}
 
       <NotasDrawer

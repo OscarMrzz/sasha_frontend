@@ -3,7 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { AsistenciaGridModal, type AsistenciaGridMode } from '#/components/asistencia/AsistenciaGridModal'
+import { AsistenciaGridModal } from '#/components/asistencia/AsistenciaGridModal'
+import type { AsistenciaGridMode } from '#/components/asistencia/AsistenciaGridModal'
+import { AsistenciaSeccionModal } from '#/components/asistencia/AsistenciaSeccionModal'
 import { PuntosAsistenciaModal } from '#/components/asistencia/PuntosAsistenciaModal'
 import { RequirePermission, useCan } from '#/components/gates/Can'
 import { DataTable } from '#/components/ui/DataTable'
@@ -15,14 +17,37 @@ import {
   getInasistenciaDetalle,
   listInasistencias,
   listMateriasAsistencia,
-  type AsistenciaMateria,
-  type InasistenciaDetalleResponse,
-  type InasistenciaResumen,
+} from '#/services/asistencia'
+import type {
+  AsistenciaMateria,
+  AsistenciaSeccion,
+  InasistenciaDetalleResponse,
+  InasistenciaResumen,
 } from '#/services/asistencia'
 
 export const Route = createFileRoute('/_app/asistencia')({ component: AsistenciaPage })
 
 const col = createColumnHelper<AsistenciaMateria>()
+
+function seccionDesdeMateria(m: AsistenciaMateria, puedeEditar: boolean): AsistenciaSeccion {
+  return {
+    seccion_id: m.seccion_id ?? '',
+    seccion_nombre: m.seccion_nombre,
+    grado_nombre: m.grado_nombre,
+    modalidad_nombre: m.modalidad_nombre,
+    periodo_academico_id: m.periodo_academico_id,
+    periodo_nombre: m.periodo_nombre,
+    alumnos: 0,
+    clases_hoy: 0,
+    modo_asistencia: 'SECCION',
+    responsable: m.responsable_code
+      ? { codigo: m.responsable_code, nombre: m.responsable_nombre ?? '' }
+      : undefined,
+    puede_editar: puedeEditar,
+    marcas_hoy: 0,
+    estado_hoy: 'pendiente',
+  }
+}
 
 function AsistenciaPage() {
   const { can, roles } = useCan()
@@ -36,6 +61,10 @@ function AsistenciaPage() {
   const [ctx, setCtx] = useState<{ x: number; y: number; row: AsistenciaMateria } | null>(null)
   const [gridMateria, setGridMateria] = useState<AsistenciaMateria | null>(null)
   const [gridMode, setGridMode] = useState<AsistenciaGridMode>('pasar')
+  const [gridSeccion, setGridSeccion] = useState<{
+    seccion: AsistenciaSeccion
+    mode: AsistenciaGridMode
+  } | null>(null)
   const [inaMateria, setInaMateria] = useState<AsistenciaMateria | null>(null)
   const [puntosMateria, setPuntosMateria] = useState<AsistenciaMateria | null>(null)
 
@@ -47,19 +76,33 @@ function AsistenciaPage() {
     return () => window.removeEventListener('click', h)
   }, [ctx, closeCtx])
 
+  const esSeccion = (row: AsistenciaMateria) => (row.modo_asistencia ?? 'CLASE') === 'SECCION'
+
   const openPasar = (row: AsistenciaMateria) => {
     if (!canPost) return
+    if (esSeccion(row)) {
+      setGridSeccion({ seccion: seccionDesdeMateria(row, true), mode: 'editar' })
+      return
+    }
     setGridMode('pasar')
     setGridMateria(row)
   }
 
   const openEditar = (row: AsistenciaMateria) => {
     if (!canPost) return
+    if (esSeccion(row)) {
+      setGridSeccion({ seccion: seccionDesdeMateria(row, true), mode: 'editar' })
+      return
+    }
     setGridMode('editar')
     setGridMateria(row)
   }
 
   const openVer = (row: AsistenciaMateria) => {
+    if (esSeccion(row)) {
+      setGridSeccion({ seccion: seccionDesdeMateria(row, false), mode: 'ver' })
+      return
+    }
     setGridMode('ver')
     setGridMateria(row)
   }
@@ -70,6 +113,26 @@ function AsistenciaPage() {
       col.accessor('grado_nombre', { header: 'Grado', cell: (i) => i.getValue() || '—' }),
       col.accessor('modalidad_nombre', { header: 'Modalidad', cell: (i) => i.getValue() || '—' }),
       col.accessor('seccion_nombre', { header: 'Sección', cell: (i) => i.getValue() || '—' }),
+      col.accessor('modo_asistencia', {
+        header: 'Lista',
+        cell: (i) => {
+          const m = i.row.original
+          const modo = m.modo_asistencia ?? 'CLASE'
+          return (
+            <span>
+              <span className={`badge ${modo === 'SECCION' ? 'badge--ok' : 'badge--muted'}`}>
+                {modo === 'SECCION' ? 'Por sección' : 'Por clase'}
+              </span>
+              {modo === 'SECCION' ? (
+                <span className="texto-muted" style={{ marginLeft: '0.4rem', fontSize: '0.8rem' }}>
+                  {m.responsable_code ? `${m.responsable_code} · ` : ''}
+                  {m.responsable_nombre || 'Sin responsable'}
+                </span>
+              ) : null}
+            </span>
+          )
+        },
+      }),
     ],
     [],
   )
@@ -92,6 +155,13 @@ function AsistenciaPage() {
         getValue: (r: AsistenciaMateria) => r.curso_id || r.curso_nombre,
         getLabel: (r: AsistenciaMateria) => r.curso_nombre,
       },
+      {
+        id: 'modo',
+        label: 'Lista',
+        getValue: (r: AsistenciaMateria) => r.modo_asistencia ?? 'CLASE',
+        getLabel: (r: AsistenciaMateria) =>
+          (r.modo_asistencia ?? 'CLASE') === 'SECCION' ? 'Por sección' : 'Por clase',
+      },
     ],
     [],
   )
@@ -101,14 +171,17 @@ function AsistenciaPage() {
   if (isMaestroRole(roles)) {
     const lastId = readLastAsignacionId()
     const materia =
-      data.find((m) => m.asignacion_docente_id === lastId) ?? data[0]
+      data.length === 0
+        ? undefined
+        : (data.find((m) => m.asignacion_docente_id === lastId) ?? data[0])
+    const materiaEsSeccion = (materia?.modo_asistencia ?? 'CLASE') === 'SECCION'
     return (
       <RequirePermission permission="asistencia:get">
         {materia ? (
           <AsistenciaGridModal
             key={materia.asignacion_docente_id}
             materia={materia}
-            mode={canPost ? 'editar' : 'ver'}
+            mode={materiaEsSeccion ? 'ver' : canPost ? 'editar' : 'ver'}
             inline
             onClose={() => {}}
             extraActions={
@@ -121,7 +194,19 @@ function AsistenciaPage() {
                 >
                   Ver faltas
                 </button>
-                {canPost ? (
+                {materiaEsSeccion && materia.es_responsable ? (
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    data-testid="asistencia-seccion-acceso"
+                    onClick={() =>
+                      setGridSeccion({ seccion: seccionDesdeMateria(materia, true), mode: 'pasar' })
+                    }
+                  >
+                    Pasar asistencia de la sección
+                  </button>
+                ) : null}
+                {canPost && !materiaEsSeccion ? (
                   <button
                     type="button"
                     className="btn btn--ghost"
@@ -137,6 +222,13 @@ function AsistenciaPage() {
         ) : (
           <div className="empty-state">No tienes clases asignadas</div>
         )}
+        {gridSeccion ? (
+          <AsistenciaSeccionModal
+            seccion={gridSeccion.seccion}
+            mode={gridSeccion.mode}
+            onClose={() => setGridSeccion(null)}
+          />
+        ) : null}
         {inaMateria ? (
           <InasistenciasModal materia={inaMateria} onClose={() => setInaMateria(null)} />
         ) : null}
@@ -161,6 +253,11 @@ function AsistenciaPage() {
           grado: m.grado_nombre,
           modalidad: m.modalidad_nombre,
           seccion: m.seccion_nombre,
+          lista: (m.modo_asistencia ?? 'CLASE') === 'SECCION' ? 'Por sección' : 'Por clase',
+          responsable:
+            (m.modo_asistencia ?? 'CLASE') === 'SECCION'
+              ? `${m.responsable_code ?? ''} ${m.responsable_nombre ?? ''}`.trim()
+              : '',
         }))}
         onRowDoubleClick={(row) => openPasar(row)}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
@@ -227,6 +324,14 @@ function AsistenciaPage() {
         />
       ) : null}
 
+      {gridSeccion ? (
+        <AsistenciaSeccionModal
+          seccion={gridSeccion.seccion}
+          mode={gridSeccion.mode}
+          onClose={() => setGridSeccion(null)}
+        />
+      ) : null}
+
       {inaMateria ? (
         <InasistenciasModal materia={inaMateria} onClose={() => setInaMateria(null)} />
       ) : null}
@@ -247,21 +352,21 @@ function InasistenciasModal({
   const [detalle, setDetalle] = useState<InasistenciaDetalleResponse | null>(null)
 
   useEffect(() => {
-    let cancelled = false
+    const state = { cancelled: false }
     ;(async () => {
       setLoading(true)
       try {
         const rows = await listInasistencias(materia.asignacion_docente_id)
-        if (!cancelled) setList(rows)
+        if (!state.cancelled) setList(rows)
       } catch (e) {
         toast.error(userMessageFromError(e))
-        if (!cancelled) setList([])
+        if (!state.cancelled) setList([])
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!state.cancelled) setLoading(false)
       }
     })()
     return () => {
-      cancelled = true
+      state.cancelled = true
     }
   }, [materia.asignacion_docente_id])
 
@@ -346,7 +451,7 @@ function InasistenciasModal({
             <p className="texto-muted" style={{ marginTop: 0 }}>
               {detalle.codigo} · {detalle.nombre}
             </p>
-            {(detalle.items ?? []).length === 0 ? (
+            {detalle.items.length === 0 ? (
               <div className="empty-state">Sin registros</div>
             ) : (
               <table className="data-table">
@@ -355,6 +460,7 @@ function InasistenciasModal({
                     <th>Fecha</th>
                     <th>Día</th>
                     <th>Tipo</th>
+                    <th>Registró</th>
                     <th>Obs.</th>
                   </tr>
                 </thead>
@@ -365,6 +471,11 @@ function InasistenciasModal({
                       <td>{it.dia_semana}</td>
                       <td>
                         {it.letra} — {it.nombre_tipo}
+                      </td>
+                      <td data-testid="asistencia-detalle-registro">
+                        {it.maestro_nombre
+                          ? `${it.maestro_nombre}${it.maestro_code ? ` (${it.maestro_code})` : ''}`
+                          : '—'}
                       </td>
                       <td>{it.observaciones || '—'}</td>
                     </tr>

@@ -18,16 +18,23 @@ export interface Asistencia {
   tipo_codigo?: string
 }
 
+export type ModoAsistencia = 'CLASE' | 'SECCION'
+
 export interface AsistenciaMateria {
   asignacion_docente_id: string
   curso_id: string
   curso_nombre: string
   grado_nombre: string
   modalidad_nombre: string
+  seccion_id?: string
   seccion_nombre: string
   periodo_academico_id: string
   periodo_nombre: string
   maestro_nombre?: string
+  modo_asistencia?: ModoAsistencia
+  responsable_nombre?: string
+  responsable_code?: string
+  es_responsable?: boolean
 }
 
 export interface SemanaDia {
@@ -43,6 +50,12 @@ export interface SemanaMarca {
   /** La puso una excusa registrada: no se puede cambiar. */
   bloqueada?: boolean
   excusa_tipo?: string
+  /** Snapshot histórico: maestro que pasó lista. */
+  maestro_nombre?: string
+  maestro_code?: string
+  registrado_por?: string
+  registrado_por_code?: string
+  mixto?: boolean
 }
 
 export interface SemanaAlumno {
@@ -62,6 +75,70 @@ export interface SemanaResponse {
   alumnos: SemanaAlumno[]
 }
 
+export interface ActorAsistencia {
+  codigo: string
+  nombre: string
+}
+
+export interface AsistenciaSeccion {
+  seccion_id: string
+  seccion_nombre: string
+  grado_nombre: string
+  modalidad_nombre: string
+  periodo_academico_id: string
+  periodo_nombre: string
+  alumnos: number
+  clases_hoy: number
+  modo_asistencia: 'SECCION'
+  responsable?: ActorAsistencia
+  puede_editar: boolean
+  marcas_hoy: number
+  estado_hoy: 'pendiente' | 'incompleta' | 'lista' | 'sin_clase'
+}
+
+export interface SemanaSeccionDia extends SemanaDia {
+  tiene_clases: boolean
+  pasado: boolean
+  clases: number
+  registrado_por?: ActorAsistencia
+  maestro_registro?: ActorAsistencia
+  registrado_en?: string
+}
+
+export interface SemanaSeccionMarca {
+  fecha: string
+  tipo_codigo?: string | null
+  letra: string
+  mixto?: boolean
+  bloqueada?: boolean
+  excusa_tipo?: string
+  origen?: string
+}
+
+export interface SemanaSeccionAlumno {
+  alumno_id: string
+  codigo: string
+  nombre: string
+  marcas: SemanaSeccionMarca[]
+}
+
+export interface SemanaSeccionResponse {
+  seccion_id: string
+  seccion_nombre: string
+  grado_nombre: string
+  modalidad_nombre: string
+  periodo_academico_id: string
+  periodo_nombre: string
+  fecha_ref: string
+  semana_inicio: string
+  semana_fin: string
+  modo_asistencia: 'SECCION'
+  puede_editar: boolean
+  responsable?: ActorAsistencia
+  dias: SemanaSeccionDia[]
+  alumnos: SemanaSeccionAlumno[]
+}
+
 export interface InasistenciaResumen {
   alumno_id: string
   codigo: string
@@ -79,6 +156,8 @@ export interface InasistenciaDetalleItem {
   letra: string
   nombre_tipo: string
   observaciones?: string
+  maestro_nombre?: string
+  maestro_code?: string
 }
 
 export interface InasistenciaDetalleResponse {
@@ -112,6 +191,16 @@ export function nextLetra(actual: string): string {
   return LETRA_CYCLE[(idx + 1) % LETRA_CYCLE.length]
 }
 
+/** En modo sección no hay celda vacía: A → T → E → F → A. */
+export const LETRA_CYCLE_SECCION = ['A', 'T', 'E', 'F'] as const
+
+export function nextLetraSeccion(actual: string): string {
+  const letra = actual || 'A'
+  const i = LETRA_CYCLE_SECCION.indexOf(letra as (typeof LETRA_CYCLE_SECCION)[number])
+  const idx = i < 0 ? 0 : i
+  return LETRA_CYCLE_SECCION[(idx + 1) % LETRA_CYCLE_SECCION.length]
+}
+
 export interface CeldaLista {
   alumno_id: string
   fecha: string
@@ -135,6 +224,32 @@ export async function getSemanaAsistencia(asignacionDocenteId: string, fecha?: s
   const qs = new URLSearchParams({ asignacion_docente_id: asignacionDocenteId })
   if (fecha) qs.set('fecha', fecha)
   return apiRequest<SemanaResponse>(`/asistencia/semana?${qs}`)
+}
+
+export async function getSeccionesAsistencia() {
+  return apiRequest<{ secciones: AsistenciaSeccion[] }>('/asistencia/seccion/mias')
+}
+
+export async function getSemanaSeccion(seccionId: string, fecha?: string) {
+  const qs = new URLSearchParams({ seccion_id: seccionId })
+  if (fecha) qs.set('fecha', fecha)
+  return apiRequest<SemanaSeccionResponse>(`/asistencia/seccion/semana?${qs}`)
+}
+
+export async function guardarListaSeccion(
+  seccionId: string,
+  fecha: string,
+  items: { alumno_id: string; tipo_codigo: string }[],
+) {
+  return apiRequest<{
+    guardadas: number
+    alumnos_guardados: number
+    clases_afectadas: number
+    bloqueadas: Array<{ alumno_id: string; asignacion_docente_id: string; excusa_tipo: string }>
+  }>('/asistencia/seccion/lote', {
+    method: 'POST',
+    body: { seccion_id: seccionId, fecha, items },
+  })
 }
 
 export async function putCeldaAsistencia(body: {

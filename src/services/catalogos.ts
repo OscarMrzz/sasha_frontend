@@ -53,6 +53,8 @@ export interface ModalidadCreate {
   cantidad_recreos: number
 }
 
+export type ModoAsistencia = 'CLASE' | 'SECCION'
+
 export interface Seccion {
   id: string
   codigo: string
@@ -63,6 +65,10 @@ export interface Seccion {
   codigo_sace?: string
   detalles?: string
   cupo_maximo?: number
+  modo_asistencia?: ModoAsistencia
+  maestro_responsable_id?: string | null
+  maestro_responsable_nombre?: string | null
+  maestro_responsable_code?: string | null
 }
 
 export interface SeccionCreate {
@@ -73,6 +79,8 @@ export interface SeccionCreate {
   codigo_sace?: string
   detalles?: string
   cupo_maximo?: number
+  modo_asistencia?: ModoAsistencia
+  maestro_responsable_id?: string | null
 }
 
 export interface CursoTextoItem {

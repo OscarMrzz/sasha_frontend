@@ -250,7 +250,7 @@ Calendario (hora clase, periodo, parciales, recreos) van en cada **modalidad** (
 |---------|--------|
 | Grados | `/catalogos/grados` (+ `/{id}`) |
 | Modalidades | `/catalogos/modalidades` (+ `/{id}`) — `hora_inicio`, `hora_fin`, `dias`, `duracion_hora_clase_minutos`, `duracion_periodo_meses`, `cantidad_parciales_por_periodo`, `duracion_parcial_dias`, `duracion_recreo_minutos`, `cantidad_recreos` |
-| Secciones | `/catalogos/secciones` (+ `/{id}`) — `grado_id`, `modalidad_id` |
+| Secciones | `/catalogos/secciones` (+ `/{id}`) — `grado_id`, `modalidad_id`, `modo_asistencia` (`CLASE`/`SECCION`), `maestro_responsable_id` |
 | Cursos | `/catalogos/cursos` (+ `/{id}`) — `horas_semana_minimas` |
 | Periodos | `/catalogos/periodos` (+ `/{id}`) |
 
@@ -309,6 +309,16 @@ POST /asistencia/
 ```
 
 Un registro o `{ "items": [ { "alumno_id", "asignacion_docente_id", "fecha", "tipo_codigo": "presente|injustificada|justificada" } ] }`
+
+**Modo por sección (migración 065):**
+
+- `GET /asistencia/seccion/mias` → `{ secciones: AsistenciaSeccion[] }` (responsable; admin ve todas).
+- `GET /asistencia/seccion/semana?seccion_id=&fecha=` → días, alumnos, marca agregada por alumno/día, `maestro_registro` histórico y `puede_editar`.
+- `POST /asistencia/seccion/lote` `{ seccion_id, fecha, items: [{ alumno_id, tipo_codigo, observaciones? }] }` → guarda la lista completa y replica a las clases con horario ese día.
+- `PUT /asistencia/seccion/celda` `{ seccion_id, alumno_id, fecha, tipo_codigo }` → corrección puntual.
+- En modo `SECCION`, `POST /asistencia/` y `PUT /asistencia/celda` responden **409**.
+- `GET /catalogos/secciones` devuelve `modo_asistencia` (`CLASE`/`SECCION`), `maestro_responsable_id`, `maestro_responsable_nombre` y `maestro_responsable_code`; `POST/PUT /catalogos/secciones` acepta `modo_asistencia` y `maestro_responsable_id` (solo admin/admin temporal).
+- `GET /asistencia/materias` agrega `seccion_id`, `modo_asistencia`, `responsable_nombre`, `responsable_code` y `es_responsable`; `GET /maestro/dashboard` agrega `asistencia_general` y los mismos campos en `materia`. El detalle de inasistencias agrega `maestro_nombre`/`maestro_code`.
 
 ### Tareas (`tareas:get|post`)
 

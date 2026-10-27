@@ -20,6 +20,14 @@ Mapa de módulos y flujos: [`MAPA.md`](MAPA.md).
 
 ## 2. Bitácora
 
+### 2026-10-26 — Asistencia configurable por sección
+
+- Formulario de sección: modo «Por clase» (por defecto) / «Por sección» + maestro responsable; solo admin/admin temporal. Tabla con columna/filtro «Lista».
+- Hub y dashboard del maestro: «Pasar asistencia» para el responsable de una sección; «Pasar lista» por clase se oculta en modo sección; el maestro de clase ve «Ver asistencia» y quién la registra.
+- Grilla general (`AsistenciaSeccionModal`) reutiliza la grilla: una marca por alumno/día, A/T/E/F sin vacío, «Guardar lista», «Tomada por» histórico y «Clases afectadas». Endpoints `/asistencia/seccion/*`.
+- `/asistencia`: columna «Lista», acción de sección y detalle de inasistencias con «Registró».
+- Specs: `spec/023-asistencia-por-seccion` (frontend) y `spec/015-asistencia-por-seccion` (backend, migración 065 creada sin ejecutar).
+
 ### 2026-10-12 — Configuración de pagos por periodo
 
 - Ruta nueva `/configuracion-pagos` (permiso `pagos_config:get`, acciones con `pagos_config:put`): `DataTable` de periodos con acción y menú contextual «Configurar pagos» → modal.

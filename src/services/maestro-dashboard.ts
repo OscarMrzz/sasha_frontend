@@ -6,9 +6,14 @@ export interface MaestroDashboard {
     asignacion_docente_id: string
     curso_nombre: string
     grado_nombre: string
+    seccion_id?: string
     seccion_nombre: string
     modalidad_nombre: string
     periodo_nombre: string
+    modo_asistencia?: 'CLASE' | 'SECCION'
+    responsable_nombre?: string
+    responsable_code?: string
+    es_responsable?: boolean
   }
   slot: {
     dia_semana: number
@@ -50,6 +55,24 @@ export interface MaestroDashboard {
     marcas: number
     alumnos: number
     inasistencias_7d: number
+    modo?: 'CLASE' | 'SECCION'
+    tomada_por_nombre?: string
+    clases_afectadas?: number
+  }
+  asistencia_general?: {
+    seccion_id: string
+    seccion_nombre: string
+    modo_asistencia: 'CLASE' | 'SECCION'
+    responsable_id?: string
+    responsable_code?: string
+    responsable_nombre?: string
+    es_responsable: boolean
+    puede_editar: boolean
+    pasada: boolean
+    alumnos: number
+    marcas: number
+    clases_afectadas: number
+    fecha: string
   }
   alumnos_count: number
 }

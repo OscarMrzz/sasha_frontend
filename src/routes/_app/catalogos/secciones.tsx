@@ -15,17 +15,28 @@ import {
   deleteSeccion,
   listGrados,
   listModalidades,
+  listPeriodos,
   listSecciones,
   updateSeccion,
-  type Seccion,
-  type SeccionCreate,
 } from '#/services/catalogos'
+import type { ModoAsistencia, Seccion, SeccionCreate } from '#/services/catalogos'
+import { listMaestros } from '#/services/personas'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
 
 export const Route = createFileRoute('/_app/catalogos/secciones')({ component: SeccionesPage })
 
 const col = createColumnHelper<Seccion>()
-const defaultForm: SeccionCreate = { nombre: '', grado_id: '', modalidad_id: '', status: 'ACTIVE' }
+const defaultForm: SeccionCreate = {
+  nombre: '',
+  grado_id: '',
+  modalidad_id: '',
+  status: 'ACTIVE',
+  modo_asistencia: 'CLASE',
+}
+
+function etiquetaModo(modo?: ModoAsistencia | string) {
+  return (modo ?? 'CLASE') === 'SECCION' ? 'Por sección' : 'Por clase'
+}
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE' },
@@ -34,10 +45,16 @@ const STATUS_OPTIONS = [
 
 function SeccionesPage() {
   const qc = useQueryClient()
-  const { can } = useCan()
+  const { can, roles } = useCan()
   const { data = [], isLoading } = useQuery({ queryKey: ['secciones'], queryFn: listSecciones })
   const { data: grados = [] } = useQuery({ queryKey: ['grados'], queryFn: listGrados })
   const { data: modalidades = [] } = useQuery({ queryKey: ['modalidades'], queryFn: listModalidades })
+  const { data: periodos = [] } = useQuery({ queryKey: ['periodos'], queryFn: listPeriodos })
+  const { data: maestros = [] } = useQuery({ queryKey: ['maestros'], queryFn: listMaestros })
+
+  const periodoActivo = periodos.find((p) => p.status === 'ACTIVE')
+  const puedeConfigurarAsistencia =
+    roles.includes('admin') || roles.includes('admin_temporal')
 
   const gradoMap = useMemo(() => Object.fromEntries(grados.map((g) => [g.id, g.nombre])), [grados])
   const modalidadMap = useMemo(
@@ -51,6 +68,7 @@ function SeccionesPage() {
   const [form, setForm] = useState<SeccionCreate>(defaultForm)
   const [confirmDelete, setConfirmDelete] = useState<Seccion | null>(null)
   const [confirmSave, setConfirmSave] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: Seccion } | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
@@ -65,6 +83,7 @@ function SeccionesPage() {
     setEditing(null)
     setViewOnly(false)
     setForm(defaultForm)
+    setFormError(null)
     setModalOpen(true)
   }
 
@@ -81,19 +100,45 @@ function SeccionesPage() {
       codigo_sace: row.codigo_sace,
       detalles: row.detalles,
       cupo_maximo: row.cupo_maximo,
+      modo_asistencia: row.modo_asistencia ?? 'CLASE',
+      maestro_responsable_id: row.maestro_responsable_id ?? null,
     })
+    setFormError(null)
     setModalOpen(true)
     closeCtx()
   }
 
+  const payload = (): SeccionCreate => ({
+    ...form,
+    modo_asistencia: form.modo_asistencia ?? 'CLASE',
+    maestro_responsable_id:
+      (form.modo_asistencia ?? 'CLASE') === 'SECCION' ? (form.maestro_responsable_id ?? null) : null,
+  })
+
+  const validarGuardar = () => {
+    if ((form.modo_asistencia ?? 'CLASE') === 'SECCION' && !form.maestro_responsable_id) {
+      setFormError('Elige el maestro que pasará la lista de la sección.')
+      return
+    }
+    if ((form.modo_asistencia ?? 'CLASE') === 'SECCION' && !periodoActivo) {
+      setFormError('No hay periodo activo. No se puede configurar la asistencia de la sección.')
+      return
+    }
+    setFormError(null)
+    setConfirmSave(true)
+  }
+
   const saveMut = useMutation({
     mutationFn: async () => {
-      if (editing) return updateSeccion(editing.id, form)
-      return createSeccion(form)
+      if (editing) return updateSeccion(editing.id, payload())
+      return createSeccion(payload())
     },
     onSuccess: () => {
       toast.success(editing ? 'Sección actualizada' : 'Sección creada')
       qc.invalidateQueries({ queryKey: ['secciones'] })
+      qc.invalidateQueries({ queryKey: ['asistencia-materias'] })
+      qc.invalidateQueries({ queryKey: ['asistencia-secciones'] })
+      qc.invalidateQueries({ queryKey: ['maestro-dashboard'] })
       setModalOpen(false)
       setConfirmSave(false)
     },
@@ -119,6 +164,26 @@ function SeccionesPage() {
         header: 'Modalidad',
         cell: (i) => modalidadMap[i.getValue()] ?? '—',
       }),
+      col.accessor('modo_asistencia', {
+        header: 'Lista',
+        cell: (i) => {
+          const s = i.row.original
+          const modo = s.modo_asistencia ?? 'CLASE'
+          return (
+            <span data-testid={`seccion-lista-${s.codigo}`}>
+              <span className={`badge ${modo === 'SECCION' ? 'badge--ok' : 'badge--muted'}`}>
+                {etiquetaModo(modo)}
+              </span>
+              {modo === 'SECCION' ? (
+                <span className="texto-muted" style={{ marginLeft: '0.4rem', fontSize: '0.8rem' }}>
+                  {s.maestro_responsable_code ? `${s.maestro_responsable_code} · ` : ''}
+                  {s.maestro_responsable_nombre || 'Sin responsable'}
+                </span>
+              ) : null}
+            </span>
+          )
+        },
+      }),
       col.accessor('status', { header: 'Estado', cell: (i) => <span className="badge">{i.getValue()}</span> }),
     ],
     [gradoMap, modalidadMap],
@@ -138,6 +203,12 @@ function SeccionesPage() {
         label: 'Modalidad',
         getValue: (r: Seccion) => r.modalidad_id,
         getLabel: (r: Seccion) => modalidadMap[r.modalidad_id] ?? '—',
+      },
+      {
+        id: 'modo',
+        label: 'Lista',
+        getValue: (r: Seccion) => r.modo_asistencia ?? 'CLASE',
+        getLabel: (r: Seccion) => etiquetaModo(r.modo_asistencia),
       },
       { id: 'status', label: 'Estado', getValue: (r: Seccion) => r.status },
     ],
@@ -162,6 +233,11 @@ function SeccionesPage() {
           nombre: s.nombre,
           grado: gradoMap[s.grado_id],
           modalidad: modalidadMap[s.modalidad_id],
+          lista: etiquetaModo(s.modo_asistencia),
+          responsable:
+            s.modo_asistencia === 'SECCION'
+              ? `${s.maestro_responsable_code ?? ''} ${s.maestro_responsable_nombre ?? ''}`.trim()
+              : '',
           status: s.status,
         }))}
         onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
@@ -207,7 +283,7 @@ function SeccionesPage() {
                 Cancelar
               </button>
               <Can permission={editing ? 'catalogos:put' : 'catalogos:post'}>
-                <button type="button" className="btn btn--primary" onClick={() => setConfirmSave(true)}>
+                <button type="button" className="btn btn--primary" onClick={validarGuardar}>
                   Guardar
                 </button>
               </Can>
@@ -247,6 +323,77 @@ function SeccionesPage() {
             placeholder="Seleccione una modalidad"
           />
         </Field>
+        <div data-testid="seccion-asistencia-bloque" style={{ marginBottom: '0.85rem' }}>
+          <div className="field__label">Asistencia</div>
+          <div className="segmento" role="radiogroup" aria-label="¿Cómo se pasa lista?">
+            {(
+              [
+                { value: 'CLASE', label: 'Por clase' },
+                { value: 'SECCION', label: 'Por sección' },
+              ] as const
+            ).map((opt) => (
+              <label
+                key={opt.value}
+                className={`segmento__item${(form.modo_asistencia ?? 'CLASE') === opt.value ? ' segmento__item--on' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="seccion-modo-asistencia"
+                  data-testid={`seccion-modo-${opt.value.toLowerCase()}`}
+                  checked={(form.modo_asistencia ?? 'CLASE') === opt.value}
+                  disabled={viewOnly || !puedeConfigurarAsistencia}
+                  onChange={() =>
+                    setForm((f) => ({
+                      ...f,
+                      modo_asistencia: opt.value,
+                      maestro_responsable_id:
+                        opt.value === 'CLASE' ? null : f.maestro_responsable_id,
+                    }))
+                  }
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+          <p className="texto-muted" style={{ fontSize: '0.8rem', margin: '0.4rem 0 0' }} data-testid="seccion-periodo-activo">
+            {periodoActivo ? `Periodo activo: ${periodoActivo.nombre}` : 'No hay periodo activo'}
+          </p>
+          {(form.modo_asistencia ?? 'CLASE') === 'SECCION' ? (
+            <>
+              <Field label="Maestro responsable" error={formError ?? undefined}>
+                <Combobox
+                  data-testid="seccion-maestro-responsable-select"
+                  disabled={viewOnly || !puedeConfigurarAsistencia}
+                  value={form.maestro_responsable_id ?? ''}
+                  onChange={(v) => {
+                    setFormError(null)
+                    setForm((f) => ({ ...f, maestro_responsable_id: v || null }))
+                  }}
+                  options={maestros
+                    .filter((m) => m.status === 'ACTIVE')
+                    .map((m) => ({
+                      value: m.id,
+                      label: `${m.user_code ?? '—'} · ${m.nombre}`,
+                      keywords: m.user_code,
+                    }))}
+                  placeholder="Buscar por código o nombre…"
+                />
+              </Field>
+              <p className="texto-muted" style={{ fontSize: '0.8rem', margin: '0.35rem 0 0' }}>
+                El responsable pasa una lista diaria para toda la sección. Los registros anteriores conservan
+                al maestro que pasó lista.
+              </p>
+              {form.maestro_responsable_id &&
+              !maestros.some(
+                (m) => m.id === form.maestro_responsable_id && m.status === 'ACTIVE',
+              ) ? (
+                <p className="texto-muted" style={{ fontSize: '0.8rem', margin: '0.35rem 0 0' }}>
+                  El responsable actual ya no está activo; elige otro.
+                </p>
+              ) : null}
+            </>
+          ) : null}
+        </div>
         <Field label="Cupo máximo">
           <input
             type="number"

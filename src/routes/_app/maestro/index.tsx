@@ -3,12 +3,15 @@ import { useQuery } from '@tanstack/react-query'
 import { BarChart3, FileSpreadsheet, MoreVertical } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { AsistenciaGridModal } from '#/components/asistencia/AsistenciaGridModal'
+import { AsistenciaSeccionModal } from '#/components/asistencia/AsistenciaSeccionModal'
+import { SeccionPickerModal } from '#/components/asistencia/SeccionPickerModal'
 import { MaestroHorarioView } from '#/components/horarios/MaestroHorarioView'
 import { RequirePermission, useCan } from '#/components/gates/Can'
 import { AvisoBanner } from '#/components/layout/AvisoBanner'
 import { Modal } from '#/components/ui/Modal'
 import { TareaCreateModal } from '#/components/tareas/TareaCreateModal'
-import { listMateriasAsistencia, type AsistenciaMateria } from '#/services/asistencia'
+import { getSeccionesAsistencia, listMateriasAsistencia } from '#/services/asistencia'
+import type { AsistenciaMateria, AsistenciaSeccion } from '#/services/asistencia'
 
 export const Route = createFileRoute('/_app/maestro/')({
   component: () => (
@@ -31,9 +34,21 @@ function MaestroHubPage() {
     queryKey: ['asistencia-materias'],
     queryFn: listMateriasAsistencia,
   })
+  const { data: seccionesData } = useQuery({
+    queryKey: ['asistencia-secciones'],
+    queryFn: getSeccionesAsistencia,
+    enabled: can('asistencia:get'),
+    retry: false,
+  })
+  const secciones = seccionesData?.secciones ?? []
   const [ctx, setCtx] = useState<CtxState | null>(null)
   const [ver, setVer] = useState<AsistenciaMateria | null>(null)
   const [pasar, setPasar] = useState<AsistenciaMateria | null>(null)
+  const [pasarSeccion, setPasarSeccion] = useState<{
+    seccion: AsistenciaSeccion
+    mode: 'pasar' | 'ver'
+  } | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [tarea, setTarea] = useState<AsistenciaMateria | null>(null)
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -60,6 +75,23 @@ function MaestroHubPage() {
         <p className="texto-muted" style={{ margin: '0.35rem 0 0' }}>
           Elige una clase para entrar, o usa el horario de abajo.
         </p>
+        {secciones.length > 0 ? (
+          <button
+            type="button"
+            className="btn btn--primary"
+            data-testid="hub-pasar-asistencia"
+            style={{ marginTop: '0.75rem' }}
+            onClick={() => {
+              if (secciones.length === 1) {
+                setPasarSeccion({ seccion: secciones[0], mode: 'pasar' })
+              } else {
+                setPickerOpen(true)
+              }
+            }}
+          >
+            Pasar asistencia
+          </button>
+        ) : null}
       </header>
 
       {isLoading ? (
@@ -104,6 +136,15 @@ function MaestroHubPage() {
                 {m.grado_nombre} · sec{m.seccion_nombre}
               </p>
               <p className="maestro-hub__card-meta texto-muted">{m.modalidad_nombre}</p>
+              {(m.modo_asistencia ?? 'CLASE') === 'SECCION' ? (
+                <p
+                  className="texto-muted"
+                  style={{ margin: '0.15rem 0 0', fontSize: '0.78rem' }}
+                  data-testid={`maestro-hub-chip-seccion-${m.asignacion_docente_id}`}
+                >
+                  Asistencia por sección
+                </p>
+              ) : null}
               <button
                 type="button"
                 className="btn btn--primary btn--sm maestro-hub__card-ir"
@@ -172,7 +213,7 @@ function MaestroHubPage() {
           >
             Ver
           </button>
-          {can('asistencia:post') ? (
+          {can('asistencia:post') && (ctx.row.modo_asistencia ?? 'CLASE') !== 'SECCION' ? (
             <button
               type="button"
               className="ctx-menu__item"
@@ -224,6 +265,25 @@ function MaestroHubPage() {
 
       {pasar ? (
         <AsistenciaGridModal materia={pasar} mode="pasar" onClose={() => setPasar(null)} />
+      ) : null}
+
+      {pickerOpen ? (
+        <SeccionPickerModal
+          secciones={secciones}
+          onClose={() => setPickerOpen(false)}
+          onSelect={(seccion) => {
+            setPickerOpen(false)
+            setPasarSeccion({ seccion, mode: 'pasar' })
+          }}
+        />
+      ) : null}
+
+      {pasarSeccion ? (
+        <AsistenciaSeccionModal
+          seccion={pasarSeccion.seccion}
+          mode={pasarSeccion.mode}
+          onClose={() => setPasarSeccion(null)}
+        />
       ) : null}
 
       {tarea ? (
