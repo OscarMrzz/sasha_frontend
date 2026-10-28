@@ -65,7 +65,9 @@ test.describe('liberación de notas por parcial', () => {
     const p1 = page.getByTestId('portal-calif-parcial-1')
     await expect(p1).toHaveAttribute('data-estado', 'bloqueado_pago')
     await expect(p1).toContainText(/marzo/i)
-    await expect(page.getByTestId('portal-calif-parcial-2')).toHaveAttribute('data-estado', 'visible')
+    // Con la regla nueva (vencidas hasta el corte) la mensualidad de octubre, ya vencida,
+    // también bloquea el parcial: se documenta como cambio aprobado.
+    await expect(page.getByTestId('portal-calif-parcial-2')).toHaveAttribute('data-estado', 'bloqueado_pago')
   })
 
   test('admin: panel con parciales, nada por liberar y tabla de bloqueados', async ({ page }) => {
@@ -108,6 +110,6 @@ test.describe('liberación de notas por parcial', () => {
     await expect(page.getByTestId('pago-meses-cobrar')).toBeDisabled()
     await julio.locator('input').check()
     await page.getByTestId('pago-mes-2026-8').locator('input').check()
-    await expect(page.getByTestId('pago-meses-cobrar')).toContainText('2 mes(es) · L 3000.00')
+    await expect(page.getByTestId('pago-meses-cobrar')).toContainText('2 concepto(s) · L 3000.00')
   })
 })

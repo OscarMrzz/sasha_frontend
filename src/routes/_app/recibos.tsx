@@ -57,7 +57,12 @@ function RecibosPage() {
           </>
         ),
       }),
-      col.accessor((r) => mesAnio(r.anio, r.mes), { id: 'mes', header: 'Mes' }),
+      col.accessor((r) => r.etiqueta, { id: 'mes', header: 'Concepto' }),
+      col.accessor((r) => r.tipo_nombre ?? '', {
+        id: 'tipo',
+        header: 'Tipo',
+        cell: (i) => (i.getValue() ? <span className="badge badge--muted">{i.getValue()}</span> : '—'),
+      }),
       col.accessor('monto', { header: 'Cantidad', cell: (i) => lempiras(i.getValue()) }),
       col.accessor((r) => (r.fecha_pago ? fechaCorta(r.fecha_pago) : '—'), { id: 'fecha_pago', header: 'Fecha de pago' }),
       col.accessor('estado', {

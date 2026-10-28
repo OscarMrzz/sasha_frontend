@@ -111,8 +111,12 @@ export interface LiberacionResultado {
 
 export interface MesPendiente {
   obligacion_id: string
-  anio: number
-  mes: number
+  tipo_pago_id?: string
+  tipo_codigo?: string
+  tipo_nombre?: string
+  es_mensualidad?: boolean
+  anio: number | null
+  mes: number | null
   etiqueta: string
   monto: number
   fecha_vencimiento: string
@@ -127,6 +131,8 @@ export interface AlumnoBloqueado {
   seccion: string
   parciales: Array<{ parcial_id: string; numero: number; nombre: string }>
   meses: MesPendiente[]
+  /** Nombres de los tipos que bloquean (mensualidad, matrícula, adicionales). */
+  tipos_bloqueantes?: string[]
   monto_total: number
 }
 

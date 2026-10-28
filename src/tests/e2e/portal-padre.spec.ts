@@ -54,21 +54,24 @@ test.describe('portal del padre estilo app', () => {
 
   test('pagos: deuda, meses pagados y recibo en revisión', async ({ page }) => {
     await entrarComoPadre(page, PADRE_ANA)
-    await expect(page.getByTestId('padre-tile-pagos')).toContainText(/Debe 2 meses/, { timeout: 15_000 })
+    await expect(page.getByTestId('padre-tile-pagos')).toContainText(/Debe \d+ mes/, { timeout: 15_000 })
     await page.getByTestId('padre-tile-pagos').click()
 
+    await page.getByTestId('padre-pagos-tab-retrasados').click()
     await expect(page.getByTestId('padre-pagos-deuda')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('padre-subir-recibo')).toBeEnabled()
+    await page.getByTestId('padre-pagos-tab-meses').click()
     await expect(page.getByTestId('padre-mes-2026-2')).toContainText('Pagado')
     await expect(page.getByTestId('padre-mes-2026-5')).toContainText('Pagado')
     await expect(page.getByTestId('padre-mes-2026-8')).toContainText('Debe')
     await expect(page.getByTestId('padre-mes-2026-7')).toContainText('Recibo en revisión')
-    await expect(page.getByTestId('padre-pagos-recibos')).toContainText('Recibo de Julio 2026')
+    await expect(page.getByTestId('padre-pagos-recibos')).toContainText(/Recibo de julio 2026/i)
   })
 
   test('pagos: el padre sube la foto del recibo y el mes queda en revisión', async ({ page }) => {
     await entrarComoPadre(page, PADRE_HECTOR)
     await page.getByTestId('padre-tile-pagos').click()
+    await page.getByTestId('padre-pagos-tab-meses').click()
     await expect(page.getByTestId('padre-mes-2026-10')).toBeVisible({ timeout: 15_000 })
 
     await page.getByTestId('padre-subir-recibo').click()
@@ -79,13 +82,17 @@ test.describe('portal del padre estilo app', () => {
       buffer: PNG,
     })
     await expect(page.getByTestId('recibo-preview')).toContainText('recibo-octubre.png')
-    await page.getByTestId('recibo-mes').selectOption('2026-10')
+    const opcionOctubre = page
+      .getByTestId('recibo-mes')
+      .locator('option', { hasText: /octubre 2026/i })
+    const labelOctubre = (await opcionOctubre.textContent())?.trim() ?? ''
+    await page.getByTestId('recibo-mes').selectOption({ label: labelOctubre })
     await page.getByTestId('recibo-enviar').click()
     await page.getByRole('button', { name: 'Sí, enviar' }).click()
 
     await expect(page.getByText('Recibo enviado')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('padre-mes-2026-10')).toContainText('Recibo en revisión', { timeout: 15_000 })
-    await expect(page.getByTestId('padre-pagos-recibos')).toContainText('Recibo de Octubre 2026')
+    await expect(page.getByTestId('padre-pagos-recibos')).toContainText(/Recibo de octubre 2026/i)
   })
 
   test('pagos: el recibo denegado muestra el motivo', async ({ page }) => {

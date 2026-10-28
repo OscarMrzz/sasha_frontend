@@ -77,10 +77,15 @@ function DetallePagos({ alumno }: { alumno: AlumnoBloqueado }) {
       <ul className="liberacion__meses-lista">
         {alumno.meses.map((m) => (
           <li key={m.obligacion_id}>
-            Mensualidad de {m.etiqueta}: {fmtMonto(m.monto)} · vence {fmtFecha(m.fecha_vencimiento)} ({m.estado})
+            {m.etiqueta}: {fmtMonto(m.monto)} · vence {fmtFecha(m.fecha_vencimiento)} ({m.estado})
           </li>
         ))}
       </ul>
+      {alumno.tipos_bloqueantes && alumno.tipos_bloqueantes.length > 0 ? (
+        <p style={{ margin: '0 0 0.5rem' }} data-testid="liberacion-tipos-bloqueantes">
+          Bloquea: {alumno.tipos_bloqueantes.join(', ')}
+        </p>
+      ) : null}
       <p style={{ margin: 0 }}>
         Total pendiente: <strong>{fmtMonto(alumno.monto_total)}</strong>
       </p>

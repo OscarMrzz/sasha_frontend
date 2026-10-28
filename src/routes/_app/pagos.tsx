@@ -90,8 +90,19 @@ function PagosPage() {
         ),
       }),
       col.accessor((r) => [r.grado, r.seccion].filter(Boolean).join(' · ') || '—', { id: 'grado', header: 'Grado' }),
-      col.accessor((r) => mesAnio(r.anio, r.mes), { id: 'mes', header: 'Mes' }),
-      col.accessor('monto', { header: 'Monto', cell: (i) => lempiras(i.getValue()) }),
+      col.accessor('tipo_nombre', {
+        header: 'Tipo',
+        cell: (i) => (
+          <span
+            className="badge badge--muted"
+            data-testid={`pago-tipo-${i.row.original.obligacion_id}`}
+          >
+            {i.getValue()}
+          </span>
+        ),
+      }),
+      col.accessor((r) => r.etiqueta, { id: 'mes', header: 'Concepto' }),
+      col.accessor('total', { header: 'Monto', cell: (i) => lempiras(i.getValue()) }),
       col.accessor('fecha_vencimiento', { header: 'Vence', cell: (i) => fechaCorta(i.getValue()) }),
       col.accessor('estado', { header: 'Estado', cell: (i) => <EstadoBadge estado={i.getValue()} /> }),
       col.accessor((r) => (r.fecha_pagado ? fechaCorta(r.fecha_pagado) : '—'), { id: 'fecha_pagado', header: 'Pagado el' }),
@@ -102,7 +113,8 @@ function PagosPage() {
   const filters = useMemo(
     () => [
       { id: 'estado', label: 'Estado', getValue: (r: MensualidadFila) => ESTADO_MENSUALIDAD_LABEL[r.estado] },
-      { id: 'mes', label: 'Mes', getValue: (r: MensualidadFila) => mesAnio(r.anio, r.mes) },
+      { id: 'tipo', label: 'Tipo', getValue: (r: MensualidadFila) => r.tipo_nombre },
+      { id: 'mes', label: 'Concepto', getValue: (r: MensualidadFila) => r.etiqueta },
       { id: 'grado', label: 'Grado', getValue: (r: MensualidadFila) => r.grado },
       { id: 'seccion', label: 'Sección', getValue: (r: MensualidadFila) => r.seccion },
     ],
@@ -133,8 +145,9 @@ function PagosPage() {
             alumno: r.alumno_nombre,
             grado: r.grado,
             seccion: r.seccion,
-            mes: mesAnio(r.anio, r.mes),
-            monto: r.monto,
+            tipo: r.tipo_nombre,
+            concepto: r.etiqueta,
+            monto: r.total,
             vence: r.fecha_vencimiento,
             estado: ESTADO_MENSUALIDAD_LABEL[r.estado],
             pagado_el: r.fecha_pagado ?? '',
@@ -159,18 +172,20 @@ function PagosPage() {
             Ver
           </button>
           <Can permission="pagos:put">
-            <button
-              type="button"
-              className="ctx-menu__item"
-              data-testid="pagos-ctx-editar"
-              onClick={() => {
-                setEditar(ctx.row)
-                closeCtx()
-              }}
-            >
-              Editar
-            </button>
-            {ctx.row.estado === 'pagado' ? (
+            {ctx.row.es_mensualidad ? (
+              <button
+                type="button"
+                className="ctx-menu__item"
+                data-testid="pagos-ctx-editar"
+                onClick={() => {
+                  setEditar(ctx.row)
+                  closeCtx()
+                }}
+              >
+                Editar
+              </button>
+            ) : null}
+            {ctx.row.es_mensualidad && ctx.row.estado === 'pagado' ? (
               <button
                 type="button"
                 className="ctx-menu__item ctx-menu__item--danger"
@@ -205,7 +220,13 @@ function PagosPage() {
       {ver ? <VerMensualidadModal fila={ver} onClose={() => setVer(null)} /> : null}
       {editar ? <EditarMensualidadModal fila={editar} onClose={() => setEditar(null)} /> : null}
       {anular ? <AnularPagoModal fila={anular} onClose={() => setAnular(null)} /> : null}
-      {registrar ? <RegistrarPagoModal initialCode={registrar.code} onClose={cerrarRegistrar} /> : null}
+      {registrar ? (
+        <RegistrarPagoModal
+          initialCode={registrar.code}
+          filas={data}
+          onClose={cerrarRegistrar}
+        />
+      ) : null}
     </RequirePermission>
   )
 }
@@ -224,12 +245,21 @@ function DatosMensualidad({ f }: { f: MensualidadFila }) {
         <dd>{[f.grado, f.seccion].filter(Boolean).join(' · ') || '—'}</dd>
       </div>
       <div>
-        <dt className="field__label">Mes</dt>
-        <dd>{mesAnio(f.anio, f.mes)}</dd>
+        <dt className="field__label">Tipo</dt>
+        <dd>{f.tipo_nombre}</dd>
+      </div>
+      <div>
+        <dt className="field__label">Concepto</dt>
+        <dd>{f.etiqueta}</dd>
       </div>
       <div>
         <dt className="field__label">Monto</dt>
-        <dd>{lempiras(f.monto)}</dd>
+        <dd>
+          {lempiras(f.monto)}
+          {f.mora_monto > 0 ? (
+            <span className="texto-muted"> + {lempiras(f.mora_monto)} de mora = {lempiras(f.total)}</span>
+          ) : null}
+        </dd>
       </div>
       <div>
         <dt className="field__label">Vence</dt>
@@ -276,7 +306,7 @@ function VerMensualidadModal({ fila, onClose }: { fila: MensualidadFila; onClose
   return (
     <Modal
       open={open}
-      title={`Mensualidad · ${mesAnio(fila.anio, fila.mes)}`}
+      title={`Pago · ${fila.etiqueta}`}
       onClose={dismiss}
       wide
       footer={
@@ -301,7 +331,7 @@ function EditarMensualidadModal({ fila, onClose }: { fila: MensualidadFila; onCl
     <>
       <Modal
         open={open}
-        title={`Editar · ${fila.alumno_nombre} · ${mesAnio(fila.anio, fila.mes)}`}
+      title={`Editar · ${fila.alumno_nombre} · ${fila.etiqueta}`}
         onClose={dismiss}
         wide
         footer={
@@ -369,7 +399,7 @@ function AnularPagoModal({
       toast.success(
         r.recibos_reabiertos
           ? `Pago anulado. El recibo del padre volvió a "Sin revisar".`
-          : `Pago anulado. ${mesAnio(fila.anio, fila.mes)} quedó ${ESTADO_MENSUALIDAD_LABEL[r.estado].toLowerCase()}.`,
+          : `Pago anulado. ${fila.etiqueta} quedó ${ESTADO_MENSUALIDAD_LABEL[r.estado].toLowerCase()}.`,
       )
       refrescarPagos(qc)
       setConfirmar(false)
@@ -386,7 +416,7 @@ function AnularPagoModal({
     <>
       <Modal
         open={open}
-        title={`Anular pago · ${fila.alumno_nombre} · ${mesAnio(fila.anio, fila.mes)}`}
+        title={`Anular pago · ${fila.alumno_nombre} · ${fila.etiqueta}`}
         onClose={dismiss}
         wide
         footer={
@@ -426,7 +456,7 @@ function AnularPagoModal({
       <ConfirmDialog
         open={confirmar}
         title="Anular pago"
-        message={`¿Anular el pago de ${mesAnio(fila.anio, fila.mes)} de ${fila.alumno_nombre}? Las calificaciones de ese mes volverán a bloquearse si corresponde.`}
+        message={`¿Anular el pago de ${fila.etiqueta} de ${fila.alumno_nombre}? Las calificaciones de ese mes volverán a bloquearse si corresponde.`}
         confirmLabel="Anular"
         danger
         onCancel={() => setConfirmar(false)}
@@ -451,7 +481,15 @@ const opcionAlumno = (a: AlumnoBusqueda): ComboboxOption => ({
   keywords: a.nombre,
 })
 
-function RegistrarPagoModal({ initialCode, onClose }: { initialCode?: string; onClose: () => void }) {
+function RegistrarPagoModal({
+  initialCode,
+  filas,
+  onClose,
+}: {
+  initialCode?: string
+  filas: MensualidadFila[]
+  onClose: () => void
+}) {
   const { open, dismiss } = useDismiss(onClose)
   const qc = useQueryClient()
   const [code, setCode] = useState(initialCode ?? '')
@@ -491,7 +529,15 @@ function RegistrarPagoModal({ initialCode, onClose }: { initialCode?: string; on
 
   const pendientes = c?.meses.filter((m) => m.estado !== 'pagado') ?? []
   const seleccionados = pendientes.filter((m) => mesesSel.includes(m.obligacion_id))
-  const totalSel = seleccionados.reduce((s, m) => s + m.monto, 0)
+  // Matrícula y tipos adicionales del alumno (cualquier obligación que no sea mensualidad).
+  const otros = filas.filter(
+    (f) => f.alumno_codigo === code && f.estado !== 'pagado' && !f.es_mensualidad,
+  )
+  const otrosSeleccionados = otros.filter((f) => mesesSel.includes(f.obligacion_id))
+  const totalSel =
+    seleccionados.reduce((s, m) => s + m.monto, 0) +
+    otrosSeleccionados.reduce((s, f) => s + f.total, 0)
+  const totalConceptos = seleccionados.length + otrosSeleccionados.length
   const toggleMes = (id: string) => setMesesSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
 
   const cobrar = useMutation({
@@ -525,10 +571,10 @@ function RegistrarPagoModal({ initialCode, onClose }: { initialCode?: string; on
                 type="button"
                 className="btn btn--primary"
                 data-testid="pago-meses-cobrar"
-                disabled={!seleccionados.length || cobrar.isPending}
+                disabled={totalConceptos === 0 || cobrar.isPending}
                 onClick={() => setConfirmar(true)}
               >
-                Cobrar {seleccionados.length ? `${seleccionados.length} mes(es) · L ${totalSel.toFixed(2)}` : 'meses'}
+                Cobrar {totalConceptos ? `${totalConceptos} concepto(s) · L ${totalSel.toFixed(2)}` : 'conceptos'}
               </button>
             </Can>
           </>
@@ -619,7 +665,7 @@ function RegistrarPagoModal({ initialCode, onClose }: { initialCode?: string; on
                         checked={pagado || mesesSel.includes(m.obligacion_id)}
                         onChange={() => toggleMes(m.obligacion_id)}
                       />
-                      <span>{mesAnio(m.anio, m.mes)}</span>
+                <span>{mesAnio(m.anio, m.mes)}</span>
                       <EstadoBadge estado={m.estado} />
                       {pagado && m.fecha_pagado ? (
                         <span className="texto-muted" style={{ fontSize: '0.8rem' }}>
@@ -633,6 +679,33 @@ function RegistrarPagoModal({ initialCode, onClose }: { initialCode?: string; on
                 })}
               </div>
             )}
+
+            {otros.length > 0 ? (
+              <div className="pago-otros" data-testid="pago-otros-conceptos">
+                <h4 className="expediente__titulo">Matrícula y otros conceptos</h4>
+                <div className="cobro-meses">
+                  {otros.map((f) => (
+                    <label
+                      key={f.obligacion_id}
+                      className="cobro-meses__item"
+                      data-testid={`pago-obligacion-${f.obligacion_id}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={mesesSel.includes(f.obligacion_id)}
+                        onChange={() => toggleMes(f.obligacion_id)}
+                      />
+                      <span>{f.etiqueta}</span>
+                      <EstadoBadge estado={f.estado} />
+                      <span className="texto-muted" style={{ fontSize: '0.8rem' }}>
+                        {fechaCorta(f.fecha_vencimiento)}
+                      </span>
+                      <span className="cobro-meses__monto">{lempiras(f.total)}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <Field label="Observaciones" htmlFor="pago-observaciones">
               <textarea
@@ -649,8 +722,8 @@ function RegistrarPagoModal({ initialCode, onClose }: { initialCode?: string; on
 
       <ConfirmDialog
         open={confirmar}
-        title="Cobrar mensualidades"
-        message={`¿Registrar el pago de ${seleccionados.map((m) => mesAnio(m.anio, m.mes)).join(', ')} (${lempiras(totalSel)}) para ${c?.nombre ?? ''}? Las calificaciones de los parciales de esos meses se habilitarán automáticamente.`}
+        title="Cobrar conceptos"
+        message={`¿Registrar el pago de ${[...seleccionados.map((m) => mesAnio(m.anio, m.mes)), ...otrosSeleccionados.map((f) => f.etiqueta)].join(', ')} (${lempiras(totalSel)}) para ${c?.nombre ?? ''}? Las calificaciones se habilitarán si correspondía un bloqueo.`}
         onConfirm={() => cobrar.mutate()}
         onCancel={() => setConfirmar(false)}
       />

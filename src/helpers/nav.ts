@@ -68,6 +68,12 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'pagos_config:get',
     icon: 'settings',
   },
+  {
+    to: '/tipos-pagos',
+    label: 'Tipos pagos',
+    permission: 'pagos_config:get',
+    icon: 'receipt',
+  },
   { to: '/analitica-pagos', label: 'Analítica de pagos', permission: 'analitica_pagos:get', icon: 'chart' },
   {
     to: '/notificaciones-admin',

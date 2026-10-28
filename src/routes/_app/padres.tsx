@@ -72,6 +72,14 @@ function PadresCajaPage() {
         header: 'Debe',
         cell: (i) => <MontoVencido monto={i.getValue()} />,
       }),
+      col.accessor('obligaciones_vencidas', {
+        header: 'Conceptos',
+        cell: (i) => (
+          <span data-testid={`cartera-padre-conceptos-${i.row.original.codigo}`}>
+            {i.getValue() > 0 ? String(i.getValue()) : '—'}
+          </span>
+        ),
+      }),
     ],
     [],
   )

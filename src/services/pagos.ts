@@ -55,9 +55,15 @@ export interface MensualidadesAlumno {
   total_pendiente: number
 }
 
-/** Una mensualidad (alumno + mes) de la tabla de caja. */
+/** Una obligación (mensualidad, matrícula o adicional) de la tabla de caja. */
 export interface MensualidadFila {
   obligacion_id: string
+  tipo_pago_id: string
+  tipo_codigo: string
+  tipo_nombre: string
+  /** mensualidad | matricula | adicional */
+  tipo: 'mensualidad' | 'matricula' | 'adicional'
+  es_mensualidad: boolean
   alumno_codigo: string
   alumno_nombre: string
   grado: string
@@ -66,6 +72,8 @@ export interface MensualidadFila {
   mes: number
   etiqueta: string
   monto: number
+  mora_monto: number
+  total: number
   fecha_vencimiento: string
   estado: EstadoMensualidad
   pago_id?: string
@@ -84,6 +92,7 @@ export interface AlumnoBusqueda {
 
 export interface AnularMensualidadResponse {
   obligacion_id: string
+  tipo_codigo: string
   estado: EstadoMensualidad
   pagos_anulados: number
   recibos_reabiertos: number
@@ -163,10 +172,21 @@ export async function listMora() {
   return apiRequestList<Obligacion>('/pagos/mora')
 }
 
-export async function listMensualidades(params: { periodoId?: string; estado?: EstadoMensualidad } = {}) {
+export type TipoObligacion = 'todos' | 'mensualidad' | 'matricula' | 'adicional'
+
+export async function listMensualidades(
+  params: {
+    periodoId?: string
+    estado?: EstadoMensualidad
+    tipo?: TipoObligacion
+    tipoPagoId?: string
+  } = {},
+) {
   const q = new URLSearchParams()
   if (params.periodoId) q.set('periodo_id', params.periodoId)
   if (params.estado) q.set('estado', params.estado)
+  if (params.tipo && params.tipo !== 'todos') q.set('tipo', params.tipo)
+  if (params.tipoPagoId) q.set('tipo_pago_id', params.tipoPagoId)
   const qs = q.toString()
   return apiRequestList<MensualidadFila>(`/pagos/mensualidades${qs ? `?${qs}` : ''}`)
 }
@@ -198,6 +218,8 @@ export interface Recibo {
   alumno_codigo: string
   responsable_nombre: string
   obligacion_pago_id?: string
+  tipo_codigo?: string
+  tipo_nombre?: string
   anio: number
   mes: number
   etiqueta: string
@@ -234,6 +256,8 @@ export type EstadoPagoCartera = 'al_dia' | 'debe' | 'mora'
 
 export interface DeudaCartera {
   meses_vencidos: number
+  /** Todas las obligaciones vencidas (mensualidad, matrícula y adicionales). */
+  obligaciones_vencidas: number
   monto_vencido: number
   estado_pago: EstadoPagoCartera
   recibos_sin_revisar: number

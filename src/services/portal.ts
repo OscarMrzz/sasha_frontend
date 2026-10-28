@@ -320,12 +320,38 @@ export interface PortalMesPago {
   recibo_estado?: EstadoRecibo
 }
 
+/** Una obligación del alumno (mensualidad, matrícula o tipo adicional). */
+export interface PortalObligacion {
+  obligacion_pago_id: string
+  tipo_pago_id: string
+  tipo_codigo: string
+  tipo_nombre: string
+  descripcion: string
+  periodo_label: string
+  anio: number | null
+  mes: number | null
+  etiqueta: string
+  monto: number
+  mora_monto: number
+  total: number
+  fecha_vencimiento: string
+  estado: 'pendiente' | 'pagado' | 'mora'
+  bloquea_notas: boolean
+  puede_subir_recibo: boolean
+  recibo_estado?: EstadoRecibo
+  pago_id?: string | null
+}
+
 export interface PortalPagos {
   meses: PortalMesPago[]
+  /** Todas las obligaciones (mensualidad, matrícula y adicionales). */
+  obligaciones: PortalObligacion[]
   /** Primer mes sin pagar que aún no vence. */
   proximo?: PortalMesPago
   vencidos: number
   monto_vencido: number
+  total_pendiente: number
+  total_pagado: number
   recibos: Recibo[]
 }
 
@@ -333,12 +359,18 @@ export function getPagosHijo(alumnoId: string) {
   return apiRequest<PortalPagos>(`/portal/pagos${alumnoQs(alumnoId)}`)
 }
 
-export function subirRecibo(alumnoId: string, anio: number, mes: number, file: File) {
+/** Sube un comprobante por obligación (preferido) o, para mensualidades, por año/mes. */
+export function subirRecibo(
+  alumnoId: string,
+  file: File,
+  opciones: { obligacionId?: string; anio?: number; mes?: number },
+) {
   const form = new FormData()
   form.append('file', file)
   form.append('alumno_id', alumnoId)
-  form.append('anio', String(anio))
-  form.append('mes', String(mes))
+  if (opciones.obligacionId) form.append('obligacion_pago_id', opciones.obligacionId)
+  if (opciones.anio) form.append('anio', String(opciones.anio))
+  if (opciones.mes) form.append('mes', String(opciones.mes))
   return apiRequest<Recibo>('/portal/recibos', { method: 'POST', body: form })
 }
 

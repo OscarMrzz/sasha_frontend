@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Can } from '#/components/gates/Can'
+import { MesesCobro } from '#/components/pagos/MesesCobro'
 import { ReglasMoraGrado } from '#/components/pagos/ReglasMoraGrado'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
@@ -101,6 +102,11 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
       ),
     }))
 
+  const setMesesModo = (modo: 'auto' | 'manual') =>
+    setForm((f) => ({ ...f, mesesModo: modo }))
+
+  const setMeses = (meses: string[]) => setForm((f) => ({ ...f, meses }))
+
   const setGradoReglas = (gradoId: string, reglas_mora: ReglaMoraForm[]) =>
     setForm((f) => ({
       ...f,
@@ -195,6 +201,52 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
                 <p className="texto-muted ficha-form__nota">
                   La mora se cuenta a partir del vencimiento (día de pago).
                 </p>
+              </section>
+
+              <section className="expediente__seccion">
+                <h3 className="expediente__titulo">Meses que se cobran</h3>
+                <div className="pagos-config__modo" data-testid="pagos-config-meses-modo">
+                  <label className="pagos-config__modo-opcion">
+                    <input
+                      type="radio"
+                      name="meses-modo"
+                      value="auto"
+                      data-testid="pagos-config-meses-modo-auto"
+                      checked={form.mesesModo === 'auto'}
+                      disabled={saving}
+                      onChange={() => setMesesModo('auto')}
+                    />
+                    <span>
+                      Automático: los meses que abarcan las fechas del periodo
+                    </span>
+                  </label>
+                  <label className="pagos-config__modo-opcion">
+                    <input
+                      type="radio"
+                      name="meses-modo"
+                      value="manual"
+                      data-testid="pagos-config-meses-modo-manual"
+                      checked={form.mesesModo === 'manual'}
+                      disabled={saving}
+                      onChange={() => setMesesModo('manual')}
+                    />
+                    <span>Manual: elige los meses</span>
+                  </label>
+                </div>
+                {form.mesesModo === 'manual' ? (
+                  <MesesCobro
+                    opciones={form.opcionesMeses}
+                    seleccionados={form.meses}
+                    onChange={setMeses}
+                    disabled={saving}
+                  />
+                ) : (
+                  <p className="texto-muted ficha-form__nota">
+                    Se cobran los meses que caen entre el inicio y el fin del periodo
+                    {form.meses.length > 0 ? ` (${form.meses.length})` : ''}. Cambia a «Manual»
+                    para cobrar otros meses o excluir alguno.
+                  </p>
+                )}
               </section>
 
               <section className="expediente__seccion">
@@ -316,6 +368,10 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
           </p>
           <p className="texto-muted" style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
             Si eliges «No», los cambios aplican solo a las obligaciones nuevas.
+          </p>
+          <p className="texto-muted" style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
+            Si quitas un mes, sus obligaciones pendientes o en mora quedan inactivas. Si ese mes
+            ya tiene pagos registrados, el cambio se rechaza y no se guarda nada.
           </p>
         </div>
       </Modal>

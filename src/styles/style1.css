@@ -9540,3 +9540,472 @@ body::before {
     white-space: nowrap;
   }
 }
+
+/* =============================================================================
+   Meses de cobro del periodo (configuración de pagos)
+   ============================================================================= */
+.meses-cobro__grupo {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 0;
+}
+
+.meses-cobro__anio {
+  padding: 0;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sasha-texto-title);
+}
+
+.meses-cobro__rejilla {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.meses-cobro__mes {
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--sasha-texto-muted);
+  cursor: pointer;
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius-sm);
+  opacity: 0.55;
+  transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.meses-cobro__mes:hover:not(:disabled) {
+  opacity: 0.9;
+  border-color: var(--sasha-border-fuerte);
+}
+
+.meses-cobro__mes--activo,
+.meses-cobro__mes--activo:hover:not(:disabled) {
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-accent);
+  border-color: var(--sasha-accent);
+  opacity: 1;
+}
+
+.meses-cobro__mes--activo:hover:not(:disabled) {
+  background: var(--sasha-accent-hover);
+}
+
+.meses-cobro__mes:disabled {
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .meses-cobro__rejilla {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.pagos-config__modo {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.pagos-config__modo-opcion {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--sasha-texto-primary);
+  cursor: pointer;
+}
+
+.pagos-config__modo-opcion input {
+  accent-color: var(--sasha-primary);
+}
+
+@media (max-width: 640px) {
+  .pagos-config__modo {
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-start;
+  }
+}
+
+/* =============================================================================
+   Tipos de pago del periodo (modal de registros)
+   ============================================================================= */
+.tipos-pago__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.pagos-config__acciones {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tipos-pago__item-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tipos-pago__monto-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 0.35rem 1rem;
+  align-items: end;
+}
+
+.tipos-pago__monto-actual {
+  grid-column: 1 / -1;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .tipos-pago__monto-fila {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Par de botones (general / por grado) */
+.segmented {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius-sm);
+}
+
+.segmented__option {
+  padding: 0.35rem 0.75rem;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--sasha-texto-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--sasha-radius-sm);
+}
+
+.segmented__option--activo {
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-accent);
+}
+
+.segmented__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Selector compacto de meses por grado (números) */
+.meses-cobro--compacto .meses-cobro__rejilla {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.meses-cobro--compacto .meses-cobro__mes {
+  padding: 0.3rem 0;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.meses-cobro--compacto .meses-cobro__anio {
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.meses-cobro__fila-grado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--sasha-bg-card);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+}
+
+.meses-cobro__fila-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pago-proximo__conceptos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0;
+  margin: 0.5rem 0;
+  list-style: none;
+}
+
+.pago-proximo__conceptos li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+
+.destinos {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.destinos__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius-sm);
+}
+
+.destinos__tab {
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--sasha-texto-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--sasha-radius-sm);
+}
+
+.destinos__tab--activo {
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-accent);
+}
+
+.destinos__tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.destinos__panel {
+  min-height: 110px;
+  max-height: 320px;
+  padding: 1rem;
+  overflow: auto;
+  background: var(--sasha-bg-card);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+}
+
+.destinos__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.destinos__opcion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--sasha-texto-primary);
+  text-align: left;
+  cursor: pointer;
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius-sm);
+}
+
+.destinos__opcion:hover:not(:disabled) {
+  border-color: var(--sasha-accent);
+}
+
+.destinos__opcion:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.destinos__opcion-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.destinos__opcion-marca {
+  flex: none;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.72rem;
+  background: var(--sasha-accent-muted);
+  border-radius: 999px;
+}
+
+.destinos__avanzado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.destinos__filtros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.destinos__resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.destinos__chips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.destinos__chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius-sm);
+}
+
+@media (max-width: 640px) {
+  .destinos__filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .destinos__lista {
+    grid-template-columns: 1fr;
+  }
+
+  .destinos__panel {
+    max-height: none;
+  }
+}
+
+.destinos__panel--avanzado {
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+}
+
+/* Resumen y pestañas de pagos del padre */
+.pago-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.pagos-tabs {
+  display: flex;
+  gap: 0.35rem;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.pagos-tabs__tab {
+  flex: none;
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.45rem 0.8rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--sasha-texto-muted);
+  cursor: pointer;
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 999px;
+}
+
+.pagos-tabs__tab--activo {
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-accent);
+  border-color: var(--sasha-accent);
+}
+
+.pagos-tabs__conteo {
+  padding: 0.05rem 0.35rem;
+  font-size: 0.72rem;
+  background: var(--sasha-bg-card);
+  border-radius: 999px;
+}
+
+.pagos-tabs__tab--activo .pagos-tabs__conteo {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.pagos-filtro-movil {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.pago-info {
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius-sm);
+}
+
+.pago-info--mal {
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-danger-muted);
+  border-color: var(--sasha-danger);
+}
+
+.recibo-subir__camara {
+  justify-content: center;
+  padding-block: 0.9rem;
+}
+
+.recibo-subir__camara svg {
+  width: 44px;
+  height: 44px;
+}
+
+.field__select--primary {
+  font-weight: 600;
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-accent);
+  border-color: var(--sasha-accent);
+}
+
+.field__select--primary option {
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-bg-card);
+}
+
+.field__select.field__select--primary {
+  font-weight: 600;
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-accent);
+  border-color: var(--sasha-accent);
+  box-shadow: none;
+}

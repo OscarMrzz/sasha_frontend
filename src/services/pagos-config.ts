@@ -26,6 +26,8 @@ export interface ConfiguracionPagos {
   existe: boolean
   /** Todos los grados; sin config → `monto 0` y `reglas_mora []`. */
   grados: ConfigGrado[]
+  /** Meses que se cobran en el periodo y opciones del selector. */
+  meses?: MesesCobroConfig
 }
 
 /** Cuerpo de `PUT /pagos/configuracion/{periodo_id}`. */
@@ -39,6 +41,9 @@ export interface ConfiguracionPagosUpdate {
     monto_matricula: number
     reglas_mora: ReglaMora[]
   }[]
+  /** Omitido = no tocar los meses. `manual` exige al menos un mes. */
+  meses_modo?: 'auto' | 'manual'
+  meses?: MesCobro[]
 }
 
 /** Periodo listado en la pantalla de configuración (`GET /pagos/configuracion/periodos`). */
@@ -65,4 +70,28 @@ export async function updateConfiguracionPagos(periodoId: string, body: Configur
 /** Periodos disponibles para configurar pagos (no depende de `catalogos:get`). */
 export async function listPeriodosConfig() {
   return apiRequestList<PeriodoConfigLista>('/pagos/configuracion/periodos')
+}
+
+/** Mes que se cobra en el periodo (persistido en `periodo_mes_cobro`). */
+export interface MesCobro {
+  anio: number
+  mes: number
+}
+
+/** Opción marcar/desmarcar del selector de meses. */
+export interface MesCobroOpcion extends MesCobro {
+  etiqueta: string
+  /** El mes cae dentro de fecha_inicio..fecha_fin (viene marcado por defecto). */
+  del_periodo: boolean
+  seleccionado: boolean
+}
+
+/** Bloque `meses` de la configuración del periodo. */
+export interface MesesCobroConfig {
+  /** auto = calculado por fechas; manual = selección persistida. */
+  modo: 'auto' | 'manual'
+  anio_lectivo: number
+  rango: { desde: string; hasta: string }
+  seleccionados: MesCobroOpcion[]
+  opciones: MesCobroOpcion[]
 }

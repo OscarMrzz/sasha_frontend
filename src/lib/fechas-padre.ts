@@ -59,3 +59,9 @@ export function mesAnio(anio: number, mes: number) {
   const n = nombreMes(mes)
   return `${n.charAt(0).toUpperCase()}${n.slice(1)} ${anio}`
 }
+/** Fecha de hoy en Honduras (YYYY-MM-DD), sin importar la zona horaria del navegador. */
+export function hoyHonduras(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Tegucigalpa' }).format(
+    new Date(),
+  )
+}

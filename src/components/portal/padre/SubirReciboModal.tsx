@@ -6,27 +6,32 @@ import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { Field } from '#/components/ui/Field'
 import { Modal, useDismiss } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
-import { lempiras, mesAnio } from '#/lib/fechas-padre'
+import { lempiras } from '#/lib/fechas-padre'
 import { subirRecibo } from '#/services/portal'
-import type { PortalMesPago } from '#/services/portal'
 
 const MAX_BYTES = 10 * 1024 * 1024
 
-function claveMes(m: { anio: number; mes: number }) {
-  return `${m.anio}-${m.mes}`
+/** Obligación que el padre puede pagar (con o sin mes). */
+export type PagoSeleccionable = {
+  id: string
+  etiqueta: string
+  monto: number
+  vencido: boolean
+  anio?: number | null
+  mes?: number | null
 }
 
-/** Subir la foto o el PDF de un recibo y decir de qué mes es. */
+/** Subir la foto o el PDF de un recibo y decir a qué concepto corresponde. */
 export function SubirReciboModal({
   alumnoId,
-  meses,
-  mesInicial,
+  obligaciones,
+  inicialId,
   onClose,
 }: {
   alumnoId: string
-  /** Meses que se pueden pagar (sin pagar y sin recibo en revisión). */
-  meses: PortalMesPago[]
-  mesInicial?: PortalMesPago
+  /** Obligaciones que se pueden pagar (sin pagar y sin recibo en revisión). */
+  obligaciones: PagoSeleccionable[]
+  inicialId?: string
   onClose: () => void
 }) {
   const { open, dismiss } = useDismiss(onClose)
@@ -35,7 +40,9 @@ export function SubirReciboModal({
   const archivoRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
-  const [mes, setMes] = useState(mesInicial ? claveMes(mesInicial) : meses[0] ? claveMes(meses[0]) : '')
+  const [sel, setSel] = useState(
+    inicialId ?? (obligaciones[0] ? obligaciones[0].id : ''),
+  )
   const [confirmar, setConfirmar] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -105,12 +112,16 @@ export function SubirReciboModal({
     return () => URL.revokeObjectURL(url)
   }, [file])
 
-  const elegido = meses.find((m) => claveMes(m) === mes)
+  const elegido = obligaciones.find((m) => m.id === sel)
 
   const enviar = useMutation({
     mutationFn: () => {
-      if (!file || !elegido) throw new Error('Falta el recibo o el mes')
-      return subirRecibo(alumnoId, elegido.anio, elegido.mes, file)
+      if (!file || !elegido) throw new Error('Falta el recibo o el concepto')
+      return subirRecibo(alumnoId, file, {
+        obligacionId: elegido.id,
+        anio: elegido.anio ?? undefined,
+        mes: elegido.mes ?? undefined,
+      })
     },
     onSuccess: () => {
       toast.success('Recibo enviado. Caja lo revisará pronto.')
@@ -166,11 +177,13 @@ export function SubirReciboModal({
         <div className="recibo-subir__opciones">
           <button
             type="button"
-            className="app-boton-grande"
+            className="app-boton-grande recibo-subir__camara"
             data-testid="recibo-tomar-foto"
+            aria-label="Tomar foto"
+            title="Tomar foto"
             onClick={() => void abrirCamara()}
           >
-            <Camera size={22} aria-hidden /> Tomar foto
+            <Camera size={44} aria-hidden />
           </button>
           <button
             type="button"
@@ -237,23 +250,23 @@ export function SubirReciboModal({
         ) : null}
 
         <p className="texto-muted" style={{ margin: '1.25rem 0 0.5rem' }}>
-          2. ¿De qué mes es este pago?
+          2. ¿A qué concepto corresponde este pago?
         </p>
-        {meses.length === 0 ? (
-          <div className="empty-state">No hay meses pendientes de pago.</div>
+        {obligaciones.length === 0 ? (
+          <div className="empty-state">No hay conceptos pendientes de pago.</div>
         ) : (
-          <Field label="Mes" htmlFor="recibo-mes">
+          <Field label="Concepto" htmlFor="recibo-mes">
             <select
               id="recibo-mes"
               className="field__select"
               data-testid="recibo-mes"
-              value={mes}
-              onChange={(e) => setMes(e.target.value)}
+              value={sel}
+              onChange={(e) => setSel(e.target.value)}
               style={{ minHeight: 48, fontSize: '1rem' }}
             >
-              {meses.map((m) => (
-                <option key={claveMes(m)} value={claveMes(m)}>
-                  {mesAnio(m.anio, m.mes)} · {lempiras(m.monto)}
+              {obligaciones.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.etiqueta} · {lempiras(m.monto)}
                   {m.vencido ? ' (vencido)' : ''}
                 </option>
               ))}
@@ -265,7 +278,7 @@ export function SubirReciboModal({
       <ConfirmDialog
         open={confirmar}
         title="Enviar recibo"
-        message={elegido ? `¿Enviar el recibo de ${mesAnio(elegido.anio, elegido.mes)}?` : '¿Enviar el recibo?'}
+        message={elegido ? `¿Enviar el recibo de ${elegido.etiqueta}?` : '¿Enviar el recibo?'}
         confirmLabel="Sí, enviar"
         onCancel={() => setConfirmar(false)}
         onConfirm={() => enviar.mutate()}

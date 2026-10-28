@@ -2,6 +2,7 @@ import type { Grado } from '#/services/catalogos'
 import type {
   ConfiguracionPagos,
   ConfiguracionPagosUpdate,
+  MesCobroOpcion,
   ReglaMora,
 } from '#/services/pagos-config'
 
@@ -30,6 +31,12 @@ export interface GradoConfigForm {
 export interface ConfiguracionPagosForm {
   dia_pago: string
   grados: GradoConfigForm[]
+  /** auto = meses por fechas del periodo; manual = selección explícita. */
+  mesesModo: 'auto' | 'manual'
+  /** Opciones ofrecidas (año lectivo y siguiente si el periodo cruza año). */
+  opcionesMeses: MesCobroOpcion[]
+  /** Claves nio-mes marcadas. */
+  meses: string[]
 }
 
 let reglaSeq = 0
@@ -47,7 +54,7 @@ export function reglaVacia(): ReglaMoraForm {
 
 /** Formulario vacío (sin datos del backend todavía). */
 export function configuracionFormVacia(): ConfiguracionPagosForm {
-  return { dia_pago: '1', grados: [] }
+  return { dia_pago: '1', grados: [], mesesModo: 'auto', opcionesMeses: [], meses: [] }
 }
 
 /** Opciones de los días del mes (1–31) para los selects. */
@@ -82,6 +89,7 @@ function diaValido(v: string): boolean {
  */
 export function validarConfiguracion(form: ConfiguracionPagosForm): string {
   if (!diaValido(form.dia_pago)) return 'Selecciona un día de pago entre 1 y 31.'
+  if (form.mesesModo === 'manual' && form.meses.length === 0) return 'Marca al menos un mes.'
   for (const grado of form.grados) {
     if (!montoValido(grado.monto)) {
       return `La mensualidad de ${grado.grado_nombre} no puede ser negativa.`
@@ -146,6 +154,9 @@ export function configToForm(
   return {
     dia_pago: String(config.dia_pago || 1),
     grados: fusionados,
+    mesesModo: config.meses?.modo === 'manual' ? 'manual' : 'auto',
+    opcionesMeses: config.meses?.opciones ?? [],
+    meses: (config.meses?.seleccionados ?? []).map(claveMes),
   }
 }
 
@@ -167,5 +178,36 @@ export function formToPayload(
         monto: montoSeguro(regla.monto),
       })),
     })),
+    meses_modo: form.mesesModo,
+    meses:
+      form.mesesModo === 'manual'
+        ? form.meses.map((clave) => {
+            const [anio, mes] = clave.split('-').map(Number)
+            return { anio, mes }
+          })
+        : undefined,
   }
+}
+/** Clave estable de un mes para el formulario ("2026-8"). */
+export function claveMes(m: { anio: number; mes: number }): string {
+  return `${m.anio}-${m.mes}`
+}
+
+/** Etiqueta legible de una clave "2026-8" (para mensajes). */
+export function etiquetaClaveMes(clave: string): string {
+  const [anio, mes] = clave.split('-').map(Number)
+  const nombres = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  ]
+  if (!anio || !mes || mes < 1 || mes > 12) return clave
+  return `${nombres[mes - 1]} ${anio}`
+}
+/** Nombre del mes (1–12) sin año; el año lo muestra el grupo del selector. */
+export function nombreMes(mes: number): string {
+  const nombres = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  ]
+  return nombres[mes - 1] ?? ''
 }

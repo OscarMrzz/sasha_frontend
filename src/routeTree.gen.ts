@@ -42,6 +42,7 @@ import { Route as AppRecuperacionesRouteImport } from './routes/_app/recuperacio
 import { Route as AppRestablecerPasswordRouteImport } from './routes/_app/restablecer-password'
 import { Route as AppSaceRouteImport } from './routes/_app/sace'
 import { Route as AppTareasRouteImport } from './routes/_app/tareas'
+import { Route as AppTiposPagosRouteImport } from './routes/_app/tipos-pagos'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 import { Route as AppAlumnoIndexRouteImport } from './routes/_app/alumno/index'
 import { Route as AppAlumnoClasesRouteImport } from './routes/_app/alumno/clases'
@@ -238,6 +239,11 @@ const AppTareasRoute = AppTareasRouteImport.update({
   path: '/tareas',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTiposPagosRoute = AppTiposPagosRouteImport.update({
+  id: '/tipos-pagos',
+  path: '/tipos-pagos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppUsuariosRoute = AppUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -428,6 +434,7 @@ export interface FileRoutesByFullPath {
   '/restablecer-password': typeof AppRestablecerPasswordRoute
   '/sace': typeof AppSaceRoute
   '/tareas': typeof AppTareasRoute
+  '/tipos-pagos': typeof AppTiposPagosRoute
   '/usuarios': typeof AppUsuariosRoute
   '/alumno/clases': typeof AppAlumnoClasesRoute
   '/alumno/fichas': typeof AppAlumnoFichasRoute
@@ -493,6 +500,7 @@ export interface FileRoutesByTo {
   '/restablecer-password': typeof AppRestablecerPasswordRoute
   '/sace': typeof AppSaceRoute
   '/tareas': typeof AppTareasRoute
+  '/tipos-pagos': typeof AppTiposPagosRoute
   '/usuarios': typeof AppUsuariosRoute
   '/alumno/clases': typeof AppAlumnoClasesRoute
   '/alumno/fichas': typeof AppAlumnoFichasRoute
@@ -560,6 +568,7 @@ export interface FileRoutesById {
   '/_app/restablecer-password': typeof AppRestablecerPasswordRoute
   '/_app/sace': typeof AppSaceRoute
   '/_app/tareas': typeof AppTareasRoute
+  '/_app/tipos-pagos': typeof AppTiposPagosRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/alumno/clases': typeof AppAlumnoClasesRoute
   '/_app/alumno/fichas': typeof AppAlumnoFichasRoute
@@ -627,6 +636,7 @@ export interface FileRouteTypes {
     | '/restablecer-password'
     | '/sace'
     | '/tareas'
+    | '/tipos-pagos'
     | '/usuarios'
     | '/alumno/clases'
     | '/alumno/fichas'
@@ -692,6 +702,7 @@ export interface FileRouteTypes {
     | '/restablecer-password'
     | '/sace'
     | '/tareas'
+    | '/tipos-pagos'
     | '/usuarios'
     | '/alumno/clases'
     | '/alumno/fichas'
@@ -758,6 +769,7 @@ export interface FileRouteTypes {
     | '/_app/restablecer-password'
     | '/_app/sace'
     | '/_app/tareas'
+    | '/_app/tipos-pagos'
     | '/_app/usuarios'
     | '/_app/alumno/clases'
     | '/_app/alumno/fichas'
@@ -1031,6 +1043,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTareasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tipos-pagos': {
+      id: '/_app/tipos-pagos'
+      path: '/tipos-pagos'
+      fullPath: '/tipos-pagos'
+      preLoaderRoute: typeof AppTiposPagosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/usuarios': {
       id: '/_app/usuarios'
       path: '/usuarios'
@@ -1281,6 +1300,7 @@ interface AppRouteChildren {
   AppRestablecerPasswordRoute: typeof AppRestablecerPasswordRoute
   AppSaceRoute: typeof AppSaceRoute
   AppTareasRoute: typeof AppTareasRoute
+  AppTiposPagosRoute: typeof AppTiposPagosRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
   AppAlumnoClasesRoute: typeof AppAlumnoClasesRoute
   AppAlumnoFichasRoute: typeof AppAlumnoFichasRoute
@@ -1344,6 +1364,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRestablecerPasswordRoute: AppRestablecerPasswordRoute,
   AppSaceRoute: AppSaceRoute,
   AppTareasRoute: AppTareasRoute,
+  AppTiposPagosRoute: AppTiposPagosRoute,
   AppUsuariosRoute: AppUsuariosRoute,
   AppAlumnoClasesRoute: AppAlumnoClasesRoute,
   AppAlumnoFichasRoute: AppAlumnoFichasRoute,
