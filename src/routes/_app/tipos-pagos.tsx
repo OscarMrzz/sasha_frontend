@@ -131,7 +131,7 @@ function TiposPagosPage() {
         }}
         rowActions={(p) => [
           {
-            label: 'Ver',
+            label: 'Abrir',
             onClick: () => setPeriodoActivo(p),
             testId: `tipos-pagos-row-ver-${p.id}`,
           },
@@ -150,7 +150,7 @@ function TiposPagosPage() {
                 closeCtx()
               }}
             >
-              Ver
+              Abrir
             </button>
           </Can>
         </div>
