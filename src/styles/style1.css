@@ -10192,3 +10192,123 @@ body::before {
     min-width: 82vw;
   }
 }
+
+/* Permisos del padre y bandeja de revisión. */
+.permisos-padre {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.permisos-padre__acciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.permisos-padre__faltas {
+  padding: 0.85rem 1rem;
+  background: var(--sasha-bg-raised);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+}
+
+.permisos-padre__faltas summary {
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.permisos-padre__lista {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.permiso-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 10px;
+  background: var(--sasha-bg-card);
+}
+
+.permiso-fila__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.permiso-fila__titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-weight: 600;
+}
+
+.permiso-fila__motivo {
+  color: var(--sasha-danger);
+  font-size: 0.85rem;
+}
+
+.permiso-wizard__paso {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.permiso-wizard__tipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.permiso-wizard__tipo {
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--sasha-border-fuerte);
+  background: var(--sasha-bg-raised);
+  color: var(--sasha-texto-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.permiso-wizard__tipo--activo {
+  border-color: var(--sasha-accent);
+}
+
+.permiso-wizard__resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--sasha-bg-raised);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+}
+
+@media (min-width: 720px) {
+  .permiso-wizard__paso {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .permiso-wizard__paso > :last-child {
+    grid-column: 1 / -1;
+  }
+}

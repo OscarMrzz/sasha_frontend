@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Clock,
   Download,
+  FileCheck,
   FileText,
   Gavel,
   Home,
@@ -74,6 +75,7 @@ export const NAV_ICONS: Record<string, LucideIcon> = {
   'shield-plus': ShieldPlus,
   refresh: RefreshCw,
   megaphone: Megaphone,
+  'file-check': FileCheck,
 }
 
 export function NavIcon({ name, className }: { name: string; className?: string }) {

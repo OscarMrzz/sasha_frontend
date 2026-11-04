@@ -56,6 +56,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/disciplina', label: 'Fichas disciplinarias', permission: 'fichas:get', icon: 'shield-alert' },
   { to: '/disciplina/tipos', label: 'Tipos de ficha', permission: 'tipos_ficha:post', icon: 'gavel' },
   { to: '/excusas', label: 'Excusas', permission: 'excusas:get', icon: 'calendar-check' },
+  { to: '/permisos', label: 'Permisos', permission: 'permisos_admin:get', icon: 'file-check' },
   { to: '/excusas/tipos', label: 'Tipos de excusa', permission: 'tipos_excusa:post', icon: 'shield-plus' },
   { to: '/contratos', label: 'Contratos', permission: 'contratos:get', icon: 'file' },
   { to: '/alumnos', label: 'Alumnos', permission: 'cartera:get', icon: 'users' },

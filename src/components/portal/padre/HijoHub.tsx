@@ -1,13 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Award, BookOpen, CalendarDays, ChevronRight, ListTodo, ShieldAlert, Wallet } from 'lucide-react'
+import { Award, BookOpen, CalendarDays, ChevronRight, FileCheck, ListTodo, ShieldAlert, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { usePortalInicio } from '#/hooks/use-portal'
 import { getPagosHijo, listHijos } from '#/services/portal'
 
 type Tile = {
-  to: '/hijo/tareas' | '/hijo/horario' | '/hijo/plan' | '/hijo/pagos' | '/hijo/fichas' | '/alumno/resultados'
+  to:
+    | '/hijo/tareas'
+    | '/hijo/horario'
+    | '/hijo/plan'
+    | '/hijo/pagos'
+    | '/hijo/fichas'
+    | '/hijo/permisos'
+    | '/alumno/resultados'
   id: string
   label: string
   detalle: string
@@ -75,6 +82,13 @@ export function HijoHub({ alumnoId }: { alumnoId: string }) {
       label: 'Fichas disciplinarias',
       detalle: 'Conducta y sanciones',
       icon: <ShieldAlert size={30} />,
+    },
+    {
+      to: '/hijo/permisos',
+      id: 'permisos',
+      label: 'Permisos',
+      detalle: 'Avisar o justificar faltas',
+      icon: <FileCheck size={30} />,
     },
     {
       to: '/alumno/resultados',

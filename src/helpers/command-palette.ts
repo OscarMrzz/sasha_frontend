@@ -83,6 +83,7 @@ export const DESCRIPCION_RUTA: Record<string, string> = {
   '/estadisticas': 'Análisis institucional',
   '/sace': 'Exportar planilla SACE',
   '/actualizaciones': 'Novedades y roadmap del sistema',
+  '/permisos': 'Permisos y justificación de faltas',
   '/auditoria': 'Historial de acciones',
 }
 
@@ -126,6 +127,7 @@ export const PALABRAS_CLAVE_RUTA: Record<string, string[]> = {
   '/estadisticas': ['estadistica', 'estadisticas', 'analisis', 'reporte', 'reportes', 'graficas'],
   '/sace': ['sace', 'export', 'exportar', 'planilla', 'reporte'],
   '/actualizaciones': ['actualizaciones', 'novedades', 'roadmap', 'cambios', 'mejoras', 'sistema'],
+  '/permisos': ['permisos', 'justificar', 'falta', 'ausencia', 'inasistencia', 'padre'],
   '/auditoria': ['auditoria', 'log', 'logs', 'historial', 'registro', 'acciones'],
 }
 
