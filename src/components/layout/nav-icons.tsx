@@ -20,6 +20,7 @@ import {
   LayoutGrid,
   Link2,
   ListTodo,
+  Megaphone,
   Network,
   Radar,
   Receipt,
@@ -72,6 +73,7 @@ export const NAV_ICONS: Record<string, LucideIcon> = {
   'calendar-check': CalendarCheck,
   'shield-plus': ShieldPlus,
   refresh: RefreshCw,
+  megaphone: Megaphone,
 }
 
 export function NavIcon({ name, className }: { name: string; className?: string }) {

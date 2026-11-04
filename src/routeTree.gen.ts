@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MantenimientoRouteImport } from './routes/mantenimiento'
+import { Route as AppActualizacionesRouteImport } from './routes/_app/actualizaciones'
 import { Route as AppAlumnosRouteImport } from './routes/_app/alumnos'
 import { Route as AppAnaliticaPagosRouteImport } from './routes/_app/analitica-pagos'
 import { Route as AppAsignacionRouteImport } from './routes/_app/asignacion'
@@ -93,6 +94,11 @@ const MantenimientoRoute = MantenimientoRouteImport.update({
   id: '/mantenimiento',
   path: '/mantenimiento',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppActualizacionesRoute = AppActualizacionesRouteImport.update({
+  id: '/actualizaciones',
+  path: '/actualizaciones',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAlumnosRoute = AppAlumnosRouteImport.update({
   id: '/alumnos',
@@ -405,6 +411,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/mantenimiento': typeof MantenimientoRoute
+  '/actualizaciones': typeof AppActualizacionesRoute
   '/alumnos': typeof AppAlumnosRoute
   '/analitica-pagos': typeof AppAnaliticaPagosRoute
   '/asignacion': typeof AppAsignacionRoute
@@ -471,6 +478,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/mantenimiento': typeof MantenimientoRoute
+  '/actualizaciones': typeof AppActualizacionesRoute
   '/alumnos': typeof AppAlumnosRoute
   '/analitica-pagos': typeof AppAnaliticaPagosRoute
   '/asignacion': typeof AppAsignacionRoute
@@ -539,6 +547,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/mantenimiento': typeof MantenimientoRoute
+  '/_app/actualizaciones': typeof AppActualizacionesRoute
   '/_app/alumnos': typeof AppAlumnosRoute
   '/_app/analitica-pagos': typeof AppAnaliticaPagosRoute
   '/_app/asignacion': typeof AppAsignacionRoute
@@ -607,6 +616,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/mantenimiento'
+    | '/actualizaciones'
     | '/alumnos'
     | '/analitica-pagos'
     | '/asignacion'
@@ -673,6 +683,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/mantenimiento'
+    | '/actualizaciones'
     | '/alumnos'
     | '/analitica-pagos'
     | '/asignacion'
@@ -740,6 +751,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/mantenimiento'
+    | '/_app/actualizaciones'
     | '/_app/alumnos'
     | '/_app/analitica-pagos'
     | '/_app/asignacion'
@@ -839,6 +851,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/mantenimiento'
       preLoaderRoute: typeof MantenimientoRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/actualizaciones': {
+      id: '/_app/actualizaciones'
+      path: '/actualizaciones'
+      fullPath: '/actualizaciones'
+      preLoaderRoute: typeof AppActualizacionesRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/alumnos': {
       id: '/_app/alumnos'
@@ -1271,6 +1290,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppActualizacionesRoute: typeof AppActualizacionesRoute
   AppAlumnosRoute: typeof AppAlumnosRoute
   AppAnaliticaPagosRoute: typeof AppAnaliticaPagosRoute
   AppAsignacionRoute: typeof AppAsignacionRoute
@@ -1335,6 +1355,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppActualizacionesRoute: AppActualizacionesRoute,
   AppAlumnosRoute: AppAlumnosRoute,
   AppAnaliticaPagosRoute: AppAnaliticaPagosRoute,
   AppAsignacionRoute: AppAsignacionRoute,

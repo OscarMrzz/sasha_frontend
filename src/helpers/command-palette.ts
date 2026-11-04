@@ -82,6 +82,7 @@ export const DESCRIPCION_RUTA: Record<string, string> = {
   '/notificaciones-admin': 'Avisos y banners',
   '/estadisticas': 'Análisis institucional',
   '/sace': 'Exportar planilla SACE',
+  '/actualizaciones': 'Novedades y roadmap del sistema',
   '/auditoria': 'Historial de acciones',
 }
 
@@ -124,6 +125,7 @@ export const PALABRAS_CLAVE_RUTA: Record<string, string[]> = {
   '/notificaciones-admin': ['notificacion', 'notificaciones', 'aviso', 'avisos', 'banner', 'comunicado'],
   '/estadisticas': ['estadistica', 'estadisticas', 'analisis', 'reporte', 'reportes', 'graficas'],
   '/sace': ['sace', 'export', 'exportar', 'planilla', 'reporte'],
+  '/actualizaciones': ['actualizaciones', 'novedades', 'roadmap', 'cambios', 'mejoras', 'sistema'],
   '/auditoria': ['auditoria', 'log', 'logs', 'historial', 'registro', 'acciones'],
 }
 

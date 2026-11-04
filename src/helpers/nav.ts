@@ -83,6 +83,12 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { to: '/estadisticas', label: 'Estadísticas', permission: 'estadisticas:get', icon: 'chart' },
   { to: '/sace', label: 'Export SACE', permission: 'sace:get', icon: 'download' },
+  {
+    to: '/actualizaciones',
+    label: 'Actualizaciones',
+    permission: 'actualizaciones:get',
+    icon: 'megaphone',
+  },
   { to: '/auditoria', label: 'Auditoría', permission: 'auditoria:get', icon: 'search' },
 ]
 

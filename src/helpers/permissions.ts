@@ -99,6 +99,7 @@ const adminPerms: Permission[] = [
   'contratos:post',
   'contratos:put',
   'contratos:delete',
+  'actualizaciones:get',
 ]
 
 export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
@@ -299,6 +300,10 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'credenciales:get',
     'credenciales:post',
     'mantenimiento:put',
+    'actualizaciones:get',
+    'actualizaciones:post',
+    'actualizaciones:put',
+    'actualizaciones:delete',
   ],
 }
 
