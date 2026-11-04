@@ -10274,18 +10274,24 @@ body::before {
 
 .permiso-wizard__tipos {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.5rem;
 }
 
 .permiso-wizard__tipo {
-  padding: 0.5rem 0.85rem;
-  border-radius: 999px;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
   border: 1px solid var(--sasha-border-fuerte);
   background: var(--sasha-bg-raised);
   color: var(--sasha-texto-primary);
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  text-align: left;
   cursor: pointer;
+}
+
+.permiso-wizard__tipo:hover {
+  border-color: var(--sasha-accent);
 }
 
 .permiso-wizard__tipo--activo {
