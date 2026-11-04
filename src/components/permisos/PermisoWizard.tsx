@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { Camera, Paperclip, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Field } from '#/components/ui/Field'
 import { Modal, useDismiss } from '#/components/ui/Modal'
@@ -35,6 +36,13 @@ export function PermisoWizard({
   const [detalle, setDetalle] = useState('')
   const [archivo, setArchivo] = useState<File | null>(null)
   const [intentado, setIntentado] = useState(false)
+  const camaraRef = useRef<HTMLInputElement>(null)
+  const archivoRef = useRef<HTMLInputElement>(null)
+
+  const elegirArchivo = (file: File | null) => {
+    if (!file) return
+    setArchivo(file)
+  }
 
   const tiposElegidos = useMemo(
     () => tipos.filter((t) => seleccion.includes(t.id)),
@@ -201,16 +209,55 @@ export function PermisoWizard({
               onChange={(e) => setDetalle(e.target.value)}
             />
           </Field>
-          <Field label="Adjunto (opcional)" htmlFor="permiso-archivo">
+          <div className="field">
+            <span className="field__label">Adjunto (opcional)</span>
+            <div className="permiso-wizard__adjuntos">
+              <button
+                type="button"
+                className="btn btn--ghost"
+                data-testid="permiso-wizard-camara"
+                onClick={() => camaraRef.current?.click()}
+              >
+                <Camera size={18} aria-hidden /> Tomar foto
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                data-testid="permiso-wizard-adjunto"
+                onClick={() => archivoRef.current?.click()}
+              >
+                <Paperclip size={18} aria-hidden /> Adjuntar archivo
+              </button>
+            </div>
             <input
-              id="permiso-archivo"
+              ref={camaraRef}
               type="file"
-              className="field__input"
-              data-testid="permiso-wizard-archivo"
-              accept="image/*,application/pdf"
-              onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+              accept="image/*"
+              capture="environment"
+              className="permiso-wizard__input-oculto"
+              onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
             />
-          </Field>
+            <input
+              ref={archivoRef}
+              type="file"
+              accept="image/*,application/pdf"
+              className="permiso-wizard__input-oculto"
+              onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
+            />
+            {archivo ? (
+              <div className="permiso-wizard__archivo">
+                <span>{archivo.name}</span>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  aria-label="Quitar adjunto"
+                  onClick={() => setArchivo(null)}
+                >
+                  <X size={16} aria-hidden />
+                </button>
+              </div>
+            ) : null}
+          </div>
           <p className="texto-muted" style={{ margin: 0 }}>
             Imagen o PDF, máximo 10 MB.
           </p>

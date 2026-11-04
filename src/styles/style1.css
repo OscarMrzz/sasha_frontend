@@ -10298,6 +10298,34 @@ body::before {
   border-color: var(--sasha-accent);
 }
 
+.permiso-wizard__adjuntos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.permiso-wizard__adjuntos .btn {
+  flex: 1 1 150px;
+  justify-content: center;
+}
+
+.permiso-wizard__input-oculto {
+  display: none;
+}
+
+.permiso-wizard__archivo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--sasha-bg-card);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
 .permiso-wizard__resumen {
   display: flex;
   flex-direction: column;
