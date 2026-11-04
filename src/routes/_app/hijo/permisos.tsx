@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PadreScreen } from '#/components/portal/padre/PadreScreen'
@@ -48,6 +49,8 @@ function PermisosHijo({ alumnoId }: { alumnoId: string }) {
 
   const prefill =
     wizard && wizard !== 'nuevo' ? { fecha_inicio: wizard.inicio, fecha_fin: wizard.fin } : null
+  const tardanzas = faltas.filter((f) => f.tipo === 'tarde')
+  const ausencias = faltas.filter((f) => f.tipo === 'injustificada')
 
   return (
     <div className="permisos-padre">
@@ -112,18 +115,38 @@ function PermisosHijo({ alumnoId }: { alumnoId: string }) {
         )}
       </section>
 
+      <details className="permisos-padre__faltas" data-testid="permisos-tardanzas">
+        <summary>
+          <ChevronDown size={16} aria-hidden />
+          Ver tardanzas <span className="badge">{tardanzas.length}</span>
+        </summary>
+        {tardanzas.length === 0 ? (
+          <p className="texto-muted">No hay tardanzas pendientes de justificar.</p>
+        ) : (
+          <ul className="permisos-padre__lista">
+            {tardanzas.map((f) => (
+              <FaltaFila
+                key={`${f.fecha}-${f.tipo}-${f.asignatura}`}
+                falta={f}
+                onJustificar={() => setWizard({ inicio: f.fecha, fin: f.fecha })}
+              />
+            ))}
+          </ul>
+        )}
+      </details>
+
       <details className="permisos-padre__faltas" data-testid="permisos-faltas">
         <summary>
-          Faltas y tardanzas registradas
-          {faltas.length > 0 ? <span className="badge">{faltas.length}</span> : null}
+          <ChevronDown size={16} aria-hidden />
+          Ver faltas <span className="badge">{ausencias.length}</span>
         </summary>
-        {faltas.length === 0 ? (
+        {ausencias.length === 0 ? (
           <p className="texto-muted">No hay faltas pendientes de justificar.</p>
         ) : (
           <ul className="permisos-padre__lista">
-            {faltas.map((f) => (
+            {ausencias.map((f) => (
               <FaltaFila
-                key={`${f.fecha}-${f.tipo}`}
+                key={`${f.fecha}-${f.tipo}-${f.asignatura}`}
                 falta={f}
                 onJustificar={() => setWizard({ inicio: f.fecha, fin: f.fecha })}
               />
@@ -149,7 +172,11 @@ function FaltaFila({ falta, onJustificar }: { falta: FaltaPermiso; onJustificar:
       <div className="permiso-fila__cuerpo">
         <div className="permiso-fila__titulo">{formatearFechaPermiso(falta.fecha)}</div>
         <div className="texto-muted">
-          {etiquetaFalta(falta.tipo)} en {falta.clases} clase{falta.clases === 1 ? '' : 's'}
+          {falta.tipo === 'tarde'
+            ? falta.asignatura
+              ? `Tardanza en ${falta.asignatura}`
+              : 'Tardanza'
+            : `${etiquetaFalta(falta.tipo)} en ${falta.clases} clase${falta.clases === 1 ? '' : 's'}`}
         </div>
       </div>
       <button type="button" className="btn btn--ghost btn--sm" onClick={onJustificar}>

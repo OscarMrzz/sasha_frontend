@@ -22,6 +22,7 @@ export interface SolicitudPermiso {
   grado: string
   seccion: string
   solicitado_por: string
+  solicitado_por_codigo: string
   tipo_solicitud: 'aviso_previo' | 'justificacion'
   fecha_inicio: string
   fecha_fin: string
@@ -37,6 +38,7 @@ export interface SolicitudPermiso {
 export interface FaltaPermiso {
   fecha: string
   tipo: 'injustificada' | 'tarde'
+  asignatura: string
   clases: number
 }
 
@@ -59,6 +61,10 @@ export async function crearTipoPermiso(body: TipoPermisoInput) {
 
 export async function actualizarTipoPermiso(id: string, body: TipoPermisoInput) {
   return apiRequest<TipoPermiso>(`/permisos/tipos/${id}`, { method: 'PUT', body })
+}
+
+export async function desactivarTipoPermiso(id: string) {
+  return apiRequest<void>(`/permisos/tipos/${id}`, { method: 'DELETE' })
 }
 
 export async function listSolicitudesPermiso(estado = '') {

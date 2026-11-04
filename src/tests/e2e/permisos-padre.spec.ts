@@ -27,8 +27,13 @@ async function crearSolicitud(page: Parameters<typeof loginAs>[0], detalle: stri
 
 async function abrirBandeja(page: Parameters<typeof loginAs>[0]) {
   await loginAs(page, { code: CONSEJERIA })
-  await page.locator('.sidebar-nav').getByTitle('Permisos', { exact: true }).first().click()
-  await expect(page.getByTestId('permisos-page')).toBeVisible({ timeout: 15_000 })
+  await page
+    .locator('.sidebar-nav')
+    .getByTitle('Solicitudes de permiso', { exact: true })
+    .first()
+    .click()
+  await expect(page.getByTestId('solicitud-permisos-page')).toBeVisible({ timeout: 15_000 })
+  await expect(page.locator('table.data-table tbody tr').first()).toBeVisible({ timeout: 15_000 })
 }
 
 test.describe('permisos del padre', () => {
@@ -41,7 +46,8 @@ test.describe('permisos del padre', () => {
     await abrirBandeja(page)
     const fila = page.locator('table.data-table tbody tr', { hasText: 'Ana Alvarez' }).first()
     await expect(fila).toContainText('Pendiente')
-    await fila.dblclick()
+    await fila.click({ button: 'right' })
+    await page.getByTestId('permisos-ctx-validar').click()
     await expect(page.getByTestId('permiso-detalle')).toBeVisible()
     await page.getByTestId('permiso-aprobar').click()
     await page.getByTestId('permiso-aprobar-confirmar').getByRole('button', { name: 'Aprobar' }).click()
@@ -63,7 +69,8 @@ test.describe('permisos del padre', () => {
     await cerrarSesion(page)
     await abrirBandeja(page)
     const fila = page.locator('table.data-table tbody tr', { hasText: 'Ana Alvarez' }).first()
-    await fila.dblclick()
+    await fila.click({ button: 'right' })
+    await page.getByTestId('permisos-ctx-validar').click()
     await page.getByTestId('permiso-rechazar').click()
     await page.getByTestId('permiso-motivo').fill('Falta un documento')
     await page.getByTestId('permiso-rechazo-confirmar').click()
@@ -79,8 +86,13 @@ test.describe('permisos del padre', () => {
     await expect(solicitud).toContainText('Falta un documento')
   })
 
-  test('un rol sin permiso no ve el menú de permisos', async ({ page }) => {
+  test('un rol sin permiso no ve los menús de permisos', async ({ page }) => {
     await loginAs(page, { code: MAESTRO })
-    await expect(page.locator('.sidebar-nav').getByTitle('Permisos', { exact: true })).toHaveCount(0)
+    await expect(
+      page.locator('.sidebar-nav').getByTitle('Solicitudes de permiso', { exact: true }),
+    ).toHaveCount(0)
+    await expect(
+      page.locator('.sidebar-nav').getByTitle('Tipos de permiso', { exact: true }),
+    ).toHaveCount(0)
   })
 })

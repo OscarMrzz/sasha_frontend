@@ -42,8 +42,10 @@ import { Route as AppRecibosRouteImport } from './routes/_app/recibos'
 import { Route as AppRecuperacionesRouteImport } from './routes/_app/recuperaciones'
 import { Route as AppRestablecerPasswordRouteImport } from './routes/_app/restablecer-password'
 import { Route as AppSaceRouteImport } from './routes/_app/sace'
+import { Route as AppSolicitudPermisosRouteImport } from './routes/_app/solicitud-permisos'
 import { Route as AppTareasRouteImport } from './routes/_app/tareas'
 import { Route as AppTiposPagosRouteImport } from './routes/_app/tipos-pagos'
+import { Route as AppTiposPermisoRouteImport } from './routes/_app/tipos-permiso'
 import { Route as AppUsuariosRouteImport } from './routes/_app/usuarios'
 import { Route as AppAlumnoIndexRouteImport } from './routes/_app/alumno/index'
 import { Route as AppAlumnoClasesRouteImport } from './routes/_app/alumno/clases'
@@ -72,8 +74,6 @@ import { Route as AppHijoTareasRouteImport } from './routes/_app/hijo/tareas'
 import { Route as AppMaestroIndexRouteImport } from './routes/_app/maestro/index'
 import { Route as AppMaestroAnaliticasRouteImport } from './routes/_app/maestro/analiticas'
 import { Route as AppMaestroSaceRouteImport } from './routes/_app/maestro/sace'
-import { Route as AppPermisosIndexRouteImport } from './routes/_app/permisos/index'
-import { Route as AppPermisosTiposRouteImport } from './routes/_app/permisos/tipos'
 import { Route as AppResponsableIndexRouteImport } from './routes/_app/responsable/index'
 import { Route as AppHijoPlanIndexRouteImport } from './routes/_app/hijo/plan/index'
 import { Route as AppHijoPlanAsignacionIdRouteImport } from './routes/_app/hijo/plan/$asignacionId'
@@ -243,6 +243,11 @@ const AppSaceRoute = AppSaceRouteImport.update({
   path: '/sace',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSolicitudPermisosRoute = AppSolicitudPermisosRouteImport.update({
+  id: '/solicitud-permisos',
+  path: '/solicitud-permisos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTareasRoute = AppTareasRouteImport.update({
   id: '/tareas',
   path: '/tareas',
@@ -251,6 +256,11 @@ const AppTareasRoute = AppTareasRouteImport.update({
 const AppTiposPagosRoute = AppTiposPagosRouteImport.update({
   id: '/tipos-pagos',
   path: '/tipos-pagos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTiposPermisoRoute = AppTiposPermisoRouteImport.update({
+  id: '/tipos-permiso',
+  path: '/tipos-permiso',
   getParentRoute: () => AppRoute,
 } as any)
 const AppUsuariosRoute = AppUsuariosRouteImport.update({
@@ -393,16 +403,6 @@ const AppMaestroSaceRoute = AppMaestroSaceRouteImport.update({
   path: '/maestro/sace',
   getParentRoute: () => AppRoute,
 } as any)
-const AppPermisosIndexRoute = AppPermisosIndexRouteImport.update({
-  id: '/permisos/',
-  path: '/permisos/',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPermisosTiposRoute = AppPermisosTiposRouteImport.update({
-  id: '/permisos/tipos',
-  path: '/permisos/tipos',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppResponsableIndexRoute = AppResponsableIndexRouteImport.update({
   id: '/responsable/',
   path: '/responsable/',
@@ -458,8 +458,10 @@ export interface FileRoutesByFullPath {
   '/recuperaciones': typeof AppRecuperacionesRoute
   '/restablecer-password': typeof AppRestablecerPasswordRoute
   '/sace': typeof AppSaceRoute
+  '/solicitud-permisos': typeof AppSolicitudPermisosRoute
   '/tareas': typeof AppTareasRoute
   '/tipos-pagos': typeof AppTiposPagosRoute
+  '/tipos-permiso': typeof AppTiposPermisoRoute
   '/usuarios': typeof AppUsuariosRoute
   '/alumno/clases': typeof AppAlumnoClasesRoute
   '/alumno/fichas': typeof AppAlumnoFichasRoute
@@ -483,13 +485,11 @@ export interface FileRoutesByFullPath {
   '/hijo/tareas': typeof AppHijoTareasRoute
   '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
   '/maestro/sace': typeof AppMaestroSaceRoute
-  '/permisos/tipos': typeof AppPermisosTiposRoute
   '/alumno/': typeof AppAlumnoIndexRoute
   '/contratos/': typeof AppContratosIndexRoute
   '/disciplina/': typeof AppDisciplinaIndexRoute
   '/excusas/': typeof AppExcusasIndexRoute
   '/maestro/': typeof AppMaestroIndexRoute
-  '/permisos/': typeof AppPermisosIndexRoute
   '/responsable/': typeof AppResponsableIndexRoute
   '/hijo/plan/$asignacionId': typeof AppHijoPlanAsignacionIdRoute
   '/maestro/clases/$asignacionId': typeof AppMaestroClasesAsignacionIdRoute
@@ -528,8 +528,10 @@ export interface FileRoutesByTo {
   '/recuperaciones': typeof AppRecuperacionesRoute
   '/restablecer-password': typeof AppRestablecerPasswordRoute
   '/sace': typeof AppSaceRoute
+  '/solicitud-permisos': typeof AppSolicitudPermisosRoute
   '/tareas': typeof AppTareasRoute
   '/tipos-pagos': typeof AppTiposPagosRoute
+  '/tipos-permiso': typeof AppTiposPermisoRoute
   '/usuarios': typeof AppUsuariosRoute
   '/alumno/clases': typeof AppAlumnoClasesRoute
   '/alumno/fichas': typeof AppAlumnoFichasRoute
@@ -553,13 +555,11 @@ export interface FileRoutesByTo {
   '/hijo/tareas': typeof AppHijoTareasRoute
   '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
   '/maestro/sace': typeof AppMaestroSaceRoute
-  '/permisos/tipos': typeof AppPermisosTiposRoute
   '/alumno': typeof AppAlumnoIndexRoute
   '/contratos': typeof AppContratosIndexRoute
   '/disciplina': typeof AppDisciplinaIndexRoute
   '/excusas': typeof AppExcusasIndexRoute
   '/maestro': typeof AppMaestroIndexRoute
-  '/permisos': typeof AppPermisosIndexRoute
   '/responsable': typeof AppResponsableIndexRoute
   '/hijo/plan/$asignacionId': typeof AppHijoPlanAsignacionIdRoute
   '/maestro/clases/$asignacionId': typeof AppMaestroClasesAsignacionIdRoute
@@ -600,8 +600,10 @@ export interface FileRoutesById {
   '/_app/recuperaciones': typeof AppRecuperacionesRoute
   '/_app/restablecer-password': typeof AppRestablecerPasswordRoute
   '/_app/sace': typeof AppSaceRoute
+  '/_app/solicitud-permisos': typeof AppSolicitudPermisosRoute
   '/_app/tareas': typeof AppTareasRoute
   '/_app/tipos-pagos': typeof AppTiposPagosRoute
+  '/_app/tipos-permiso': typeof AppTiposPermisoRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/alumno/clases': typeof AppAlumnoClasesRoute
   '/_app/alumno/fichas': typeof AppAlumnoFichasRoute
@@ -625,13 +627,11 @@ export interface FileRoutesById {
   '/_app/hijo/tareas': typeof AppHijoTareasRoute
   '/_app/maestro/analiticas': typeof AppMaestroAnaliticasRoute
   '/_app/maestro/sace': typeof AppMaestroSaceRoute
-  '/_app/permisos/tipos': typeof AppPermisosTiposRoute
   '/_app/alumno/': typeof AppAlumnoIndexRoute
   '/_app/contratos/': typeof AppContratosIndexRoute
   '/_app/disciplina/': typeof AppDisciplinaIndexRoute
   '/_app/excusas/': typeof AppExcusasIndexRoute
   '/_app/maestro/': typeof AppMaestroIndexRoute
-  '/_app/permisos/': typeof AppPermisosIndexRoute
   '/_app/responsable/': typeof AppResponsableIndexRoute
   '/_app/hijo/plan/$asignacionId': typeof AppHijoPlanAsignacionIdRoute
   '/_app/maestro/clases/$asignacionId': typeof AppMaestroClasesAsignacionIdRoute
@@ -672,8 +672,10 @@ export interface FileRouteTypes {
     | '/recuperaciones'
     | '/restablecer-password'
     | '/sace'
+    | '/solicitud-permisos'
     | '/tareas'
     | '/tipos-pagos'
+    | '/tipos-permiso'
     | '/usuarios'
     | '/alumno/clases'
     | '/alumno/fichas'
@@ -697,13 +699,11 @@ export interface FileRouteTypes {
     | '/hijo/tareas'
     | '/maestro/analiticas'
     | '/maestro/sace'
-    | '/permisos/tipos'
     | '/alumno/'
     | '/contratos/'
     | '/disciplina/'
     | '/excusas/'
     | '/maestro/'
-    | '/permisos/'
     | '/responsable/'
     | '/hijo/plan/$asignacionId'
     | '/maestro/clases/$asignacionId'
@@ -742,8 +742,10 @@ export interface FileRouteTypes {
     | '/recuperaciones'
     | '/restablecer-password'
     | '/sace'
+    | '/solicitud-permisos'
     | '/tareas'
     | '/tipos-pagos'
+    | '/tipos-permiso'
     | '/usuarios'
     | '/alumno/clases'
     | '/alumno/fichas'
@@ -767,13 +769,11 @@ export interface FileRouteTypes {
     | '/hijo/tareas'
     | '/maestro/analiticas'
     | '/maestro/sace'
-    | '/permisos/tipos'
     | '/alumno'
     | '/contratos'
     | '/disciplina'
     | '/excusas'
     | '/maestro'
-    | '/permisos'
     | '/responsable'
     | '/hijo/plan/$asignacionId'
     | '/maestro/clases/$asignacionId'
@@ -813,8 +813,10 @@ export interface FileRouteTypes {
     | '/_app/recuperaciones'
     | '/_app/restablecer-password'
     | '/_app/sace'
+    | '/_app/solicitud-permisos'
     | '/_app/tareas'
     | '/_app/tipos-pagos'
+    | '/_app/tipos-permiso'
     | '/_app/usuarios'
     | '/_app/alumno/clases'
     | '/_app/alumno/fichas'
@@ -838,13 +840,11 @@ export interface FileRouteTypes {
     | '/_app/hijo/tareas'
     | '/_app/maestro/analiticas'
     | '/_app/maestro/sace'
-    | '/_app/permisos/tipos'
     | '/_app/alumno/'
     | '/_app/contratos/'
     | '/_app/disciplina/'
     | '/_app/excusas/'
     | '/_app/maestro/'
-    | '/_app/permisos/'
     | '/_app/responsable/'
     | '/_app/hijo/plan/$asignacionId'
     | '/_app/maestro/clases/$asignacionId'
@@ -1091,6 +1091,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSaceRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/solicitud-permisos': {
+      id: '/_app/solicitud-permisos'
+      path: '/solicitud-permisos'
+      fullPath: '/solicitud-permisos'
+      preLoaderRoute: typeof AppSolicitudPermisosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/tareas': {
       id: '/_app/tareas'
       path: '/tareas'
@@ -1103,6 +1110,13 @@ declare module '@tanstack/react-router' {
       path: '/tipos-pagos'
       fullPath: '/tipos-pagos'
       preLoaderRoute: typeof AppTiposPagosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tipos-permiso': {
+      id: '/_app/tipos-permiso'
+      path: '/tipos-permiso'
+      fullPath: '/tipos-permiso'
+      preLoaderRoute: typeof AppTiposPermisoRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/usuarios': {
@@ -1301,20 +1315,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMaestroSaceRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/permisos/': {
-      id: '/_app/permisos/'
-      path: '/permisos'
-      fullPath: '/permisos/'
-      preLoaderRoute: typeof AppPermisosIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/permisos/tipos': {
-      id: '/_app/permisos/tipos'
-      path: '/permisos/tipos'
-      fullPath: '/permisos/tipos'
-      preLoaderRoute: typeof AppPermisosTiposRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/responsable/': {
       id: '/_app/responsable/'
       path: '/responsable'
@@ -1376,8 +1376,10 @@ interface AppRouteChildren {
   AppRecuperacionesRoute: typeof AppRecuperacionesRoute
   AppRestablecerPasswordRoute: typeof AppRestablecerPasswordRoute
   AppSaceRoute: typeof AppSaceRoute
+  AppSolicitudPermisosRoute: typeof AppSolicitudPermisosRoute
   AppTareasRoute: typeof AppTareasRoute
   AppTiposPagosRoute: typeof AppTiposPagosRoute
+  AppTiposPermisoRoute: typeof AppTiposPermisoRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
   AppAlumnoClasesRoute: typeof AppAlumnoClasesRoute
   AppAlumnoFichasRoute: typeof AppAlumnoFichasRoute
@@ -1401,13 +1403,11 @@ interface AppRouteChildren {
   AppHijoTareasRoute: typeof AppHijoTareasRoute
   AppMaestroAnaliticasRoute: typeof AppMaestroAnaliticasRoute
   AppMaestroSaceRoute: typeof AppMaestroSaceRoute
-  AppPermisosTiposRoute: typeof AppPermisosTiposRoute
   AppAlumnoIndexRoute: typeof AppAlumnoIndexRoute
   AppContratosIndexRoute: typeof AppContratosIndexRoute
   AppDisciplinaIndexRoute: typeof AppDisciplinaIndexRoute
   AppExcusasIndexRoute: typeof AppExcusasIndexRoute
   AppMaestroIndexRoute: typeof AppMaestroIndexRoute
-  AppPermisosIndexRoute: typeof AppPermisosIndexRoute
   AppResponsableIndexRoute: typeof AppResponsableIndexRoute
   AppHijoPlanAsignacionIdRoute: typeof AppHijoPlanAsignacionIdRoute
   AppMaestroClasesAsignacionIdRoute: typeof AppMaestroClasesAsignacionIdRoute
@@ -1444,8 +1444,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppRecuperacionesRoute: AppRecuperacionesRoute,
   AppRestablecerPasswordRoute: AppRestablecerPasswordRoute,
   AppSaceRoute: AppSaceRoute,
+  AppSolicitudPermisosRoute: AppSolicitudPermisosRoute,
   AppTareasRoute: AppTareasRoute,
   AppTiposPagosRoute: AppTiposPagosRoute,
+  AppTiposPermisoRoute: AppTiposPermisoRoute,
   AppUsuariosRoute: AppUsuariosRoute,
   AppAlumnoClasesRoute: AppAlumnoClasesRoute,
   AppAlumnoFichasRoute: AppAlumnoFichasRoute,
@@ -1469,13 +1471,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppHijoTareasRoute: AppHijoTareasRoute,
   AppMaestroAnaliticasRoute: AppMaestroAnaliticasRoute,
   AppMaestroSaceRoute: AppMaestroSaceRoute,
-  AppPermisosTiposRoute: AppPermisosTiposRoute,
   AppAlumnoIndexRoute: AppAlumnoIndexRoute,
   AppContratosIndexRoute: AppContratosIndexRoute,
   AppDisciplinaIndexRoute: AppDisciplinaIndexRoute,
   AppExcusasIndexRoute: AppExcusasIndexRoute,
   AppMaestroIndexRoute: AppMaestroIndexRoute,
-  AppPermisosIndexRoute: AppPermisosIndexRoute,
   AppResponsableIndexRoute: AppResponsableIndexRoute,
   AppHijoPlanAsignacionIdRoute: AppHijoPlanAsignacionIdRoute,
   AppMaestroClasesAsignacionIdRoute: AppMaestroClasesAsignacionIdRoute,

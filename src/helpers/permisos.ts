@@ -23,6 +23,14 @@ export function rangoPermiso(inicio: string, fin: string): string {
   return `${formatearFechaPermiso(inicio)} – ${formatearFechaPermiso(fin)}`
 }
 
+/** Días inclusivos entre dos fechas YYYY-MM-DD. */
+export function diasPermiso(inicio: string, fin: string): number {
+  const a = new Date(`${inicio}T00:00:00`)
+  const b = new Date(`${fin}T00:00:00`)
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 1
+  return Math.max(1, Math.round((b.getTime() - a.getTime()) / 86_400_000) + 1)
+}
+
 export function etiquetaEstadoPermiso(estado: SolicitudPermiso['estado']): string {
   switch (estado) {
     case 'pendiente':

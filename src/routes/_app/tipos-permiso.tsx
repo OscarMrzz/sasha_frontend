@@ -1,29 +1,55 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, useCan } from '#/components/gates/Can'
+import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
-import { actualizarTipoPermiso, crearTipoPermiso, listTiposPermiso } from '#/services/permisos'
+import {
+  actualizarTipoPermiso,
+  crearTipoPermiso,
+  desactivarTipoPermiso,
+  listTiposPermiso,
+} from '#/services/permisos'
 import type { TipoPermiso } from '#/services/permisos'
 
-export const Route = createFileRoute('/_app/permisos/tipos')({
+export const Route = createFileRoute('/_app/tipos-permiso')({
   component: TiposPermisoPage,
 })
 
 const col = createColumnHelper<TipoPermiso>()
 
 function TiposPermisoPage() {
+  const qc = useQueryClient()
   const { can } = useCan()
   const { data = [], isLoading } = useQuery({
     queryKey: ['permisos-tipos', 'todos'],
     queryFn: () => listTiposPermiso(true),
   })
   const [editar, setEditar] = useState<{ tipo: TipoPermiso | null } | null>(null)
+  const [desactivar, setDesactivar] = useState<TipoPermiso | null>(null)
+  const [ctx, setCtx] = useState<{ x: number; y: number; row: TipoPermiso } | null>(null)
+
+  const cerrarCtx = useCallback(() => setCtx(null), [])
+  useEffect(() => {
+    if (!ctx) return
+    window.addEventListener('click', cerrarCtx)
+    return () => window.removeEventListener('click', cerrarCtx)
+  }, [ctx, cerrarCtx])
+
+  const desactivarMut = useMutation({
+    mutationFn: (t: TipoPermiso) => desactivarTipoPermiso(t.id),
+    onSuccess: () => {
+      toast.success('Tipo desactivado')
+      qc.invalidateQueries({ queryKey: ['permisos-tipos'] })
+      setDesactivar(null)
+    },
+    onError: (e) => toast.error(userMessageFromError(e)),
+  })
 
   const columns = useMemo(
     () => [
@@ -69,10 +95,51 @@ function TiposPermisoPage() {
             estado: t.status === 'ACTIVE' ? 'Activo' : 'Inactivo',
           }))}
           onRowDoubleClick={(row) => can('tipos_permiso:post') && setEditar({ tipo: row })}
+          onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
         />
       </div>
 
+      {ctx ? (
+        <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }} data-testid="tipos-permiso-ctx">
+          <button
+            type="button"
+            className="ctx-menu__item"
+            onClick={() => {
+              setEditar({ tipo: ctx.row })
+              cerrarCtx()
+            }}
+          >
+            Editar
+          </button>
+          {ctx.row.status === 'ACTIVE' ? (
+            <button
+              type="button"
+              className="ctx-menu__item ctx-menu__item--danger"
+              data-testid="tipo-permiso-desactivar"
+              onClick={() => {
+                setDesactivar(ctx.row)
+                cerrarCtx()
+              }}
+            >
+              Desactivar
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {editar ? <TipoPermisoModal tipo={editar.tipo} onClose={() => setEditar(null)} /> : null}
+
+      <ConfirmDialog
+        open={Boolean(desactivar)}
+        title="Desactivar tipo de permiso"
+        message={`«${desactivar?.nombre ?? ''}» dejará de aparecer en el wizard del padre. Los permisos ya enviados no cambian.`}
+        confirmLabel="Desactivar"
+        danger
+        confirmDisabled={desactivarMut.isPending}
+        testId="tipo-permiso-confirmar-desactivar"
+        onConfirm={() => desactivar && desactivarMut.mutate(desactivar)}
+        onCancel={() => setDesactivar(null)}
+      />
     </RequirePermission>
   )
 }
