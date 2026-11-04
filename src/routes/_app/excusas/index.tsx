@@ -91,7 +91,7 @@ function ExcusasPage() {
     <RequirePermission permission="excusas:get">
       <div data-testid="excusas-page">
         <DataTable
-          title="Excusas"
+          title="Permisos"
           data={data}
           columns={columns}
           filters={filters}

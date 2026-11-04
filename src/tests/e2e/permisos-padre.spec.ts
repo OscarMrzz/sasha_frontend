@@ -29,7 +29,7 @@ async function abrirBandeja(page: Parameters<typeof loginAs>[0]) {
   await loginAs(page, { code: CONSEJERIA })
   await page
     .locator('.sidebar-nav')
-    .getByTitle('Solicitudes de permiso', { exact: true })
+    .getByTitle('Solicitud de permisos', { exact: true })
     .first()
     .click()
   await expect(page.getByTestId('solicitud-permisos-page')).toBeVisible({ timeout: 15_000 })
@@ -89,10 +89,10 @@ test.describe('permisos del padre', () => {
   test('un rol sin permiso no ve los menús de permisos', async ({ page }) => {
     await loginAs(page, { code: MAESTRO })
     await expect(
-      page.locator('.sidebar-nav').getByTitle('Solicitudes de permiso', { exact: true }),
+      page.locator('.sidebar-nav').getByTitle('Solicitud de permisos', { exact: true }),
     ).toHaveCount(0)
     await expect(
-      page.locator('.sidebar-nav').getByTitle('Tipos de permiso', { exact: true }),
+      page.locator('.sidebar-nav').getByTitle('Tipos de permisos', { exact: true }),
     ).toHaveCount(0)
   })
 })

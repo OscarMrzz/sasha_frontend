@@ -70,8 +70,7 @@ export const DESCRIPCION_RUTA: Record<string, string> = {
   '/consejeria/horarios': 'Horarios de sólo lectura',
   '/disciplina': 'Fichas disciplinarias',
   '/disciplina/tipos': 'Tipos de ficha y castigos',
-  '/excusas': 'Justificaciones de inasistencia',
-  '/excusas/tipos': 'Tipos de excusa',
+  '/excusas': 'Permisos y justificaciones de inasistencia',
   '/contratos': 'Documentos de contratos',
   '/alumnos': 'Cartera de alumnos y pagos',
   '/padres': 'Cartera de padres',
@@ -116,7 +115,7 @@ export const PALABRAS_CLAVE_RUTA: Record<string, string[]> = {
   '/disciplina': ['ficha', 'fichas', 'disciplina', 'sancion', 'sanciones', 'castigo', 'conducta'],
   '/disciplina/tipos': ['tipo', 'tipos', 'ficha', 'disciplina', 'castigos', 'niveles'],
   '/excusas': ['excusa', 'excusas', 'permiso', 'permisos', 'justificacion', 'justificar'],
-  '/excusas/tipos': ['tipo', 'tipos', 'excusa', 'excusas'],
+
   '/contratos': ['contrato', 'contratos', 'documento', 'convenio', 'empleado'],
   '/alumnos': ['alumno', 'alumnos', 'estudiante', 'cartera', 'pagos', 'caja', 'mora'],
   '/padres': ['padre', 'padres', 'responsable', 'responsables', 'encargado', 'tutor', 'cartera'],
@@ -128,8 +127,8 @@ export const PALABRAS_CLAVE_RUTA: Record<string, string[]> = {
   '/estadisticas': ['estadistica', 'estadisticas', 'analisis', 'reporte', 'reportes', 'graficas'],
   '/sace': ['sace', 'export', 'exportar', 'planilla', 'reporte'],
   '/actualizaciones': ['actualizaciones', 'novedades', 'roadmap', 'cambios', 'mejoras', 'sistema'],
-  '/solicitud-permisos': ['permisos', 'solicitud', 'solicitudes', 'justificar', 'falta', 'ausencia', 'inasistencia', 'padre'],
-  '/tipos-permiso': ['tipos', 'permiso', 'motivos', 'justificacion'],
+  '/solicitud-permisos': ['permisos', 'solicitud', 'solicitudes', 'excusa', 'excusas', 'justificacion', 'justificar', 'falta', 'ausencia', 'inasistencia', 'padre'],
+  '/tipos-permiso': ['tipos', 'permiso', 'permisos', 'motivos', 'excusa', 'excusas', 'justificacion', 'justificar'],
   '/auditoria': ['auditoria', 'log', 'logs', 'historial', 'registro', 'acciones'],
 }
 
