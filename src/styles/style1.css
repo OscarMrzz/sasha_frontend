@@ -3689,8 +3689,8 @@ input.field__input,
 
 /* Wizard — industrial utilitario: rail numerado + progreso */
 .wizard-steps {
-  margin: 0 0 1.25rem;
-  padding: 0.85rem 0.5rem 0.35rem;
+  margin: 0 0 1.35rem;
+  padding: 0.95rem 0.35rem 0.5rem;
   border-bottom: 1px solid var(--sasha-border-suave);
 }
 
@@ -3701,7 +3701,7 @@ input.field__input,
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0;
+  gap: 0.5rem;
 }
 
 .wizard-steps__item {
@@ -3718,7 +3718,7 @@ input.field__input,
 .wizard-steps__connector {
   flex: 1;
   height: 2px;
-  margin: 0.85rem 0.35rem 0;
+  margin: 1rem 0.55rem 0;
   background: var(--sasha-border-fuerte);
   border-radius: 1px;
   transition: background 0.25s ease;
@@ -3732,18 +3732,19 @@ input.field__input,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
-  min-width: 3.25rem;
+  gap: 0.5rem;
+  min-width: 4.25rem;
+  padding: 0 0.15rem;
 }
 
 .wizard-steps__circle {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2rem;
+  height: 2rem;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   border: 1.5px solid var(--sasha-border-fuerte);
@@ -3772,19 +3773,20 @@ input.field__input,
 }
 
 .wizard-steps__label {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--sasha-texto-muted);
   text-align: center;
-  line-height: 1.2;
-  max-width: 5.5rem;
+  line-height: 1.25;
+  max-width: 6rem;
 }
 
 .wizard-steps__item--current .wizard-steps__label {
   color: var(--sasha-texto-emphasis);
-  font-weight: 600;
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .wizard-steps__item--done .wizard-steps__label {
@@ -10310,5 +10312,53 @@ body::before {
 
   .permiso-wizard__paso > :last-child {
     grid-column: 1 / -1;
+  }
+}
+
+/* En celular el rail se vuelve una rejilla 2x2: textos más grandes, sin
+   conectores apretados y con aire entre pasos. */
+@media (max-width: 640px) {
+  .wizard-steps {
+    padding: 0.75rem 0 0.5rem;
+  }
+
+  .wizard-steps__list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 0.7rem 0.9rem;
+  }
+
+  .wizard-steps__item,
+  .wizard-steps__item:first-child {
+    flex: none;
+  }
+
+  .wizard-steps__connector {
+    display: none;
+  }
+
+  .wizard-steps__node {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    width: 100%;
+    padding: 0;
+  }
+
+  .wizard-steps__label {
+    max-width: none;
+    text-align: left;
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+
+  .wizard-steps__item--current .wizard-steps__label {
+    font-size: 0.88rem;
+  }
+
+  .wizard-steps__circle {
+    flex-shrink: 0;
   }
 }
