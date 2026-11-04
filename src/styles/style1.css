@@ -10211,18 +10211,31 @@ body::before {
 }
 
 .permisos-padre__faltas {
-  padding: 0.85rem 1rem;
-  background: var(--sasha-bg-raised);
-  border: 1px solid var(--sasha-border-suave);
-  border-radius: var(--sasha-radius);
+  margin-top: 1.5rem;
+  padding: 1rem 0 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px dashed var(--sasha-border-suave);
+  border-radius: 0;
 }
 
 .permisos-padre__faltas summary {
   cursor: pointer;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--sasha-texto-muted);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.permisos-padre__faltas .permiso-fila {
+  background: transparent;
+}
+
+.permisos-padre__faltas .permiso-fila__titulo {
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .permisos-padre__lista {

@@ -10,7 +10,12 @@ export function formatearFechaPermiso(fecha: string): string {
   if (!fecha) return '—'
   const d = new Date(`${fecha}T00:00:00`)
   if (Number.isNaN(d.getTime())) return fecha
-  return new Intl.DateTimeFormat('es-HN', { day: '2-digit', month: 'short', year: 'numeric' }).format(d)
+  return new Intl.DateTimeFormat('es-HN', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(d)
 }
 
 export function rangoPermiso(inicio: string, fin: string): string {

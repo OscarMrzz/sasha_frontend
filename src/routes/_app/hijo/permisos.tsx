@@ -67,26 +67,6 @@ function PermisosHijo({ alumnoId }: { alumnoId: string }) {
         </button>
       </div>
 
-      <details className="permisos-padre__faltas" data-testid="permisos-faltas">
-        <summary>
-          Faltas y tardanzas registradas
-          {faltas.length > 0 ? <span className="badge">{faltas.length}</span> : null}
-        </summary>
-        {faltas.length === 0 ? (
-          <p className="texto-muted">No hay faltas pendientes de justificar.</p>
-        ) : (
-          <ul className="permisos-padre__lista">
-            {faltas.map((f) => (
-              <FaltaFila
-                key={`${f.fecha}-${f.tipo}`}
-                falta={f}
-                onJustificar={() => setWizard({ inicio: f.fecha, fin: f.fecha })}
-              />
-            ))}
-          </ul>
-        )}
-      </details>
-
       <section className="permisos-padre__solicitudes">
         <h2 className="actualizaciones__columna-titulo">Mis solicitudes</h2>
         {isLoading ? (
@@ -131,6 +111,26 @@ function PermisosHijo({ alumnoId }: { alumnoId: string }) {
           </ul>
         )}
       </section>
+
+      <details className="permisos-padre__faltas" data-testid="permisos-faltas">
+        <summary>
+          Faltas y tardanzas registradas
+          {faltas.length > 0 ? <span className="badge">{faltas.length}</span> : null}
+        </summary>
+        {faltas.length === 0 ? (
+          <p className="texto-muted">No hay faltas pendientes de justificar.</p>
+        ) : (
+          <ul className="permisos-padre__lista">
+            {faltas.map((f) => (
+              <FaltaFila
+                key={`${f.fecha}-${f.tipo}`}
+                falta={f}
+                onJustificar={() => setWizard({ inicio: f.fecha, fin: f.fecha })}
+              />
+            ))}
+          </ul>
+        )}
+      </details>
 
       {wizard ? (
         <PermisoWizard
