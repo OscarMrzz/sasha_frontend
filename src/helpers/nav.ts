@@ -35,6 +35,15 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/plan-estudio', label: 'Plan de estudio', permission: 'planestudio:get', icon: 'file' },
   { to: '/asistencia', label: 'Asistencia', permission: 'asistencia:get', icon: 'check' },
   { to: '/tareas', label: 'Tareas', permission: 'tareas:get', icon: 'list' },
+  {
+    to: '/chats-tareas',
+    label: 'Chats de tareas',
+    permission: 'comentarios_tarea:get',
+    icon: 'message-circle',
+    // Alumno y responsable tienen `get` para el chat de una tarea, pero el
+    // listado general solo lo devuelve el backend a maestro/admin.
+    hideForRoles: ['alumno', 'responsable'],
+  },
   { to: '/monitores', label: 'Monitores', permission: 'monitores:get', icon: 'radar' },
   { to: '/calificaciones', label: 'Calificaciones', permission: 'calificaciones:get', icon: 'award' },
   { to: '/recuperaciones', label: 'Recuperaciones', permission: 'recuperaciones:get', icon: 'refresh' },

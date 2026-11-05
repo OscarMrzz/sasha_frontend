@@ -21,6 +21,7 @@ import { Route as AppAsistenciaRouteImport } from './routes/_app/asistencia'
 import { Route as AppAuditoriaRouteImport } from './routes/_app/auditoria'
 import { Route as AppCalificacionesRouteImport } from './routes/_app/calificaciones'
 import { Route as AppCarnetsRouteImport } from './routes/_app/carnets'
+import { Route as AppChatsTareasRouteImport } from './routes/_app/chats-tareas'
 import { Route as AppConfiguracionRouteImport } from './routes/_app/configuracion'
 import { Route as AppConfiguracionPagosRouteImport } from './routes/_app/configuracion-pagos'
 import { Route as AppControladoresRouteImport } from './routes/_app/controladores'
@@ -136,6 +137,11 @@ const AppCalificacionesRoute = AppCalificacionesRouteImport.update({
 const AppCarnetsRoute = AppCarnetsRouteImport.update({
   id: '/carnets',
   path: '/carnets',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChatsTareasRoute = AppChatsTareasRouteImport.update({
+  id: '/chats-tareas',
+  path: '/chats-tareas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConfiguracionRoute = AppConfiguracionRouteImport.update({
@@ -437,6 +443,7 @@ export interface FileRoutesByFullPath {
   '/auditoria': typeof AppAuditoriaRoute
   '/calificaciones': typeof AppCalificacionesRoute
   '/carnets': typeof AppCarnetsRoute
+  '/chats-tareas': typeof AppChatsTareasRoute
   '/configuracion': typeof AppConfiguracionRoute
   '/configuracion-pagos': typeof AppConfiguracionPagosRoute
   '/controladores': typeof AppControladoresRoute
@@ -507,6 +514,7 @@ export interface FileRoutesByTo {
   '/auditoria': typeof AppAuditoriaRoute
   '/calificaciones': typeof AppCalificacionesRoute
   '/carnets': typeof AppCarnetsRoute
+  '/chats-tareas': typeof AppChatsTareasRoute
   '/configuracion': typeof AppConfiguracionRoute
   '/configuracion-pagos': typeof AppConfiguracionPagosRoute
   '/controladores': typeof AppControladoresRoute
@@ -579,6 +587,7 @@ export interface FileRoutesById {
   '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/calificaciones': typeof AppCalificacionesRoute
   '/_app/carnets': typeof AppCarnetsRoute
+  '/_app/chats-tareas': typeof AppChatsTareasRoute
   '/_app/configuracion': typeof AppConfiguracionRoute
   '/_app/configuracion-pagos': typeof AppConfiguracionPagosRoute
   '/_app/controladores': typeof AppControladoresRoute
@@ -651,6 +660,7 @@ export interface FileRouteTypes {
     | '/auditoria'
     | '/calificaciones'
     | '/carnets'
+    | '/chats-tareas'
     | '/configuracion'
     | '/configuracion-pagos'
     | '/controladores'
@@ -721,6 +731,7 @@ export interface FileRouteTypes {
     | '/auditoria'
     | '/calificaciones'
     | '/carnets'
+    | '/chats-tareas'
     | '/configuracion'
     | '/configuracion-pagos'
     | '/controladores'
@@ -792,6 +803,7 @@ export interface FileRouteTypes {
     | '/_app/auditoria'
     | '/_app/calificaciones'
     | '/_app/carnets'
+    | '/_app/chats-tareas'
     | '/_app/configuracion'
     | '/_app/configuracion-pagos'
     | '/_app/controladores'
@@ -942,6 +954,13 @@ declare module '@tanstack/react-router' {
       path: '/carnets'
       fullPath: '/carnets'
       preLoaderRoute: typeof AppCarnetsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/chats-tareas': {
+      id: '/_app/chats-tareas'
+      path: '/chats-tareas'
+      fullPath: '/chats-tareas'
+      preLoaderRoute: typeof AppChatsTareasRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/configuracion': {
@@ -1355,6 +1374,7 @@ interface AppRouteChildren {
   AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppCalificacionesRoute: typeof AppCalificacionesRoute
   AppCarnetsRoute: typeof AppCarnetsRoute
+  AppChatsTareasRoute: typeof AppChatsTareasRoute
   AppConfiguracionRoute: typeof AppConfiguracionRoute
   AppConfiguracionPagosRoute: typeof AppConfiguracionPagosRoute
   AppControladoresRoute: typeof AppControladoresRoute
@@ -1423,6 +1443,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAuditoriaRoute: AppAuditoriaRoute,
   AppCalificacionesRoute: AppCalificacionesRoute,
   AppCarnetsRoute: AppCarnetsRoute,
+  AppChatsTareasRoute: AppChatsTareasRoute,
   AppConfiguracionRoute: AppConfiguracionRoute,
   AppConfiguracionPagosRoute: AppConfiguracionPagosRoute,
   AppControladoresRoute: AppControladoresRoute,

@@ -1,8 +1,10 @@
 import { Download } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AdjuntoIcono } from '#/components/archivos/AdjuntoIcono'
 import { AdjuntoVista } from '#/components/archivos/AdjuntoVista'
+import { TareaChatModal } from '#/components/comentarios/TareaChatModal'
 import { VisorImagen } from '#/components/portal/VisorImagen'
+import { Can } from '#/components/gates/Can'
 import { Modal } from '#/components/ui/Modal'
 import {
   categoriaAdjunto,
@@ -116,6 +118,11 @@ export function TareaPortalVerModal({
   onClose: () => void
 }) {
   const [ampliada, setAmpliada] = useState<{ src: string; alt: string } | null>(null)
+  const [chatAbierto, setChatAbierto] = useState(false)
+
+  useEffect(() => {
+    if (!tarea) setChatAbierto(false)
+  }, [tarea])
 
   const filas: [string, string][] = tarea
     ? [
@@ -136,9 +143,21 @@ export function TareaPortalVerModal({
         onClose={onClose}
         testId="portal-tarea-ver-modal"
         footer={
-          <button type="button" className="btn btn--primary" onClick={onClose}>
-            Entendido
-          </button>
+          <>
+            <Can permission="comentarios_tarea:get">
+              <button
+                type="button"
+                className="btn btn--ghost"
+                data-testid="portal-tarea-comentarios"
+                onClick={() => setChatAbierto(true)}
+              >
+                Comentarios
+              </button>
+            </Can>
+            <button type="button" className="btn btn--primary" onClick={onClose}>
+              Entendido
+            </button>
+          </>
         }
       >
         {tarea ? (
@@ -189,6 +208,14 @@ export function TareaPortalVerModal({
           </>
         ) : null}
       </Modal>
+
+      {chatAbierto && tarea ? (
+        <TareaChatModal
+          tareaId={tarea.id}
+          titulo={tarea.titulo}
+          onClose={() => setChatAbierto(false)}
+        />
+      ) : null}
 
       {ampliada ? (
         <VisorImagen

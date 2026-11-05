@@ -22,6 +22,7 @@ import {
   Link2,
   ListTodo,
   Megaphone,
+  MessageCircle,
   Network,
   Radar,
   Receipt,
@@ -75,6 +76,7 @@ export const NAV_ICONS: Record<string, LucideIcon> = {
   'shield-plus': ShieldPlus,
   refresh: RefreshCw,
   megaphone: Megaphone,
+  'message-circle': MessageCircle,
   'file-check': FileCheck,
 }
 

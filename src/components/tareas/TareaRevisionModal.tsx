@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { TareaChatModal } from '#/components/comentarios/TareaChatModal'
+import { Can } from '#/components/gates/Can'
 import { Modal, useDismiss } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
 import {
@@ -8,10 +10,8 @@ import {
   getTareaRevision,
   labelCriterioModo,
   listCriteriosEvaluacion,
-  type CriterioEvaluacion,
-  type RevisionAlumno,
-  type TareaCriterioModo,
 } from '#/services/tareas'
+import type { CriterioEvaluacion, RevisionAlumno } from '#/services/tareas'
 
 function nextCriterioId(
   current: string | null | undefined,
@@ -47,6 +47,7 @@ export function TareaRevisionModal({
   const [local, setLocal] = useState<Record<string, RevisionAlumno>>({})
   /** Borradores de puntos tipados (manual) antes de confirmar con blur/Enter. */
   const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [chatAbierto, setChatAbierto] = useState(false)
 
   const alumnos = useMemo(() => {
     const base = data?.alumnos ?? []
@@ -60,7 +61,9 @@ export function TareaRevisionModal({
 
   const applyLocal = (alumnoId: string, patch: Partial<RevisionAlumno>) => {
     setLocal((prev) => {
-      const base = prev[alumnoId] ?? data?.alumnos.find((a) => a.alumno_id === alumnoId)
+      const base =
+        (prev[alumnoId] as RevisionAlumno | undefined) ??
+        data?.alumnos.find((a) => a.alumno_id === alumnoId)
       if (!base) return prev
       return { ...prev, [alumnoId]: { ...base, ...patch } }
     })
@@ -175,7 +178,7 @@ export function TareaRevisionModal({
     const shown =
       valueFromInput !== undefined
         ? valueFromInput
-        : drafts[row.alumno_id] !== undefined
+        : row.alumno_id in drafts
           ? drafts[row.alumno_id]
           : row.puntos != null
             ? String(row.puntos)
@@ -291,24 +294,37 @@ export function TareaRevisionModal({
     }
   }
 
-  const tipo = (data?.tarea.tipo ?? 'simple') as TareaCriterioModo
+  const tipo = data?.tarea.tipo ?? 'simple'
   const maxPts = data?.tarea.puntos ?? 0
 
   const colAccion =
     tipo === 'criterio' ? 'Criterio' : tipo === 'manual' ? `Puntos (0–${maxPts})` : 'Entregado'
 
   return (
-    <Modal
-      open={open}
-      title={data ? `Revisar · ${data.tarea.titulo}` : 'Revisar tarea'}
-      onClose={dismiss}
-      wide
-      footer={
-        <button type="button" className="btn btn--primary" onClick={dismiss}>
-          Listo
-        </button>
-      }
-    >
+    <>
+      <Modal
+        open={open}
+        title={data ? `Revisar · ${data.tarea.titulo}` : 'Revisar tarea'}
+        onClose={dismiss}
+        wide
+        footer={
+          <>
+            <Can permission="comentarios_tarea:get">
+              <button
+                type="button"
+                className="btn btn--ghost"
+                data-testid="tarea-revision-comentarios"
+                onClick={() => setChatAbierto(true)}
+              >
+                Comentarios
+              </button>
+            </Can>
+            <button type="button" className="btn btn--primary" onClick={dismiss}>
+              Listo
+            </button>
+          </>
+        }
+      >
       {isLoading ? (
         <div className="empty-state">Cargando alumnos…</div>
       ) : isError || !data ? (
@@ -373,7 +389,7 @@ export function TareaRevisionModal({
                           disabled={pending === a.alumno_id}
                           placeholder="0"
                           value={
-                            drafts[a.alumno_id] !== undefined
+                            a.alumno_id in drafts
                               ? drafts[a.alumno_id]
                               : a.puntos != null
                                 ? String(a.puntos)
@@ -401,6 +417,15 @@ export function TareaRevisionModal({
           </div>
         </div>
       )}
-    </Modal>
+      </Modal>
+
+      {chatAbierto ? (
+        <TareaChatModal
+          tareaId={tareaId}
+          titulo={data?.tarea.titulo ?? 'Comentarios'}
+          onClose={() => setChatAbierto(false)}
+        />
+      ) : null}
+    </>
   )
 }

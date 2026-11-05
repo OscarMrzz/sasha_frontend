@@ -10505,3 +10505,363 @@ body::before {
     flex-shrink: 0;
   }
 }
+
+/* Chats de tareas (feature 027) */
+.chats-tareas {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chats-tareas__toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.chats-tareas__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chats-tareas__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  text-align: left;
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-bg-raised);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+  cursor: pointer;
+}
+
+.chats-tareas__item:hover {
+  background: var(--sasha-bg-hover);
+  border-color: var(--sasha-border-fuerte);
+}
+
+.chats-tareas__item:focus-visible {
+  outline: 2px solid var(--sasha-accent);
+  outline-offset: 1px;
+}
+
+.chats-tareas__cuerpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.chats-tareas__titulo {
+  font-weight: 600;
+  color: var(--sasha-texto-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chats-tareas__sub,
+.chats-tareas__ultimo {
+  font-size: 0.82rem;
+  color: var(--sasha-texto-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chats-tareas__lado {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.chats-tareas__hora {
+  font-size: 0.72rem;
+  color: var(--sasha-texto-muted);
+  white-space: nowrap;
+}
+
+.chats-tareas__badge {
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--sasha-accent);
+  color: var(--sasha-texto-inverse);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.chats-tareas__silenciado {
+  display: inline-flex;
+  color: var(--sasha-warning);
+}
+
+/* Modal de chat de una tarea */
+.tarea-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  height: min(62vh, 560px);
+  min-height: 0;
+}
+
+.modal:has(.tarea-chat) .modal__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tarea-chat__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tarea-chat__cabecera strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.tarea-chat__cabecera span {
+  font-size: 0.78rem;
+  color: var(--sasha-texto-muted);
+}
+
+.tarea-chat__grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.tarea-chat__form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.tarea-chat__form .tarea-chat__texto {
+  flex: 1;
+  min-height: 2.6rem;
+  max-height: 7rem;
+  resize: vertical;
+}
+
+.tarea-chat__enviar {
+  flex-shrink: 0;
+}
+
+.tarea-chat__estado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--sasha-texto-muted);
+}
+
+.tarea-chat__lista {
+  flex: 1;
+  min-height: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.tarea-chat__dia {
+  align-self: center;
+  padding: 0.15rem 0.65rem;
+  margin: 0.25rem 0;
+  font-size: 0.72rem;
+  color: var(--sasha-texto-muted);
+  background: var(--sasha-bg-muted);
+  border-radius: 999px;
+}
+
+.tarea-chat__fila {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.tarea-chat__fila--propia {
+  justify-content: flex-end;
+}
+
+.tarea-chat__burbuja {
+  max-width: min(78%, 520px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.55rem 0.7rem 0.4rem;
+  color: var(--sasha-texto-primary);
+  background: var(--sasha-bg-muted);
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: var(--sasha-radius);
+}
+
+.tarea-chat__burbuja--propia {
+  background: var(--sasha-accent-muted);
+  border-color: var(--sasha-accent);
+}
+
+.tarea-chat__burbuja--maestro {
+  border-left: 3px solid var(--sasha-accent);
+}
+
+.tarea-chat__burbuja--eliminado {
+  opacity: 0.65;
+  font-style: italic;
+}
+
+.tarea-chat__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: var(--sasha-texto-muted);
+}
+
+.tarea-chat__autor {
+  font-weight: 600;
+  color: var(--sasha-texto-title);
+}
+
+.tarea-chat__rol {
+  padding: 0 0.35rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: 1px solid var(--sasha-border-fuerte);
+  border-radius: 999px;
+}
+
+.tarea-chat__burbuja--maestro .tarea-chat__rol {
+  color: var(--sasha-accent);
+  border-color: var(--sasha-accent);
+}
+
+.tarea-chat__hora {
+  margin-left: auto;
+}
+
+.tarea-chat__texto {
+  margin: 0;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tarea-chat__borrar {
+  display: inline-flex;
+  padding: 0.1rem;
+  color: var(--sasha-texto-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--sasha-radius);
+  cursor: pointer;
+}
+
+.tarea-chat__borrar:hover {
+  color: var(--sasha-danger);
+  background: var(--sasha-bg-hover);
+}
+
+.tarea-chat__input {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--sasha-border-suave);
+}
+
+.tarea-chat__input .field {
+  flex: 1;
+  margin: 0;
+}
+
+.tarea-chat__input .field__textarea {
+  width: 100%;
+  min-height: 2.6rem;
+  max-height: 7rem;
+  resize: vertical;
+}
+
+.tarea-chat__aviso {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--sasha-warning);
+}
+
+.tarea-chat__vacio {
+  margin: auto;
+  font-size: 0.9rem;
+  color: var(--sasha-texto-muted);
+  text-align: center;
+}
+
+.tarea-chat__pie {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+@media (max-width: 640px) {
+  .chats-tareas__item {
+    padding: 0.7rem 0.75rem;
+  }
+
+  .chats-tareas__hora {
+    display: none;
+  }
+
+  .modal-backdrop:has(.tarea-chat) {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .modal:has(.tarea-chat) {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .modal:has(.tarea-chat) .modal__body {
+    padding: 0.6rem;
+  }
+
+  .tarea-chat {
+    height: auto;
+    flex: 1;
+  }
+
+  .tarea-chat__burbuja {
+    max-width: 88%;
+  }
+}
