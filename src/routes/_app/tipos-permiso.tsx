@@ -4,6 +4,7 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { RequirePermission, useCan } from '#/components/gates/Can'
+import { useAccionPalette } from '#/hooks/use-accion-palette'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
@@ -33,6 +34,8 @@ function TiposPermisoPage() {
   const [editar, setEditar] = useState<{ tipo: TipoPermiso | null } | null>(null)
   const [desactivar, setDesactivar] = useState<TipoPermiso | null>(null)
   const [ctx, setCtx] = useState<{ x: number; y: number; row: TipoPermiso } | null>(null)
+
+  useAccionPalette('nuevo-tipo-permiso', () => setEditar({ tipo: null }))
 
   const cerrarCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
