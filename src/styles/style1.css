@@ -4386,6 +4386,17 @@ input.field__input,
   color: var(--sasha-texto-muted);
 }
 
+.tarea-comentarios-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: var(--sasha-accent-muted);
+  color: var(--sasha-accent);
+}
+
 .maestro-hub__cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

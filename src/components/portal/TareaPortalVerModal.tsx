@@ -152,6 +152,9 @@ export function TareaPortalVerModal({
                 onClick={() => setChatAbierto(true)}
               >
                 Comentarios
+                {(tarea?.comentarios ?? 0) > 0 ? (
+                  <span className="badge">{tarea?.comentarios}</span>
+                ) : null}
               </button>
             </Can>
             <button type="button" className="btn btn--primary" onClick={onClose}>

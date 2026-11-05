@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { MessageCircle } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { TareaPortalVerModal } from '#/components/portal/TareaPortalVerModal'
 import { fechaRelativa, hoyISO } from '#/lib/fechas-padre'
@@ -33,6 +34,15 @@ function TareaItem({
           </span>
         </div>
         <div className="app-list__lado">
+          {(t.comentarios_no_leidos ?? 0) > 0 ? (
+            <span
+              className="tarea-comentarios-marca"
+              title={`${t.comentarios_no_leidos} comentario${t.comentarios_no_leidos === 1 ? '' : 's'} sin leer`}
+              aria-label={`${t.comentarios_no_leidos} comentario${t.comentarios_no_leidos === 1 ? '' : 's'} sin leer`}
+            >
+              <MessageCircle size={15} aria-hidden />
+            </span>
+          ) : null}
           {t.estado === 'revisada' ? (
             <span className="estado-pill estado-pill--ok">Revisada</span>
           ) : vencida ? (

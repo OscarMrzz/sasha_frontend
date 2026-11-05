@@ -70,6 +70,10 @@ export interface PortalTarea {
   liberado: boolean
   /** Documentos/fotos que el maestro adjuntó a la tarea. */
   adjuntos?: PortalAdjunto[]
+  /** Cantidad de comentarios activos en el chat de la tarea. */
+  comentarios?: number
+  /** Comentarios que el usuario actual todavía no ha leído. */
+  comentarios_no_leidos?: number
 }
 
 /** Adjunto de tarea visto por el alumno o el responsable. */

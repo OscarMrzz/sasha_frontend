@@ -121,7 +121,11 @@ export function TareaChatModal({
   useEffect(() => {
     if (!hilo) return
     void marcarComentariosLeidos(tareaId)
-      .then(() => qc.invalidateQueries({ queryKey: ['chats-tareas'] }))
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ['chats-tareas'] })
+        qc.invalidateQueries({ queryKey: ['portal-tareas'] })
+        qc.invalidateQueries({ queryKey: ['portal-tareas-lista'] })
+      })
       .catch(() => undefined)
   }, [tareaId, total, hilo, qc])
 
