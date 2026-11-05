@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Send, Trash2, Volume2, VolumeX } from 'lucide-react'
+import { Send, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useCan } from '#/components/gates/Can'
@@ -38,6 +38,26 @@ function hora(iso: string) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
   return new Intl.DateTimeFormat('es-HN', { hour: '2-digit', minute: '2-digit' }).format(d)
+}
+
+function iniciales(nombre: string) {
+  return nombre
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p.charAt(0).toUpperCase())
+    .join('')
+}
+
+function Avatar({ comentario }: { comentario: ComentarioTarea }) {
+  return (
+    <span
+      className={`tarea-chat__avatar tarea-chat__avatar--${comentario.autor_rol}`}
+      aria-hidden
+    >
+      {iniciales(comentario.autor_nombre || 'Usuario')}
+    </span>
+  )
 }
 
 export function TareaChatModal({
@@ -143,7 +163,7 @@ export function TareaChatModal({
             }}
           >
             <textarea
-              className="field__input tarea-chat__texto"
+              className="field__input tarea-chat__campo"
               rows={2}
               maxLength={2000}
               data-testid="tarea-chat-texto"
@@ -163,24 +183,36 @@ export function TareaChatModal({
           </form>
         }
       >
-        <div className="tarea-chat">
+        <div className="tarea-chat tarea-chat--v2">
           <header className="tarea-chat__cabecera">
-            <div>
+            <div className="tarea-chat__titulo">
               <strong>{titulo}</strong>
               <span>{hilo?.silenciado ? 'Chat silenciado por el admin' : 'Dudas y consultas de la tarea'}</span>
             </div>
-            {puedeSilenciar ? (
+            <div className="tarea-chat__acciones">
+              {puedeSilenciar ? (
+                <button
+                  type="button"
+                  className="tarea-chat__accion"
+                  data-testid="tarea-chat-silenciar"
+                  disabled={silenciarMut.isPending}
+                  onClick={() => silenciarMut.mutate(!hilo?.silenciado)}
+                >
+                  {hilo?.silenciado ? <Volume2 size={16} aria-hidden /> : <VolumeX size={16} aria-hidden />}
+                  <span>{hilo?.silenciado ? 'Activar' : 'Silenciar'}</span>
+                </button>
+              ) : null}
               <button
                 type="button"
-                className="btn btn--ghost btn--sm"
-                data-testid="tarea-chat-silenciar"
-                disabled={silenciarMut.isPending}
-                onClick={() => silenciarMut.mutate(!hilo?.silenciado)}
+                className="tarea-chat__cerrar"
+                data-testid="tarea-chat-cerrar"
+                aria-label="Cerrar chat"
+                onClick={onClose}
               >
-                {hilo?.silenciado ? <Volume2 size={16} aria-hidden /> : <VolumeX size={16} aria-hidden />}
-                {hilo?.silenciado ? 'Activar' : 'Silenciar'}
+                <X size={18} aria-hidden />
+                <span>Cerrar</span>
               </button>
-            ) : null}
+            </div>
           </header>
 
           <div className="tarea-chat__lista" ref={listaRef} data-testid="tarea-chat-lista">
@@ -196,6 +228,7 @@ export function TareaChatModal({
                     key={c.id}
                     className={`tarea-chat__fila${c.es_propio ? ' tarea-chat__fila--propia' : ''}`}
                   >
+                    {!c.es_propio ? <Avatar comentario={c} /> : null}
                     <article
                       className={[
                         'tarea-chat__burbuja',
@@ -207,7 +240,7 @@ export function TareaChatModal({
                         .join(' ')}
                     >
                       <div className="tarea-chat__meta">
-                        <span className="tarea-chat__autor">{c.autor_nombre}</span>
+                        <span className="tarea-chat__autor">{c.autor_nombre || 'Usuario'}</span>
                         <span className="tarea-chat__rol">{ROL_LABEL[c.autor_rol] ?? c.autor_rol}</span>
                         <span className="tarea-chat__hora">{hora(c.creado_en)}</span>
                         {puedeBorrar && !c.eliminado ? (
@@ -226,6 +259,7 @@ export function TareaChatModal({
                         {c.eliminado ? 'Mensaje eliminado' : c.texto}
                       </p>
                     </article>
+                    {c.es_propio ? <Avatar comentario={c} /> : null}
                   </div>
                 ))}
               </div>

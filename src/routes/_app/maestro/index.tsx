@@ -1,6 +1,6 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, FileSpreadsheet, MoreVertical } from 'lucide-react'
+import { BarChart3, ChevronRight, FileSpreadsheet, MessageCircle, MoreVertical } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { AsistenciaGridModal } from '#/components/asistencia/AsistenciaGridModal'
 import { AsistenciaSeccionModal } from '#/components/asistencia/AsistenciaSeccionModal'
@@ -68,6 +68,20 @@ function MaestroHubPage() {
   return (
     <div className="maestro-hub" data-testid="maestro-hub">
       <AvisoBanner />
+
+      <Link
+        to="/chats-tareas"
+        className="maestro-chat-acceso"
+        data-testid="maestro-chat-tareas"
+      >
+        <MessageCircle size={24} aria-hidden />
+        <span className="maestro-chat-acceso__texto">
+          <strong>Chats de tareas</strong>
+          <small>Responde dudas de alumnos y padres</small>
+        </span>
+        <ChevronRight size={20} aria-hidden />
+      </Link>
+
       <header className="maestro-hub__header">
         <h1 className="page-title" style={{ margin: 0 }}>
           Mis clases

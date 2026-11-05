@@ -11,12 +11,8 @@ import { useEsMovil } from '#/hooks/use-media-query'
 import { userMessageFromError } from '#/lib/api'
 import { hoyISO } from '#/lib/fechas-padre'
 import { DIA_SHORT } from '#/lib/horarioGrid'
-import {
-  getHorarioMio,
-  getHorarioMioDetalle,
-  type HorarioMioDetalle,
-  type HorarioSlotDetail,
-} from '#/services/horarios'
+import { getHorarioMio, getHorarioMioDetalle } from '#/services/horarios'
+import type { HorarioMioDetalle, HorarioSlotDetail } from '#/services/horarios'
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7]
 
@@ -220,6 +216,7 @@ export function MaestroHorarioView({
   return (
     <div data-testid="horario-maestro-view">
       <div
+        className="horario-maestro__cabecera"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -254,7 +251,7 @@ export function MaestroHorarioView({
         <div className="horario-view" data-testid="horario-maestro-horario-view">
           {!lockedToAsignacion ? (
             <div className="horario-view__filters">
-              <div className="horario-view__filter" style={{ minWidth: 220, flex: '1 1 200px' }}>
+              <div className="horario-view__filter">
                 <SearchInput
                   data-testid="horario-maestro-search"
                   value={search}
@@ -434,7 +431,7 @@ export function MaestroHorarioView({
               </p>
 
               <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Plan de la semana</h3>
-              {(detalle.plan_items ?? []).length === 0 ? (
+              {detalle.plan_items.length === 0 ? (
                 <p className="texto-muted" style={{ fontSize: '0.85rem' }}>
                   Sin ítems de plan activo para esta semana.
                 </p>
@@ -467,7 +464,7 @@ export function MaestroHorarioView({
               )}
 
               <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Tareas del día</h3>
-              {(detalle.tareas ?? []).length === 0 ? (
+              {detalle.tareas.length === 0 ? (
                 <p className="texto-muted" style={{ fontSize: '0.85rem' }}>
                   Sin tareas asignadas o con entrega en este día.
                 </p>
