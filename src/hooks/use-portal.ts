@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useCan } from '#/components/gates/Can'
 import { isPortalRole, isResponsableRole } from '#/lib/home-path'
 import { usePortalAlumnoId, usePortalClase } from '#/lib/portal-context'
+import { getPortalExamenes } from '#/services/examenes'
 import { getPortalInicio } from '#/services/portal'
 
 /**
@@ -24,6 +25,16 @@ export function usePortalInicio() {
   return useQuery({
     queryKey: ['portal-inicio', alumnoId ?? 'self'],
     queryFn: () => getPortalInicio(alumnoId),
+    enabled: ready,
+  })
+}
+
+/** Horario de exámenes vigente del alumno o del hijo a cargo. */
+export function usePortalExamenes() {
+  const { alumnoId, ready } = usePortal()
+  return useQuery({
+    queryKey: ['portal-examenes', alumnoId ?? 'self', 'proximo'],
+    queryFn: () => getPortalExamenes(alumnoId, true),
     enabled: ready,
   })
 }

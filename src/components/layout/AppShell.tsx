@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   BarChart3,
   BookOpen,
+  CalendarDays,
   ChevronDown,
   Home,
   LogOut,
@@ -52,6 +53,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith('/alumno/')
   const maestro = isMaestroRole(roles)
   const portal = isPortalRole(roles)
+  const isExamenMode = maestro && pathname.startsWith('/maestro/examenes')
+  const hubLike = isHubLauncher || isExamenMode
   const claseId = maestro ? (pathname.match(/^\/maestro\/clases\/([^/]+)/)?.[1] ?? null) : null
   const portalClase = usePortalClase()
   const [collapsed, setCollapsed] = useState(true)
@@ -61,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const userMenuRef = useRef<HTMLDivElement>(null)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof document === 'undefined') return 'dark'
-    return (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') || 'dark'
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
   })
   const fotoSrc = useMiFoto()
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -74,6 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       icon: string
       onClick?: () => void
       hideForRoles?: readonly string[]
+      showForRoles?: readonly string[]
     }
     const home: Item = maestro
       ? {
@@ -100,6 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return base.filter(
       (i) =>
         (i.permission ? can(i.permission) : true) &&
+        (!i.showForRoles || i.showForRoles.some((r) => roles.includes(r))) &&
         !i.hideForRoles?.some((r) => roles.includes(r)),
     )
   }, [can, roles, maestro, portal, navigate])
@@ -246,7 +251,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className={`app-shell${isHubLauncher ? ' app-shell--hub' : ''}${collapsed && !isHubLauncher ? ' app-shell--sidebar-collapsed' : ''}`}
+      className={`app-shell${hubLike ? ' app-shell--hub' : ''}${collapsed && !hubLike ? ' app-shell--sidebar-collapsed' : ''}`}
       data-theme={theme}
     >
       <header className="app-shell__top">
@@ -323,6 +328,27 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                 <span>{theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}</span>
               </button>
+              {maestro ? (
+                <>
+                  <div className="user-menu__separator" role="separator" />
+                <div className="user-menu__section mobile-nav__section">Modo de trabajo</div>
+                  <button
+                    type="button"
+                    className="user-menu__item"
+                    role="menuitem"
+                    data-testid="user-menu-modo-examenes"
+                    onClick={() => {
+                      setUserMenuOpen(false)
+                      void navigate({ to: isExamenMode ? '/maestro' : '/maestro/examenes' })
+                    }}
+                  >
+                    {isExamenMode ? <BookOpen size={15} /> : <CalendarDays size={15} />}
+                    <span>
+                      {isExamenMode ? 'Modo normal' : 'Modo semana de exámenes'}
+                    </span>
+                  </button>
+                </>
+              ) : null}
               <button
                 type="button"
                 className="user-menu__item user-menu__item--danger"
@@ -372,7 +398,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <div className="app-shell__body">
-        {!isHubLauncher ? (
+        {!hubLike ? (
           <aside
             className={`app-shell__sidebar${collapsed ? ' app-shell__sidebar--collapsed' : ''}`}
             aria-label="Navegación principal"
@@ -466,7 +492,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span>Inicio</span>
               </button>
             ) : null}
-            {maestro && can('mis_estadisticas:get') ? (
+            {!isExamenMode && maestro && can('mis_estadisticas:get') ? (
               <button
                 type="button"
                 className={`sidebar-nav__item${pathname.startsWith('/maestro/analiticas') ? ' sidebar-nav__item--active' : ''}`}
@@ -479,7 +505,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span>Analíticas</span>
               </button>
             ) : null}
-            {!isHubLauncher ? renderNavItems(true, closeMobileNav) : null}
+            {!isExamenMode && !isHubLauncher ? renderNavItems(true, closeMobileNav) : null}
           </nav>
 
           <div className="mobile-nav__foot">
@@ -491,10 +517,38 @@ export function AppShell({ children }: { children: ReactNode }) {
               <User className="sidebar-nav__icon" />
               <span>Mi perfil</span>
             </Link>
-            <button type="button" className="sidebar-nav__item" onClick={toggleTheme}>
-              {theme === 'dark' ? <Sun className="sidebar-nav__icon" /> : <Moon className="sidebar-nav__icon" />}
-              <span>{theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}</span>
-            </button>
+            {!isExamenMode ? (
+              <button type="button" className="sidebar-nav__item" onClick={toggleTheme}>
+                {theme === 'dark' ? <Sun className="sidebar-nav__icon" /> : <Moon className="sidebar-nav__icon" />}
+                <span>{theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}</span>
+              </button>
+            ) : null}
+            {maestro ? (
+              <>
+                <div className="user-menu__separator" role="separator" />
+                <div className="user-menu__section">Modo de trabajo</div>
+                <button
+                  type="button"
+                  className="sidebar-nav__item"
+                  data-testid="mobile-nav-modo-examenes"
+                  onClick={() => {
+                    closeMobileNav()
+                    void navigate({
+                      to: isExamenMode ? '/maestro' : '/maestro/examenes',
+                    })
+                  }}
+                >
+                  {isExamenMode ? (
+                    <BookOpen className="sidebar-nav__icon" />
+                  ) : (
+                    <CalendarDays className="sidebar-nav__icon" />
+                  )}
+                  <span>
+                    {isExamenMode ? 'Modo normal' : 'Modo semana de exámenes'}
+                  </span>
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               className="sidebar-nav__item mobile-nav__danger"

@@ -28,6 +28,7 @@ import { Route as AppControladoresRouteImport } from './routes/_app/controladore
 import { Route as AppCoordinacionesRouteImport } from './routes/_app/coordinaciones'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppEstadisticasRouteImport } from './routes/_app/estadisticas'
+import { Route as AppExamenesRouteImport } from './routes/_app/examenes'
 import { Route as AppHorariosRouteImport } from './routes/_app/horarios'
 import { Route as AppLiberacionNotasRouteImport } from './routes/_app/liberacion-notas'
 import { Route as AppMantenimientoAdminRouteImport } from './routes/_app/mantenimiento-admin'
@@ -41,6 +42,7 @@ import { Route as AppPersonasRouteImport } from './routes/_app/personas'
 import { Route as AppPlanEstudioRouteImport } from './routes/_app/plan-estudio'
 import { Route as AppRecibosRouteImport } from './routes/_app/recibos'
 import { Route as AppRecuperacionesRouteImport } from './routes/_app/recuperaciones'
+import { Route as AppReportesExamenRouteImport } from './routes/_app/reportes-examen'
 import { Route as AppRestablecerPasswordRouteImport } from './routes/_app/restablecer-password'
 import { Route as AppSaceRouteImport } from './routes/_app/sace'
 import { Route as AppSolicitudPermisosRouteImport } from './routes/_app/solicitud-permisos'
@@ -74,11 +76,14 @@ import { Route as AppHijoPermisosRouteImport } from './routes/_app/hijo/permisos
 import { Route as AppHijoTareasRouteImport } from './routes/_app/hijo/tareas'
 import { Route as AppMaestroIndexRouteImport } from './routes/_app/maestro/index'
 import { Route as AppMaestroAnaliticasRouteImport } from './routes/_app/maestro/analiticas'
+import { Route as AppMaestroExamenesRouteImport } from './routes/_app/maestro/examenes'
+import { Route as AppMaestroReportesExamenRouteImport } from './routes/_app/maestro/reportes-examen'
 import { Route as AppMaestroSaceRouteImport } from './routes/_app/maestro/sace'
 import { Route as AppResponsableIndexRouteImport } from './routes/_app/responsable/index'
 import { Route as AppHijoPlanIndexRouteImport } from './routes/_app/hijo/plan/index'
 import { Route as AppHijoPlanAsignacionIdRouteImport } from './routes/_app/hijo/plan/$asignacionId'
 import { Route as AppMaestroClasesAsignacionIdRouteImport } from './routes/_app/maestro/clases.$asignacionId'
+import { Route as AppMaestroExamenesAhoraRouteImport } from './routes/_app/maestro/examenes/ahora'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -174,6 +179,11 @@ const AppEstadisticasRoute = AppEstadisticasRouteImport.update({
   path: '/estadisticas',
   getParentRoute: () => AppRoute,
 } as any)
+const AppExamenesRoute = AppExamenesRouteImport.update({
+  id: '/examenes',
+  path: '/examenes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppHorariosRoute = AppHorariosRouteImport.update({
   id: '/horarios',
   path: '/horarios',
@@ -237,6 +247,11 @@ const AppRecibosRoute = AppRecibosRouteImport.update({
 const AppRecuperacionesRoute = AppRecuperacionesRouteImport.update({
   id: '/recuperaciones',
   path: '/recuperaciones',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportesExamenRoute = AppReportesExamenRouteImport.update({
+  id: '/reportes-examen',
+  path: '/reportes-examen',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRestablecerPasswordRoute = AppRestablecerPasswordRouteImport.update({
@@ -404,6 +419,17 @@ const AppMaestroAnaliticasRoute = AppMaestroAnaliticasRouteImport.update({
   path: '/maestro/analiticas',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMaestroExamenesRoute = AppMaestroExamenesRouteImport.update({
+  id: '/maestro/examenes',
+  path: '/maestro/examenes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMaestroReportesExamenRoute =
+  AppMaestroReportesExamenRouteImport.update({
+    id: '/maestro/reportes-examen',
+    path: '/maestro/reportes-examen',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppMaestroSaceRoute = AppMaestroSaceRouteImport.update({
   id: '/maestro/sace',
   path: '/maestro/sace',
@@ -430,6 +456,11 @@ const AppMaestroClasesAsignacionIdRoute =
     path: '/maestro/clases/$asignacionId',
     getParentRoute: () => AppRoute,
   } as any)
+const AppMaestroExamenesAhoraRoute = AppMaestroExamenesAhoraRouteImport.update({
+  id: '/ahora',
+  path: '/ahora',
+  getParentRoute: () => AppMaestroExamenesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -450,6 +481,7 @@ export interface FileRoutesByFullPath {
   '/coordinaciones': typeof AppCoordinacionesRoute
   '/dashboard': typeof AppDashboardRoute
   '/estadisticas': typeof AppEstadisticasRoute
+  '/examenes': typeof AppExamenesRoute
   '/horarios': typeof AppHorariosRoute
   '/liberacion-notas': typeof AppLiberacionNotasRoute
   '/mantenimiento-admin': typeof AppMantenimientoAdminRoute
@@ -463,6 +495,7 @@ export interface FileRoutesByFullPath {
   '/plan-estudio': typeof AppPlanEstudioRoute
   '/recibos': typeof AppRecibosRoute
   '/recuperaciones': typeof AppRecuperacionesRoute
+  '/reportes-examen': typeof AppReportesExamenRoute
   '/restablecer-password': typeof AppRestablecerPasswordRoute
   '/sace': typeof AppSaceRoute
   '/solicitud-permisos': typeof AppSolicitudPermisosRoute
@@ -491,6 +524,8 @@ export interface FileRoutesByFullPath {
   '/hijo/permisos': typeof AppHijoPermisosRoute
   '/hijo/tareas': typeof AppHijoTareasRoute
   '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
+  '/maestro/examenes': typeof AppMaestroExamenesRouteWithChildren
+  '/maestro/reportes-examen': typeof AppMaestroReportesExamenRoute
   '/maestro/sace': typeof AppMaestroSaceRoute
   '/alumno/': typeof AppAlumnoIndexRoute
   '/contratos/': typeof AppContratosIndexRoute
@@ -500,6 +535,7 @@ export interface FileRoutesByFullPath {
   '/responsable/': typeof AppResponsableIndexRoute
   '/hijo/plan/$asignacionId': typeof AppHijoPlanAsignacionIdRoute
   '/maestro/clases/$asignacionId': typeof AppMaestroClasesAsignacionIdRoute
+  '/maestro/examenes/ahora': typeof AppMaestroExamenesAhoraRoute
   '/hijo/plan/': typeof AppHijoPlanIndexRoute
 }
 export interface FileRoutesByTo {
@@ -521,6 +557,7 @@ export interface FileRoutesByTo {
   '/coordinaciones': typeof AppCoordinacionesRoute
   '/dashboard': typeof AppDashboardRoute
   '/estadisticas': typeof AppEstadisticasRoute
+  '/examenes': typeof AppExamenesRoute
   '/horarios': typeof AppHorariosRoute
   '/liberacion-notas': typeof AppLiberacionNotasRoute
   '/mantenimiento-admin': typeof AppMantenimientoAdminRoute
@@ -534,6 +571,7 @@ export interface FileRoutesByTo {
   '/plan-estudio': typeof AppPlanEstudioRoute
   '/recibos': typeof AppRecibosRoute
   '/recuperaciones': typeof AppRecuperacionesRoute
+  '/reportes-examen': typeof AppReportesExamenRoute
   '/restablecer-password': typeof AppRestablecerPasswordRoute
   '/sace': typeof AppSaceRoute
   '/solicitud-permisos': typeof AppSolicitudPermisosRoute
@@ -562,6 +600,8 @@ export interface FileRoutesByTo {
   '/hijo/permisos': typeof AppHijoPermisosRoute
   '/hijo/tareas': typeof AppHijoTareasRoute
   '/maestro/analiticas': typeof AppMaestroAnaliticasRoute
+  '/maestro/examenes': typeof AppMaestroExamenesRouteWithChildren
+  '/maestro/reportes-examen': typeof AppMaestroReportesExamenRoute
   '/maestro/sace': typeof AppMaestroSaceRoute
   '/alumno': typeof AppAlumnoIndexRoute
   '/contratos': typeof AppContratosIndexRoute
@@ -571,6 +611,7 @@ export interface FileRoutesByTo {
   '/responsable': typeof AppResponsableIndexRoute
   '/hijo/plan/$asignacionId': typeof AppHijoPlanAsignacionIdRoute
   '/maestro/clases/$asignacionId': typeof AppMaestroClasesAsignacionIdRoute
+  '/maestro/examenes/ahora': typeof AppMaestroExamenesAhoraRoute
   '/hijo/plan': typeof AppHijoPlanIndexRoute
 }
 export interface FileRoutesById {
@@ -594,6 +635,7 @@ export interface FileRoutesById {
   '/_app/coordinaciones': typeof AppCoordinacionesRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/estadisticas': typeof AppEstadisticasRoute
+  '/_app/examenes': typeof AppExamenesRoute
   '/_app/horarios': typeof AppHorariosRoute
   '/_app/liberacion-notas': typeof AppLiberacionNotasRoute
   '/_app/mantenimiento-admin': typeof AppMantenimientoAdminRoute
@@ -607,6 +649,7 @@ export interface FileRoutesById {
   '/_app/plan-estudio': typeof AppPlanEstudioRoute
   '/_app/recibos': typeof AppRecibosRoute
   '/_app/recuperaciones': typeof AppRecuperacionesRoute
+  '/_app/reportes-examen': typeof AppReportesExamenRoute
   '/_app/restablecer-password': typeof AppRestablecerPasswordRoute
   '/_app/sace': typeof AppSaceRoute
   '/_app/solicitud-permisos': typeof AppSolicitudPermisosRoute
@@ -635,6 +678,8 @@ export interface FileRoutesById {
   '/_app/hijo/permisos': typeof AppHijoPermisosRoute
   '/_app/hijo/tareas': typeof AppHijoTareasRoute
   '/_app/maestro/analiticas': typeof AppMaestroAnaliticasRoute
+  '/_app/maestro/examenes': typeof AppMaestroExamenesRouteWithChildren
+  '/_app/maestro/reportes-examen': typeof AppMaestroReportesExamenRoute
   '/_app/maestro/sace': typeof AppMaestroSaceRoute
   '/_app/alumno/': typeof AppAlumnoIndexRoute
   '/_app/contratos/': typeof AppContratosIndexRoute
@@ -644,6 +689,7 @@ export interface FileRoutesById {
   '/_app/responsable/': typeof AppResponsableIndexRoute
   '/_app/hijo/plan/$asignacionId': typeof AppHijoPlanAsignacionIdRoute
   '/_app/maestro/clases/$asignacionId': typeof AppMaestroClasesAsignacionIdRoute
+  '/_app/maestro/examenes/ahora': typeof AppMaestroExamenesAhoraRoute
   '/_app/hijo/plan/': typeof AppHijoPlanIndexRoute
 }
 export interface FileRouteTypes {
@@ -667,6 +713,7 @@ export interface FileRouteTypes {
     | '/coordinaciones'
     | '/dashboard'
     | '/estadisticas'
+    | '/examenes'
     | '/horarios'
     | '/liberacion-notas'
     | '/mantenimiento-admin'
@@ -680,6 +727,7 @@ export interface FileRouteTypes {
     | '/plan-estudio'
     | '/recibos'
     | '/recuperaciones'
+    | '/reportes-examen'
     | '/restablecer-password'
     | '/sace'
     | '/solicitud-permisos'
@@ -708,6 +756,8 @@ export interface FileRouteTypes {
     | '/hijo/permisos'
     | '/hijo/tareas'
     | '/maestro/analiticas'
+    | '/maestro/examenes'
+    | '/maestro/reportes-examen'
     | '/maestro/sace'
     | '/alumno/'
     | '/contratos/'
@@ -717,6 +767,7 @@ export interface FileRouteTypes {
     | '/responsable/'
     | '/hijo/plan/$asignacionId'
     | '/maestro/clases/$asignacionId'
+    | '/maestro/examenes/ahora'
     | '/hijo/plan/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -738,6 +789,7 @@ export interface FileRouteTypes {
     | '/coordinaciones'
     | '/dashboard'
     | '/estadisticas'
+    | '/examenes'
     | '/horarios'
     | '/liberacion-notas'
     | '/mantenimiento-admin'
@@ -751,6 +803,7 @@ export interface FileRouteTypes {
     | '/plan-estudio'
     | '/recibos'
     | '/recuperaciones'
+    | '/reportes-examen'
     | '/restablecer-password'
     | '/sace'
     | '/solicitud-permisos'
@@ -779,6 +832,8 @@ export interface FileRouteTypes {
     | '/hijo/permisos'
     | '/hijo/tareas'
     | '/maestro/analiticas'
+    | '/maestro/examenes'
+    | '/maestro/reportes-examen'
     | '/maestro/sace'
     | '/alumno'
     | '/contratos'
@@ -788,6 +843,7 @@ export interface FileRouteTypes {
     | '/responsable'
     | '/hijo/plan/$asignacionId'
     | '/maestro/clases/$asignacionId'
+    | '/maestro/examenes/ahora'
     | '/hijo/plan'
   id:
     | '__root__'
@@ -810,6 +866,7 @@ export interface FileRouteTypes {
     | '/_app/coordinaciones'
     | '/_app/dashboard'
     | '/_app/estadisticas'
+    | '/_app/examenes'
     | '/_app/horarios'
     | '/_app/liberacion-notas'
     | '/_app/mantenimiento-admin'
@@ -823,6 +880,7 @@ export interface FileRouteTypes {
     | '/_app/plan-estudio'
     | '/_app/recibos'
     | '/_app/recuperaciones'
+    | '/_app/reportes-examen'
     | '/_app/restablecer-password'
     | '/_app/sace'
     | '/_app/solicitud-permisos'
@@ -851,6 +909,8 @@ export interface FileRouteTypes {
     | '/_app/hijo/permisos'
     | '/_app/hijo/tareas'
     | '/_app/maestro/analiticas'
+    | '/_app/maestro/examenes'
+    | '/_app/maestro/reportes-examen'
     | '/_app/maestro/sace'
     | '/_app/alumno/'
     | '/_app/contratos/'
@@ -860,6 +920,7 @@ export interface FileRouteTypes {
     | '/_app/responsable/'
     | '/_app/hijo/plan/$asignacionId'
     | '/_app/maestro/clases/$asignacionId'
+    | '/_app/maestro/examenes/ahora'
     | '/_app/hijo/plan/'
   fileRoutesById: FileRoutesById
 }
@@ -1005,6 +1066,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEstadisticasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/examenes': {
+      id: '/_app/examenes'
+      path: '/examenes'
+      fullPath: '/examenes'
+      preLoaderRoute: typeof AppExamenesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/horarios': {
       id: '/_app/horarios'
       path: '/horarios'
@@ -1094,6 +1162,13 @@ declare module '@tanstack/react-router' {
       path: '/recuperaciones'
       fullPath: '/recuperaciones'
       preLoaderRoute: typeof AppRecuperacionesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reportes-examen': {
+      id: '/_app/reportes-examen'
+      path: '/reportes-examen'
+      fullPath: '/reportes-examen'
+      preLoaderRoute: typeof AppReportesExamenRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/restablecer-password': {
@@ -1327,6 +1402,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMaestroAnaliticasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/maestro/examenes': {
+      id: '/_app/maestro/examenes'
+      path: '/maestro/examenes'
+      fullPath: '/maestro/examenes'
+      preLoaderRoute: typeof AppMaestroExamenesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/maestro/reportes-examen': {
+      id: '/_app/maestro/reportes-examen'
+      path: '/maestro/reportes-examen'
+      fullPath: '/maestro/reportes-examen'
+      preLoaderRoute: typeof AppMaestroReportesExamenRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/maestro/sace': {
       id: '/_app/maestro/sace'
       path: '/maestro/sace'
@@ -1362,8 +1451,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMaestroClasesAsignacionIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/maestro/examenes/ahora': {
+      id: '/_app/maestro/examenes/ahora'
+      path: '/ahora'
+      fullPath: '/maestro/examenes/ahora'
+      preLoaderRoute: typeof AppMaestroExamenesAhoraRouteImport
+      parentRoute: typeof AppMaestroExamenesRoute
+    }
   }
 }
+
+interface AppMaestroExamenesRouteChildren {
+  AppMaestroExamenesAhoraRoute: typeof AppMaestroExamenesAhoraRoute
+}
+
+const AppMaestroExamenesRouteChildren: AppMaestroExamenesRouteChildren = {
+  AppMaestroExamenesAhoraRoute: AppMaestroExamenesAhoraRoute,
+}
+
+const AppMaestroExamenesRouteWithChildren =
+  AppMaestroExamenesRoute._addFileChildren(AppMaestroExamenesRouteChildren)
 
 interface AppRouteChildren {
   AppActualizacionesRoute: typeof AppActualizacionesRoute
@@ -1381,6 +1488,7 @@ interface AppRouteChildren {
   AppCoordinacionesRoute: typeof AppCoordinacionesRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstadisticasRoute: typeof AppEstadisticasRoute
+  AppExamenesRoute: typeof AppExamenesRoute
   AppHorariosRoute: typeof AppHorariosRoute
   AppLiberacionNotasRoute: typeof AppLiberacionNotasRoute
   AppMantenimientoAdminRoute: typeof AppMantenimientoAdminRoute
@@ -1394,6 +1502,7 @@ interface AppRouteChildren {
   AppPlanEstudioRoute: typeof AppPlanEstudioRoute
   AppRecibosRoute: typeof AppRecibosRoute
   AppRecuperacionesRoute: typeof AppRecuperacionesRoute
+  AppReportesExamenRoute: typeof AppReportesExamenRoute
   AppRestablecerPasswordRoute: typeof AppRestablecerPasswordRoute
   AppSaceRoute: typeof AppSaceRoute
   AppSolicitudPermisosRoute: typeof AppSolicitudPermisosRoute
@@ -1422,6 +1531,8 @@ interface AppRouteChildren {
   AppHijoPermisosRoute: typeof AppHijoPermisosRoute
   AppHijoTareasRoute: typeof AppHijoTareasRoute
   AppMaestroAnaliticasRoute: typeof AppMaestroAnaliticasRoute
+  AppMaestroExamenesRoute: typeof AppMaestroExamenesRouteWithChildren
+  AppMaestroReportesExamenRoute: typeof AppMaestroReportesExamenRoute
   AppMaestroSaceRoute: typeof AppMaestroSaceRoute
   AppAlumnoIndexRoute: typeof AppAlumnoIndexRoute
   AppContratosIndexRoute: typeof AppContratosIndexRoute
@@ -1450,6 +1561,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCoordinacionesRoute: AppCoordinacionesRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEstadisticasRoute: AppEstadisticasRoute,
+  AppExamenesRoute: AppExamenesRoute,
   AppHorariosRoute: AppHorariosRoute,
   AppLiberacionNotasRoute: AppLiberacionNotasRoute,
   AppMantenimientoAdminRoute: AppMantenimientoAdminRoute,
@@ -1463,6 +1575,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPlanEstudioRoute: AppPlanEstudioRoute,
   AppRecibosRoute: AppRecibosRoute,
   AppRecuperacionesRoute: AppRecuperacionesRoute,
+  AppReportesExamenRoute: AppReportesExamenRoute,
   AppRestablecerPasswordRoute: AppRestablecerPasswordRoute,
   AppSaceRoute: AppSaceRoute,
   AppSolicitudPermisosRoute: AppSolicitudPermisosRoute,
@@ -1491,6 +1604,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppHijoPermisosRoute: AppHijoPermisosRoute,
   AppHijoTareasRoute: AppHijoTareasRoute,
   AppMaestroAnaliticasRoute: AppMaestroAnaliticasRoute,
+  AppMaestroExamenesRoute: AppMaestroExamenesRouteWithChildren,
+  AppMaestroReportesExamenRoute: AppMaestroReportesExamenRoute,
   AppMaestroSaceRoute: AppMaestroSaceRoute,
   AppAlumnoIndexRoute: AppAlumnoIndexRoute,
   AppContratosIndexRoute: AppContratosIndexRoute,

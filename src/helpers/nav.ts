@@ -7,6 +7,8 @@ export type NavItem = {
   icon: string
   /** Roles con el permiso que igual no ven el ítem (consejería, director, secretaría y admisiones usan catalogos:get solo para matrícula). */
   hideForRoles?: RoleName[]
+  /** Si se indica, solo esos roles ven el ítem aunque tengan el permiso. */
+  showForRoles?: RoleName[]
 }
 
 const SIN_CATALOGOS: RoleName[] = ['consejeria', 'director', 'secretaria', 'admisiones']
@@ -32,6 +34,35 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/carnets', label: 'Carnets', permission: 'carnets:get', icon: 'id-card' },
   { to: '/asignacion', label: 'Asignación', permission: 'asignacion:get', icon: 'link' },
   { to: '/horarios', label: 'Horarios', permission: 'horarios:get', icon: 'calendar-days' },
+  {
+    to: '/examenes',
+    label: 'Horarios de examen',
+    permission: 'examenes:get',
+    icon: 'calendar-days',
+    // Los maestros usan sus propias vistas de exámenes (/maestro/examenes), no la de administración.
+    hideForRoles: ['maestro', 'alumno', 'responsable'],
+  },
+  {
+    to: '/maestro/examenes',
+    label: 'Exámenes',
+    permission: 'examenes:get',
+    icon: 'calendar-days',
+    showForRoles: ['maestro'],
+  },
+  {
+    to: '/maestro/reportes-examen',
+    label: 'Reportes de examen',
+    permission: 'examenes:reportar',
+    icon: 'file-check',
+    showForRoles: ['maestro'],
+  },
+  {
+    to: '/reportes-examen',
+    label: 'Reportes de examen',
+    permission: 'examenes:get',
+    icon: 'file-check',
+    showForRoles: ['admin', 'admin_temporal', 'director', 'consejeria'],
+  },
   { to: '/plan-estudio', label: 'Plan de estudio', permission: 'planestudio:get', icon: 'file' },
   { to: '/asistencia', label: 'Asistencia', permission: 'asistencia:get', icon: 'check' },
   { to: '/tareas', label: 'Tareas', permission: 'tareas:get', icon: 'list' },

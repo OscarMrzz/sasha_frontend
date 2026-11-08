@@ -41,7 +41,7 @@ function AlumnoHomePage() {
   if (responsable && !alumnoId) return <Navigate to="/responsable" replace />
   if (responsable && alumnoId) {
     return (
-      <div className="maestro-hub" data-testid="alumno-home">
+      <div className="maestro-hub maestro-hub--portal" data-testid="alumno-home">
         <HijoHub alumnoId={alumnoId} />
       </div>
     )

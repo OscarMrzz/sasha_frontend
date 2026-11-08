@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Award, BookOpen, CalendarDays, ChevronRight, FileCheck, ListTodo, ShieldAlert, Wallet } from 'lucide-react'
+import { ArrowLeft, Award, BookOpen, CalendarDays, ChevronRight, FileCheck, ListTodo, ShieldAlert, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { usePortalInicio } from '#/hooks/use-portal'
@@ -120,8 +120,13 @@ export function HijoHub({ alumnoId }: { alumnoId: string }) {
           ) : null}
           {hijo?.user_code ? <p className="padre-hub__meta">N.º de cuenta {hijo.user_code}</p> : null}
         </div>
-        <Link to="/responsable" className="btn btn--ghost btn--sm padre-hub__cambiar" data-testid="alumno-cambiar">
-          {hijos.length > 1 ? 'Cambiar alumno' : 'Mis alumnos'}
+        <Link
+          to="/responsable"
+          className="btn btn--ghost btn--sm padre-hub__cambiar"
+          data-testid="alumno-cambiar"
+        >
+          <ArrowLeft size={16} aria-hidden />
+          Volver
         </Link>
       </header>
 

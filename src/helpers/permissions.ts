@@ -49,6 +49,12 @@ const adminPerms: Permission[] = [
   'horarios:get',
   'horarios:post',
   'horarios:put',
+  'examenes:get',
+  'examenes:post',
+  'examenes:put',
+  'examenes:delete',
+  'examenes:asistencia',
+  'examenes:reportar',
   'planestudio:get',
   'planestudio:put',
   'asistencia:get',
@@ -148,6 +154,10 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'contratos:post',
     'contratos:put',
     'contratos:delete',
+    'examenes:get',
+    'examenes:post',
+    'examenes:put',
+    'examenes:delete',
   ],
   // Lista propia: hoy coincide con la de consejería por decisión (DEC-017), pero no se comparte.
   director: [
@@ -180,6 +190,10 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'contratos:post',
     'contratos:put',
     'contratos:delete',
+    'examenes:get',
+    'examenes:post',
+    'examenes:put',
+    'examenes:delete',
   ],
   consejeria: [
     'planestudio:get',
@@ -212,6 +226,10 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'permisos:get',
     'permisos_admin:get',
     'permisos_admin:put',
+    'examenes:get',
+    'examenes:post',
+    'examenes:put',
+    'examenes:delete',
   ],
   // Consejería sin matrícula: el backend recorta todo a las clases de sus coordinaciones (DEC-018).
   coordinador: [
@@ -237,6 +255,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'permisos:get',
     'permisos_admin:get',
     'permisos_admin:put',
+    'examenes:get',
   ],
   // Únicamente matricula (DEC-019): catálogos y personas solo para el asistente.
   admisiones: [
@@ -293,6 +312,9 @@ export const ROLE_PERMISSIONS: Record<RoleName, Permission[]> = {
     'recuperaciones:post',
     'boveda:get',
     'boveda:post',
+    'examenes:get',
+    'examenes:asistencia',
+    'examenes:reportar',
   ],
   responsable: [
     'tareas:get',
