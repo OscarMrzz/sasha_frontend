@@ -4,7 +4,6 @@ import { Modal } from '#/components/ui/Modal'
 import { SearchInput } from '#/components/ui/SearchInput'
 import { userMessageFromError } from '#/lib/api'
 import { formatearMes, labelGradoSeccion } from '#/lib/examenes'
-import { lempiras } from '#/lib/fechas-padre'
 import { getExamenesMorosos } from '#/services/examenes'
 import type { ExamenAlumnoPagoPendiente } from '#/services/examenes'
 
@@ -94,7 +93,6 @@ export function ExamenMorososModal({
                 <th>Meses</th>
                 <th>Otros pendientes</th>
                 <th>Obligaciones</th>
-                <th>Monto</th>
               </tr>
             </thead>
             <tbody>
@@ -114,7 +112,6 @@ export function ExamenMorososModal({
                       : '—'}
                   </td>
                   <td>{alumno.obligaciones}</td>
-                  <td>{lempiras(alumno.monto)}</td>
                 </tr>
               ))}
             </tbody>
