@@ -172,7 +172,9 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved }: ExamenA
           >
             <header className="examen-ahora__card-head">
               <div>
-                <span className="examen-ahora__etiqueta">En curso</span>
+                <span className="examen-ahora__etiqueta">
+                  {examen.es_final ? 'En curso · Examen final' : 'En curso'}
+                </span>
                 <h2 className="examen-ahora__curso">{examen.curso_nombre}</h2>
                 <p className="examen-ahora__meta">
                   {labelGradoSeccion(examen.grado_nombre, examen.seccion_nombre)} ·{' '}
@@ -217,6 +219,12 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved }: ExamenA
               <h3 className="examen-ahora__alumnos-title">
                 Alumnos con pagos pendientes
               </h3>
+              {examen.es_final ? (
+                <p className="texto-muted">
+                  Examen final: se listan todos los pagos bloqueantes del
+                  periodo, aunque aún no venzan.
+                </p>
+              ) : null}
               {examen.alumnos_pagos_pendientes.length === 0 ? (
                 <p className="texto-muted examen-ahora__sin-pagos">
                   Sin pagos pendientes.
@@ -232,6 +240,8 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved }: ExamenA
                         foto: alumno.foto,
                         grado: alumno.grado,
                         seccion: alumno.seccion,
+                        meses: alumno.meses,
+                        conceptos: alumno.conceptos,
                       }}
                     />
                   ))}

@@ -3,9 +3,10 @@ import { useMemo, useState } from 'react'
 import { Modal } from '#/components/ui/Modal'
 import { SearchInput } from '#/components/ui/SearchInput'
 import { userMessageFromError } from '#/lib/api'
-import { labelGradoSeccion } from '#/lib/examenes'
+import { formatearMes, labelGradoSeccion } from '#/lib/examenes'
 import { lempiras } from '#/lib/fechas-padre'
 import { getExamenesMorosos } from '#/services/examenes'
+import type { ExamenAlumnoPagoPendiente } from '#/services/examenes'
 
 /**
  * Lista informativa global de alumnos con mora. No filtra por grado ni sección:
@@ -14,15 +15,17 @@ import { getExamenesMorosos } from '#/services/examenes'
 export function ExamenMorososModal({
   open,
   onClose,
+  final = false,
 }: {
   open: boolean
   onClose: () => void
+  final?: boolean
 }) {
   const [filtro, setFiltro] = useState('')
 
   const consulta = useQuery({
-    queryKey: ['examenes', 'morosos'],
-    queryFn: () => getExamenesMorosos(),
+    queryKey: ['examenes', 'morosos', final],
+    queryFn: () => getExamenesMorosos(undefined, final),
     enabled: open,
   })
 
@@ -31,9 +34,13 @@ export function ExamenMorososModal({
     const q = filtro.trim().toLowerCase()
     if (!q) return lista
     return lista.filter((alumno) =>
-      [alumno.codigo, alumno.nombre, alumno.grado, alumno.seccion].some((valor) =>
-        valor.toLowerCase().includes(q),
-      ),
+      [
+        alumno.codigo,
+        alumno.nombre,
+        alumno.grado,
+        alumno.seccion,
+        ...otrosPendientes(alumno),
+      ].some((valor) => valor.toLowerCase().includes(q)),
     )
   }, [consulta.data, filtro])
 
@@ -53,6 +60,11 @@ export function ExamenMorososModal({
       <p className="texto-muted" style={{ marginTop: 0 }}>
         Todos los grados y secciones. Lista informativa.
       </p>
+      {final ? (
+        <p className="texto-muted" style={{ marginTop: 0 }}>
+          Examen final: incluye meses y pagos bloqueantes aún no vencidos.
+        </p>
+      ) : null}
 
       <div className="asistencia-toolbar">
         <SearchInput
@@ -80,6 +92,7 @@ export function ExamenMorososModal({
                 <th>Alumno</th>
                 <th>Grado / sección</th>
                 <th>Meses</th>
+                <th>Otros pendientes</th>
                 <th>Obligaciones</th>
                 <th>Monto</th>
               </tr>
@@ -90,7 +103,16 @@ export function ExamenMorososModal({
                   <td>{alumno.codigo}</td>
                   <td>{alumno.nombre}</td>
                   <td>{labelGradoSeccion(alumno.grado, alumno.seccion)}</td>
-                  <td>{alumno.meses.length > 0 ? alumno.meses.join(', ') : '—'}</td>
+                  <td>
+                    {alumno.meses.length > 0
+                      ? alumno.meses.map(formatearMes).join(' · ')
+                      : '—'}
+                  </td>
+                  <td>
+                    {otrosPendientes(alumno).length > 0
+                      ? otrosPendientes(alumno).join(' · ')
+                      : '—'}
+                  </td>
                   <td>{alumno.obligaciones}</td>
                   <td>{lempiras(alumno.monto)}</td>
                 </tr>
@@ -100,11 +122,28 @@ export function ExamenMorososModal({
         </div>
       )}
 
-      {consulta.data && !consulta.isLoading ? (
-        <p className="texto-muted" style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}>
-          {consulta.data.length} alumno{consulta.data.length === 1 ? '' : 's'} con mora.
+      {consulta.data ? (
+        <p
+          className="texto-muted"
+          style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}
+        >
+          {consulta.data.length} alumno{consulta.data.length === 1 ? '' : 's'}{' '}
+          con {final ? 'pagos pendientes' : 'mora'}.
         </p>
       ) : null}
     </Modal>
   )
+}
+
+/** Nombres únicos de los conceptos pendientes que no son mensualidad. */
+function otrosPendientes(alumno: ExamenAlumnoPagoPendiente): string[] {
+  const vistos = new Set<string>()
+  const out: string[] = []
+  for (const concepto of alumno.conceptos ?? []) {
+    if (concepto.es_mensualidad || !concepto.tipo_nombre) continue
+    if (vistos.has(concepto.tipo_nombre)) continue
+    vistos.add(concepto.tipo_nombre)
+    out.push(concepto.tipo_nombre)
+  }
+  return out
 }

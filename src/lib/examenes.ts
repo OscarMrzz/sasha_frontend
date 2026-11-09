@@ -1,7 +1,9 @@
+import { mesAnio } from '#/lib/fechas-padre'
 import type {
   ExamenAsignacion,
   ExamenBloque,
   ExamenBloqueInput,
+  ExamenConceptoPendiente,
 } from '#/services/examenes'
 
 /** Inicial del día de la semana (0 = domingo). */
@@ -146,6 +148,34 @@ export function recesosDeLista(
 /** Etiqueta de grado + sección para las tarjetas del maestro. */
 export function labelGradoSeccion(grado?: string | null, seccion?: string | null): string {
   return [grado, seccion].filter(Boolean).join(' · ')
+}
+
+/** Etiqueta de mes adeudado lista para mostrar. El backend manda `YYYY-MM`
+ * (o un `periodo_label` ya legible); solo el primero se traduce a «Enero 2026».
+ */
+export function formatearMes(etiqueta: string): string {
+  const limpio = etiqueta.trim()
+  const m = /^(\d{4})-(\d{2})$/.exec(limpio)
+  if (!m) {
+    // El backend manda «agosto 2026»; el resto de la UI usa mayúscula inicial.
+    return /^[a-záéíóúñ]+\s+\d{4}$/.test(limpio)
+      ? limpio.charAt(0).toUpperCase() + limpio.slice(1)
+      : limpio
+  }
+  return mesAnio(Number(m[1]), Number(m[2]))
+}
+
+/** Etiqueta legible de un concepto pendiente. El backend ya manda `etiqueta`
+ * («julio 2026» o el nombre del tipo); si faltara, se deriva de año/mes o del
+ * nombre del tipo.
+ */
+export function etiquetaConcepto(c: ExamenConceptoPendiente): string {
+  const etiqueta = c.etiqueta.trim()
+  if (etiqueta) return etiqueta
+  if (c.anio && c.mes) {
+    return formatearMes(`${c.anio}-${String(c.mes).padStart(2, '0')}`)
+  }
+  return c.tipo_nombre || '—'
 }
 
 /** Texto de un estado A/T/E/F. */

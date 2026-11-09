@@ -23,6 +23,8 @@ export interface ExamenHorario {
   total_bloques: number
   total_asignaciones: number
   total_secciones: number
+  /** Es el último parcial activo del periodo (examen final). */
+  es_final: boolean
 }
 
 /** Franja horaria que se repite todos los días del horario. */
@@ -298,12 +300,33 @@ export interface ExamenAlumnoPagoPendiente {
   meses: string[]
   monto: number
   obligaciones: number
+  conceptos?: ExamenConceptoPendiente[]
+}
+
+/** Obligación bloqueante impaga de un alumno (mensualidad, matrícula, etc.). */
+export interface ExamenConceptoPendiente {
+  obligacion_id: string
+  tipo_codigo: string
+  tipo_nombre: string
+  es_mensualidad: boolean
+  anio?: number
+  mes?: number
+  etiqueta: string
+  monto: number
+  mora_monto: number
+  total: number
+  fecha_vencimiento: string
+  estado: string
 }
 
 /** Examen del bloque actual (o el siguiente del día) en la vista "Ahora". */
 export interface ExamenAhora {
   examen_asignacion_id: string
   examen_horario_id: string
+  parcial_id?: string
+  parcial_numero?: number
+  parcial_nombre?: string
+  es_final: boolean
   fecha: string
   bloque_orden: number
   hora_inicio: string
@@ -536,8 +559,11 @@ export async function getExamenesAhora(
 }
 
 /** Alumnos con mora de todos los grados y secciones (vista informativa). */
-export async function getExamenesMorosos(periodoId?: string) {
-  const suffix = queryString({ periodo_id: periodoId })
+export async function getExamenesMorosos(periodoId?: string, final?: boolean) {
+  const suffix = queryString({
+    periodo_id: periodoId,
+    final: final ? '1' : undefined,
+  })
   return apiRequestList<ExamenAlumnoPagoPendiente>(`/examenes/morosos${suffix}`)
 }
 

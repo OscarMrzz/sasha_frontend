@@ -47,6 +47,7 @@ function MaestroExamenesSemanaPage() {
   })
 
   const horarios = mios.data?.horarios ?? []
+  const esSemanaFinal = horarios.some((horario) => horario.es_final)
 
   const reporteOptions = useMemo<ExamenReporteOpcion[]>(() => {
     const out: ExamenReporteOpcion[] = []
@@ -129,7 +130,11 @@ function MaestroExamenesSemanaPage() {
         examenes={reporteOptions}
       />
 
-      <ExamenMorososModal open={moraOpen} onClose={() => setMoraOpen(false)} />
+      <ExamenMorososModal
+        open={moraOpen}
+        onClose={() => setMoraOpen(false)}
+        final={esSemanaFinal}
+      />
     </div>
   )
 }
