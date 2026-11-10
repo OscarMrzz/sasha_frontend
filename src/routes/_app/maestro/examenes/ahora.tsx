@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { ExamenAhoraPanel } from '#/components/examenes/ExamenAhoraPanel'
+import { ExamenAhoraAlertas } from '#/components/examenes/ExamenAhoraAlertas'
 import { ReporteModal } from '#/components/examenes/ReporteModal'
 import { RequirePermission } from '#/components/gates/Can'
 import { userMessageFromError } from '#/lib/api'
@@ -85,7 +86,6 @@ function MaestroExamenAhoraPage() {
               : 'Examen del bloque actual de tus secciones.'}
           </p>
         </div>
-
       </header>
 
       <button
@@ -101,6 +101,8 @@ function MaestroExamenAhoraPage() {
         <RefreshCw size={20} aria-hidden />
         {consulta.isFetching ? 'Actualizando…' : 'Ahora'}
       </button>
+
+      <ExamenAhoraAlertas examenes={consulta.data?.examenes ?? []} />
 
       {consulta.isLoading ? (
         <div className="empty-state">Buscando el examen actual…</div>
