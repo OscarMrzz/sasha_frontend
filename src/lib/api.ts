@@ -1,6 +1,11 @@
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { clearPersistedSession, parseStoredSession, readStoredSessionRaw } from '#/lib/session-storage'
+import {
+  clearPersistedSession,
+  parseStoredSession,
+  readStoredSessionRaw,
+} from '#/lib/session-storage'
+import { flushDiagnostics, recordDiagnostic } from '#/lib/diagnostics-queue'
 
 export const apiErrorSchema = z.object({
   message: z.string().optional(),
@@ -110,9 +115,20 @@ export async function apiRequest<T = unknown>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = 'GET', body, activeRoles, headers = {}, raw = false, signal } = options
+  const {
+    method = 'GET',
+    body,
+    activeRoles,
+    headers = {},
+    raw = false,
+    signal,
+  } = options
   const roles =
-    activeRoles === null ? [] : activeRoles !== undefined ? activeRoles : sessionRolesGetter()
+    activeRoles === null
+      ? []
+      : activeRoles !== undefined
+        ? activeRoles
+        : sessionRolesGetter()
   const finalHeaders: Record<string, string> = { ...headers }
 
   if (roles.length > 0) {
@@ -129,67 +145,102 @@ export async function apiRequest<T = unknown>(
     }
   }
 
-  const res = await fetch(`${getApiBaseUrl()}${path}`, {
-    method,
-    credentials: 'include',
-    headers: finalHeaders,
-    body: payload,
-    signal,
-  })
+  const startedAt = Date.now()
+  const apiBase = getApiBaseUrl()
+  flushDiagnostics(apiBase)
+  let res: Response
+  try {
+    res = await fetch(`${apiBase}${path}`, {
+      method,
+      credentials: 'include',
+      headers: finalHeaders,
+      body: payload,
+      signal,
+    })
+  } catch (error) {
+    const name = error instanceof Error ? error.name : ''
+    if (
+      !signal?.aborted &&
+      name !== 'AbortError' &&
+      (error instanceof TypeError || name === 'TimeoutError')
+    ) {
+      recordDiagnostic(
+        {
+          method,
+          path,
+          code: 'NETWORK_ERROR',
+          durationMs: Date.now() - startedAt,
+          appVersion: import.meta.env.VITE_APP_VERSION,
+        },
+        apiBase,
+      )
+    }
+    throw error
+  }
 
   if (res.status === 401) {
     handleUnauthorized(path)
   }
 
-  if (raw) {
-    if (!res.ok) {
-      const text = await res.text()
-      let cuerpo: unknown = text
-      try {
-        cuerpo = JSON.parse(text)
-      } catch {
-        /* la respuesta no es JSON: se guarda el texto tal cual */
-      }
-      const parsed = apiErrorSchema.safeParse(cuerpo)
-      const code = parsed.success ? parsed.data.code : undefined
-      const message = (parsed.success && parsed.data.message) || mensajePorEstado(res.status)
-      const requestId = requestIdDeRespuesta(res, cuerpo)
-      // 503 de mantenimiento (no confundir con STORAGE_* de la bóveda).
-      if (res.status === 503 && code === 'MANTENIMIENTO') {
-        handleMaintenance()
-      }
-      logApiFailure(method, path, res.status, code, message, cuerpo, requestId)
-      throw new ApiError(message, res.status, code, cuerpo, { requestId, method, path })
-    }
-    return res as unknown as T
-  }
-
-  if (res.status === 204) {
-    return undefined as T
-  }
-
-  const contentType = res.headers.get('content-type') || ''
-  const isJson = contentType.includes('application/json')
-  const data = isJson ? await res.json() : await res.text()
-
   if (!res.ok) {
+    // Una respuesta de proxy puede anunciar JSON y devolver contenido inválido.
+    // El status HTTP sigue siendo el fallo que debe conservarse.
+    let data: unknown = ''
+    try {
+      const text = await res.text()
+      data = text
+      try {
+        data = JSON.parse(text)
+      } catch {
+        /* conservar texto en el error existente */
+      }
+    } catch {
+      /* un fallo al leer el body no oculta el status recibido */
+    }
     const parsed = apiErrorSchema.safeParse(data)
     const code = parsed.success ? parsed.data.code : undefined
-    const message = (parsed.success && parsed.data.message) || mensajePorEstado(res.status)
+    const message =
+      (parsed.success && parsed.data.message) || mensajePorEstado(res.status)
     const requestId = requestIdDeRespuesta(res, data)
+    recordDiagnostic(
+      {
+        method,
+        path,
+        status: res.status,
+        code,
+        requestId,
+        durationMs: Date.now() - startedAt,
+        retryAfter: res.headers.get('Retry-After'),
+        appVersion: import.meta.env.VITE_APP_VERSION,
+      },
+      apiBase,
+    )
     // 503 de mantenimiento (no confundir con STORAGE_* de la bóveda).
     if (res.status === 503 && code === 'MANTENIMIENTO') {
       handleMaintenance()
     }
     logApiFailure(method, path, res.status, code, message, data, requestId)
-    throw new ApiError(message, res.status, code, data, { requestId, method, path })
+    throw new ApiError(message, res.status, code, data, {
+      requestId,
+      method,
+      path,
+    })
   }
 
+  if (raw) return res as unknown as T
+  if (res.status === 204) return undefined as T
+  const contentType = res.headers.get('content-type') || ''
+  const data = contentType.includes('application/json')
+    ? await res.json()
+    : await res.text()
   return data as T
 }
 
 /** Lee el identificador de la petición de la cabecera o, si no viene, del JSON de error. */
-function requestIdDeRespuesta(res: Response, body: unknown): string | undefined {
+function requestIdDeRespuesta(
+  res: Response,
+  body: unknown,
+): string | undefined {
   const header = res.headers.get('X-Request-Id')
   if (header) return header
   if (body && typeof body === 'object' && !Array.isArray(body)) {
@@ -219,7 +270,10 @@ function logApiFailure(
 }
 
 /** Para endpoints de lista: garantiza un array aunque el backend devuelva null. */
-export async function apiRequestList<T>(path: string, options: RequestOptions = {}): Promise<T[]> {
+export async function apiRequestList<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T[]> {
   const data = await apiRequest<T[] | null>(path, options)
   return Array.isArray(data) ? data : []
 }
@@ -229,17 +283,21 @@ function mensajePorEstado(status: number): string {
   if (status === 400) return 'La solicitud no es válida.'
   if (status === 403) return 'No tienes permiso para esta acción.'
   if (status === 404) return 'No se encontró lo que buscas.'
-  if (status === 405) return 'El servidor no reconoce esta acción. Puede que el backend esté desactualizado: reinícialo.'
+  if (status === 405)
+    return 'El servidor no reconoce esta acción. Puede que el backend esté desactualizado: reinícialo.'
   if (status === 413) return 'El archivo es demasiado grande.'
   if (status === 415) return 'Tipo de archivo no permitido.'
-  if (status >= 500) return 'El servidor tuvo un problema. Intenta de nuevo en un momento.'
+  if (status >= 500)
+    return 'El servidor tuvo un problema. Intenta de nuevo en un momento.'
   return `Error del servidor (${status}).`
 }
 
 export function userMessageFromError(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 401) return 'Sesión expirada o no autenticado. Vuelve a iniciar sesión.'
-    if (err.status === 403) return err.message || 'No tienes permiso para esta acción.'
+    if (err.status === 401)
+      return 'Sesión expirada o no autenticado. Vuelve a iniciar sesión.'
+    if (err.status === 403)
+      return err.message || 'No tienes permiso para esta acción.'
     return err.message
   }
   if (err instanceof TypeError) return 'No se pudo conectar con el servidor.'
@@ -276,7 +334,10 @@ function bodyParaReporte(body: unknown): string | undefined {
  * mensaje, `request_id` y body. Si el error no es del API igualmente deja la
  * información básica para diagnosticar.
  */
-export function errorReportText(err: unknown, ctx: ErrorReportContext = {}): string {
+export function errorReportText(
+  err: unknown,
+  ctx: ErrorReportContext = {},
+): string {
   const lineas = ['Reporte de error', `Fecha: ${new Date().toISOString()}`]
   if (ctx.contexto) lineas.push(`Contexto: ${ctx.contexto}`)
 
