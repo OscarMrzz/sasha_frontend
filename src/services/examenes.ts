@@ -546,6 +546,18 @@ export async function getMisExamenes(todas = false, periodoId?: string) {
   return apiRequest<ExamenMiosResponse>(`/examenes/mios${suffix}`)
 }
 
+export async function getExamenesSupervisionSemana(periodoId?: string) {
+  return apiRequest<ExamenMiosResponse>(`/examenes/supervision/semana${queryString({ periodo_id: periodoId })}`)
+}
+
+export async function getExamenesSupervisionAhora(
+  params: { fecha?: string; hora?: string; periodoId?: string } = {},
+) {
+  return apiRequest<ExamenAhoraResponse>(`/examenes/supervision/ahora${queryString({
+    fecha: params.fecha, hora: params.hora, periodo_id: params.periodoId,
+  })}`)
+}
+
 /** Examen(es) del bloque actual de las secciones que supervisa el maestro. */
 export async function getExamenesAhora(
   params: { fecha?: string; hora?: string; periodoId?: string } = {},

@@ -193,7 +193,7 @@ export function ExamenAhoraAlertas({ examenes }: { examenes: ExamenAhora[] }) {
   const contadoresVisibles = seguimientosOrdenados.filter(
     (item) => item.avisoCincoMinutos || item.terminado,
   )
-  const alertasPendientes: AlertaPendiente[] = seguimientosOrdenados.flatMap(
+  const alertasPendientes: AlertaPendiente[] = seguimientosOrdenados.flatMap<AlertaPendiente>(
     (item) => {
       if (item.terminado && !item.finAceptado) {
         return [

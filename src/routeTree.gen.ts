@@ -34,6 +34,7 @@ import { Route as AppLiberacionNotasRouteImport } from './routes/_app/liberacion
 import { Route as AppMantenimientoAdminRouteImport } from './routes/_app/mantenimiento-admin'
 import { Route as AppMatriculaRouteImport } from './routes/_app/matricula'
 import { Route as AppMiPerfilRouteImport } from './routes/_app/mi-perfil'
+import { Route as AppModoExamenRouteImport } from './routes/_app/modo-examen'
 import { Route as AppMonitoresRouteImport } from './routes/_app/monitores'
 import { Route as AppNotificacionesAdminRouteImport } from './routes/_app/notificaciones-admin'
 import { Route as AppPadresRouteImport } from './routes/_app/padres'
@@ -79,6 +80,7 @@ import { Route as AppMaestroAnaliticasRouteImport } from './routes/_app/maestro/
 import { Route as AppMaestroExamenesRouteImport } from './routes/_app/maestro/examenes'
 import { Route as AppMaestroReportesExamenRouteImport } from './routes/_app/maestro/reportes-examen'
 import { Route as AppMaestroSaceRouteImport } from './routes/_app/maestro/sace'
+import { Route as AppModoExamenAhoraRouteImport } from './routes/_app/modo-examen/ahora'
 import { Route as AppResponsableIndexRouteImport } from './routes/_app/responsable/index'
 import { Route as AppHijoPlanIndexRouteImport } from './routes/_app/hijo/plan/index'
 import { Route as AppHijoPlanAsignacionIdRouteImport } from './routes/_app/hijo/plan/$asignacionId'
@@ -207,6 +209,11 @@ const AppMatriculaRoute = AppMatriculaRouteImport.update({
 const AppMiPerfilRoute = AppMiPerfilRouteImport.update({
   id: '/mi-perfil',
   path: '/mi-perfil',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppModoExamenRoute = AppModoExamenRouteImport.update({
+  id: '/modo-examen',
+  path: '/modo-examen',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMonitoresRoute = AppMonitoresRouteImport.update({
@@ -435,6 +442,11 @@ const AppMaestroSaceRoute = AppMaestroSaceRouteImport.update({
   path: '/maestro/sace',
   getParentRoute: () => AppRoute,
 } as any)
+const AppModoExamenAhoraRoute = AppModoExamenAhoraRouteImport.update({
+  id: '/ahora',
+  path: '/ahora',
+  getParentRoute: () => AppModoExamenRoute,
+} as any)
 const AppResponsableIndexRoute = AppResponsableIndexRouteImport.update({
   id: '/responsable/',
   path: '/responsable/',
@@ -487,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/mantenimiento-admin': typeof AppMantenimientoAdminRoute
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
+  '/modo-examen': typeof AppModoExamenRouteWithChildren
   '/monitores': typeof AppMonitoresRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/padres': typeof AppPadresRoute
@@ -527,6 +540,7 @@ export interface FileRoutesByFullPath {
   '/maestro/examenes': typeof AppMaestroExamenesRouteWithChildren
   '/maestro/reportes-examen': typeof AppMaestroReportesExamenRoute
   '/maestro/sace': typeof AppMaestroSaceRoute
+  '/modo-examen/ahora': typeof AppModoExamenAhoraRoute
   '/alumno/': typeof AppAlumnoIndexRoute
   '/contratos/': typeof AppContratosIndexRoute
   '/disciplina/': typeof AppDisciplinaIndexRoute
@@ -563,6 +577,7 @@ export interface FileRoutesByTo {
   '/mantenimiento-admin': typeof AppMantenimientoAdminRoute
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
+  '/modo-examen': typeof AppModoExamenRouteWithChildren
   '/monitores': typeof AppMonitoresRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/padres': typeof AppPadresRoute
@@ -603,6 +618,7 @@ export interface FileRoutesByTo {
   '/maestro/examenes': typeof AppMaestroExamenesRouteWithChildren
   '/maestro/reportes-examen': typeof AppMaestroReportesExamenRoute
   '/maestro/sace': typeof AppMaestroSaceRoute
+  '/modo-examen/ahora': typeof AppModoExamenAhoraRoute
   '/alumno': typeof AppAlumnoIndexRoute
   '/contratos': typeof AppContratosIndexRoute
   '/disciplina': typeof AppDisciplinaIndexRoute
@@ -641,6 +657,7 @@ export interface FileRoutesById {
   '/_app/mantenimiento-admin': typeof AppMantenimientoAdminRoute
   '/_app/matricula': typeof AppMatriculaRoute
   '/_app/mi-perfil': typeof AppMiPerfilRoute
+  '/_app/modo-examen': typeof AppModoExamenRouteWithChildren
   '/_app/monitores': typeof AppMonitoresRoute
   '/_app/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/_app/padres': typeof AppPadresRoute
@@ -681,6 +698,7 @@ export interface FileRoutesById {
   '/_app/maestro/examenes': typeof AppMaestroExamenesRouteWithChildren
   '/_app/maestro/reportes-examen': typeof AppMaestroReportesExamenRoute
   '/_app/maestro/sace': typeof AppMaestroSaceRoute
+  '/_app/modo-examen/ahora': typeof AppModoExamenAhoraRoute
   '/_app/alumno/': typeof AppAlumnoIndexRoute
   '/_app/contratos/': typeof AppContratosIndexRoute
   '/_app/disciplina/': typeof AppDisciplinaIndexRoute
@@ -719,6 +737,7 @@ export interface FileRouteTypes {
     | '/mantenimiento-admin'
     | '/matricula'
     | '/mi-perfil'
+    | '/modo-examen'
     | '/monitores'
     | '/notificaciones-admin'
     | '/padres'
@@ -759,6 +778,7 @@ export interface FileRouteTypes {
     | '/maestro/examenes'
     | '/maestro/reportes-examen'
     | '/maestro/sace'
+    | '/modo-examen/ahora'
     | '/alumno/'
     | '/contratos/'
     | '/disciplina/'
@@ -795,6 +815,7 @@ export interface FileRouteTypes {
     | '/mantenimiento-admin'
     | '/matricula'
     | '/mi-perfil'
+    | '/modo-examen'
     | '/monitores'
     | '/notificaciones-admin'
     | '/padres'
@@ -835,6 +856,7 @@ export interface FileRouteTypes {
     | '/maestro/examenes'
     | '/maestro/reportes-examen'
     | '/maestro/sace'
+    | '/modo-examen/ahora'
     | '/alumno'
     | '/contratos'
     | '/disciplina'
@@ -872,6 +894,7 @@ export interface FileRouteTypes {
     | '/_app/mantenimiento-admin'
     | '/_app/matricula'
     | '/_app/mi-perfil'
+    | '/_app/modo-examen'
     | '/_app/monitores'
     | '/_app/notificaciones-admin'
     | '/_app/padres'
@@ -912,6 +935,7 @@ export interface FileRouteTypes {
     | '/_app/maestro/examenes'
     | '/_app/maestro/reportes-examen'
     | '/_app/maestro/sace'
+    | '/_app/modo-examen/ahora'
     | '/_app/alumno/'
     | '/_app/contratos/'
     | '/_app/disciplina/'
@@ -1106,6 +1130,13 @@ declare module '@tanstack/react-router' {
       path: '/mi-perfil'
       fullPath: '/mi-perfil'
       preLoaderRoute: typeof AppMiPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/modo-examen': {
+      id: '/_app/modo-examen'
+      path: '/modo-examen'
+      fullPath: '/modo-examen'
+      preLoaderRoute: typeof AppModoExamenRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/monitores': {
@@ -1423,6 +1454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMaestroSaceRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/modo-examen/ahora': {
+      id: '/_app/modo-examen/ahora'
+      path: '/ahora'
+      fullPath: '/modo-examen/ahora'
+      preLoaderRoute: typeof AppModoExamenAhoraRouteImport
+      parentRoute: typeof AppModoExamenRoute
+    }
     '/_app/responsable/': {
       id: '/_app/responsable/'
       path: '/responsable'
@@ -1461,6 +1499,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppModoExamenRouteChildren {
+  AppModoExamenAhoraRoute: typeof AppModoExamenAhoraRoute
+}
+
+const AppModoExamenRouteChildren: AppModoExamenRouteChildren = {
+  AppModoExamenAhoraRoute: AppModoExamenAhoraRoute,
+}
+
+const AppModoExamenRouteWithChildren = AppModoExamenRoute._addFileChildren(
+  AppModoExamenRouteChildren,
+)
+
 interface AppMaestroExamenesRouteChildren {
   AppMaestroExamenesAhoraRoute: typeof AppMaestroExamenesAhoraRoute
 }
@@ -1494,6 +1544,7 @@ interface AppRouteChildren {
   AppMantenimientoAdminRoute: typeof AppMantenimientoAdminRoute
   AppMatriculaRoute: typeof AppMatriculaRoute
   AppMiPerfilRoute: typeof AppMiPerfilRoute
+  AppModoExamenRoute: typeof AppModoExamenRouteWithChildren
   AppMonitoresRoute: typeof AppMonitoresRoute
   AppNotificacionesAdminRoute: typeof AppNotificacionesAdminRoute
   AppPadresRoute: typeof AppPadresRoute
@@ -1567,6 +1618,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMantenimientoAdminRoute: AppMantenimientoAdminRoute,
   AppMatriculaRoute: AppMatriculaRoute,
   AppMiPerfilRoute: AppMiPerfilRoute,
+  AppModoExamenRoute: AppModoExamenRouteWithChildren,
   AppMonitoresRoute: AppMonitoresRoute,
   AppNotificacionesAdminRoute: AppNotificacionesAdminRoute,
   AppPadresRoute: AppPadresRoute,

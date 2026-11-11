@@ -211,15 +211,15 @@ export function ExamenSemanaPanel({
           data-testid="examen-semana-filtro-fecha"
         />
       </div>
-      <label className="horario-board__filter examen-semana__todas">
+      {onTodasChange ? <label className="horario-board__filter examen-semana__todas">
         <input
           type="checkbox"
           checked={todas}
-          onChange={(event) => onTodasChange?.(event.target.checked)}
+          onChange={(event) => onTodasChange(event.target.checked)}
           data-testid="examen-semana-ver-todo"
         />
         <span>Ver todos los exámenes</span>
-      </label>
+      </label> : null}
     </>
   )
 

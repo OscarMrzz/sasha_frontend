@@ -1,4 +1,5 @@
 import type { Permission, RoleName } from '#/helpers/permissions'
+import { ROLES_SUPERVISION_EXAMEN } from '#/lib/examenes-supervision'
 
 export type NavItem = {
   to: string
@@ -41,6 +42,13 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'calendar-days',
     // Los maestros usan sus propias vistas de exámenes (/maestro/examenes), no la de administración.
     hideForRoles: ['maestro', 'alumno', 'responsable'],
+  },
+  {
+    to: '/modo-examen',
+    label: 'Modo examen',
+    permission: 'examenes:get',
+    icon: 'calendar-days',
+    showForRoles: ROLES_SUPERVISION_EXAMEN,
   },
   {
     to: '/maestro/examenes',

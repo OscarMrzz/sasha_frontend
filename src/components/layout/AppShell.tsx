@@ -31,6 +31,7 @@ import { useSession } from '#/hooks/use-session'
 import { userMessageFromError } from '#/lib/api'
 import { homePathForRoles, isMaestroRole, isPortalRole, isResponsableRole } from '#/lib/home-path'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
+import { puedeSupervisarExamenes } from '#/lib/examenes-supervision'
 import { clearPortalContext, usePortalClase } from '#/lib/portal-context'
 import { logout } from '#/services/auth'
 import { toast } from 'sonner'
@@ -53,7 +54,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith('/alumno/')
   const maestro = isMaestroRole(roles)
   const portal = isPortalRole(roles)
-  const isExamenMode = maestro && pathname.startsWith('/maestro/examenes')
+  const supervisionExamen = puedeSupervisarExamenes(roles) && can('examenes:get')
+  const permiteModoExamen = maestro || supervisionExamen
+  const rutaModoExamen = maestro ? '/maestro/examenes' : '/modo-examen'
+  const isExamenMode = (maestro && pathname.startsWith('/maestro/examenes')) ||
+    (supervisionExamen && pathname.startsWith('/modo-examen'))
   const hubLike = isHubLauncher || isExamenMode
   const claseId = maestro ? (pathname.match(/^\/maestro\/clases\/([^/]+)/)?.[1] ?? null) : null
   const portalClase = usePortalClase()
@@ -328,7 +333,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                 <span>{theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}</span>
               </button>
-              {maestro ? (
+              {permiteModoExamen ? (
                 <>
                   <div className="user-menu__separator" role="separator" />
                 <div className="user-menu__section mobile-nav__section">Modo de trabajo</div>
@@ -339,7 +344,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     data-testid="user-menu-modo-examenes"
                     onClick={() => {
                       setUserMenuOpen(false)
-                      void navigate({ to: isExamenMode ? '/maestro' : '/maestro/examenes' })
+                      void navigate({ to: isExamenMode ? homePathForRoles(roles) : rutaModoExamen })
                     }}
                   >
                     {isExamenMode ? <BookOpen size={15} /> : <CalendarDays size={15} />}
@@ -523,7 +528,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span>{theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}</span>
               </button>
             ) : null}
-            {maestro ? (
+            {permiteModoExamen ? (
               <>
                 <div className="user-menu__separator" role="separator" />
                 <div className="user-menu__section">Modo de trabajo</div>
@@ -534,7 +539,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   onClick={() => {
                     closeMobileNav()
                     void navigate({
-                      to: isExamenMode ? '/maestro' : '/maestro/examenes',
+                      to: isExamenMode ? homePathForRoles(roles) : rutaModoExamen,
                     })
                   }}
                 >

@@ -26,8 +26,9 @@ import type {
 type ExamenAhoraPanelProps = {
   data: ExamenAhoraResponse | null
   loading?: boolean
-  onReportar: (examen: ExamenAhora, codigo?: string) => void
+  onReportar?: (examen: ExamenAhora, codigo?: string) => void
   onSaved?: () => void
+  readOnly?: boolean
 }
 
 type AsistenciaState = {
@@ -39,13 +40,13 @@ type AsistenciaState = {
 }
 
 /** Panel limpio del maestro: examen actual, morosos, lista A/T/E/F y reportes. */
-export function ExamenAhoraPanel({ data, loading, onReportar, onSaved }: ExamenAhoraPanelProps) {
+export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly = false }: ExamenAhoraPanelProps) {
   const { can } = useCan()
   const [asistencia, setAsistencia] = useState<AsistenciaState | null>(null)
   const [alumnoFilter, setAlumnoFilter] = useState('')
 
-  const puedeAsistencia = can('examenes:asistencia')
-  const puedeReportar = can('examenes:reportar')
+  const puedeAsistencia = !readOnly && can('examenes:asistencia')
+  const puedeReportar = !readOnly && Boolean(onReportar) && can('examenes:reportar')
 
   async function abrirAsistencia(examen: ExamenAhora) {
     setAlumnoFilter('')
@@ -199,7 +200,7 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved }: ExamenA
                   <button
                     type="button"
                     className="btn btn--ghost"
-                    onClick={() => onReportar(examen)}
+                    onClick={() => onReportar?.(examen)}
                     data-testid={`examen-ahora-reportar-${examen.examen_asignacion_id}`}
                   >
                     Reportar alumno
