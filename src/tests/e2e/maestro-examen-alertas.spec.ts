@@ -172,7 +172,7 @@ test.describe('alertas de tiempo para exámenes del maestro @critical', () => {
     await expect(page.getByTestId('examen-tiempo-contador-a')).toContainText(
       '00:00',
     )
-    expect(consultas).toBeGreaterThan(1)
+    expect(consultas).toBe(1)
 
     const alarmasFinales = await page.evaluate(
       () =>

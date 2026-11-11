@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ExamenAhoraPanel } from '#/components/examenes/ExamenAhoraPanel'
 import { ExamenAhoraAlertas } from '#/components/examenes/ExamenAhoraAlertas'
 import { ReporteModal } from '#/components/examenes/ReporteModal'
@@ -27,18 +27,16 @@ type ReporteDesdeAhora = {
 
 function MaestroExamenAhoraPage() {
   const navigate = useNavigate()
-  const [ahora, setAhora] = useState(() => localConsulta())
   const [reporte, setReporte] = useState<ReporteDesdeAhora | null>(null)
 
-  useEffect(() => {
-    const id = window.setInterval(() => setAhora(localConsulta()), 30_000)
-    return () => window.clearInterval(id)
-  }, [])
-
   const consulta = useQuery({
-    queryKey: ['examenes', 'ahora', ahora.fecha, ahora.hora],
-    queryFn: () => getExamenesAhora({ fecha: ahora.fecha, hora: ahora.hora }),
-    refetchInterval: 60_000,
+    queryKey: ['examenes', 'ahora'],
+    queryFn: () => getExamenesAhora(localConsulta()),
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: 'always',
+    retry: false,
   })
 
   const examenesReporte = useMemo(
@@ -91,10 +89,7 @@ function MaestroExamenAhoraPage() {
       <button
         type="button"
         className="btn btn--primary examen-ahora__boton-grande"
-        onClick={() => {
-          setAhora(localConsulta())
-          void consulta.refetch()
-        }}
+        onClick={() => void consulta.refetch()}
         disabled={consulta.isFetching}
         data-testid="maestro-ahora-boton"
       >
@@ -115,17 +110,13 @@ function MaestroExamenAhoraPage() {
           data={consulta.data ?? null}
           loading={consulta.isFetching}
           onReportar={(examen, codigo) => setReporte({ examen, codigo })}
-          onSaved={() => void consulta.refetch()}
         />
       )}
 
       <ReporteModal
         open={Boolean(reporte)}
         onClose={() => setReporte(null)}
-        onSaved={() => {
-          setReporte(null)
-          void consulta.refetch()
-        }}
+        onSaved={() => setReporte(null)}
         examenes={examenesReporte}
         defaultExamenId={reporte?.examen.examen_asignacion_id}
         defaultCodigo={reporte?.codigo}
