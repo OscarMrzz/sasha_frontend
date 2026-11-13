@@ -1,7 +1,9 @@
 /** Roles que pueden ver personas dadas de baja y restaurarlas. */
-const ROLES_VER_INACTIVOS = new Set(['admin', 'admin_temporal', 'developer'])
+const ROLES_VER_INACTIVOS = new Set(['admin'])
 
-export function puedeVerInactivos(roles: readonly string[] | undefined): boolean {
+export function puedeVerInactivos(
+  roles: readonly string[] | undefined,
+): boolean {
   return (roles ?? []).some((rol) => ROLES_VER_INACTIVOS.has(rol.toLowerCase()))
 }
 
@@ -14,5 +16,9 @@ export function esBaja(row: {
   statususer?: string
   alumno_status?: string
 }): boolean {
-  return Boolean(row.dado_de_baja) || row.statususer === 'INACTIVE' || row.alumno_status === 'INACTIVE'
+  return (
+    Boolean(row.dado_de_baja) ||
+    row.statususer === 'INACTIVE' ||
+    row.alumno_status === 'INACTIVE'
+  )
 }
