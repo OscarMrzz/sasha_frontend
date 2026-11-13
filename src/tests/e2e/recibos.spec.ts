@@ -13,7 +13,7 @@ const PNG = Buffer.from(
 test.describe.serial('recibos de pago en caja', () => {
   test('caja: la bandeja lista los recibos y Ver abre el visor', async ({ page }) => {
     await loginAs(page, { code: CAJA })
-    await page.locator('.sidebar-nav').getByTitle('Recibos').click()
+    await page.locator('.sidebar-nav').getByTitle('Recibos').first().click()
     await expect(page).toHaveURL(/\/recibos$/, { timeout: 10_000 })
 
     const filas = page.locator('table.data-table tbody tr')
@@ -37,10 +37,17 @@ test.describe.serial('recibos de pago en caja', () => {
       mimeType: 'image/png',
       buffer: PNG,
     })
-    await page.getByTestId('recibo-mes').selectOption('2026-11')
+    const noviembre = await page
+      .getByTestId('recibo-mes')
+      .locator('option')
+      .filter({ hasText: 'noviembre 2026' })
+      .getAttribute('value')
+    expect(noviembre).toBeTruthy()
+    await page.getByTestId('recibo-mes').selectOption(noviembre)
     await page.getByTestId('recibo-enviar').click()
     await page.getByRole('button', { name: 'Sí, enviar' }).click()
-    await expect(page.getByTestId('padre-mes-2026-11')).toContainText('Recibo en revisión', { timeout: 15_000 })
+    await expect(page.getByTestId('padre-pagos-recibos')).toContainText('Recibo de noviembre 2026', { timeout: 15_000 })
+    await expect(page.getByTestId('padre-pagos-recibos')).toContainText('En revisión')
   })
 
   test('caja corrige el mes a octubre y aprueba', async ({ page }) => {
@@ -68,8 +75,9 @@ test.describe.serial('recibos de pago en caja', () => {
   test('el padre ve octubre pagado y noviembre pendiente', async ({ page }) => {
     await entrarComoPadre(page, PADRE_ANA)
     await page.getByTestId('padre-tile-pagos').click()
+    await page.getByRole('tab', { name: /Meses/ }).click()
     await expect(page.getByTestId('padre-mes-2026-10')).toContainText('Pagado', { timeout: 15_000 })
-    await expect(page.getByTestId('padre-mes-2026-11')).toContainText('Pendiente')
+    await expect(page.getByTestId('padre-mes-2026-11')).toContainText('Debe')
     await expect(page.getByTestId('padre-pagos-recibos')).toContainText('Aprobado')
   })
 })

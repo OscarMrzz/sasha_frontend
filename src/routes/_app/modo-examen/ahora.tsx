@@ -1,3 +1,4 @@
+import { ExamenPagosButton } from '#/components/examenes/ExamenPagosButton'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
@@ -55,6 +56,11 @@ function ModoExamenAhoraPage() {
               : 'Exámenes del bloque actual.'}
           </p>
         </div>
+        <ExamenPagosButton
+          onSaved={() => {
+            void consulta.refetch()
+          }}
+        />
       </header>
       <button
         type="button"

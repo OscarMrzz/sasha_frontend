@@ -291,6 +291,7 @@ export interface ExamenMiosResponse {
 
 /** Alumno con pagos pendientes que bloquean notas (aviso informativo). */
 export interface ExamenAlumnoPagoPendiente {
+  autorizado_examen?: boolean
   alumno_id: string
   codigo: string
   nombre: string
@@ -501,7 +502,10 @@ export async function createExamenHorario(body: ExamenCrearRequest) {
   return apiRequest<ExamenDetalle>('/examenes/', { method: 'POST', body })
 }
 
-export async function updateExamenHorario(id: string, body: ExamenActualizarRequest) {
+export async function updateExamenHorario(
+  id: string,
+  body: ExamenActualizarRequest,
+) {
   return apiRequest<ExamenDetalle>(`/examenes/${id}`, { method: 'PUT', body })
 }
 
@@ -509,21 +513,34 @@ export async function deleteExamenHorario(id: string) {
   return apiRequest<void>(`/examenes/${id}`, { method: 'DELETE' })
 }
 
-export async function getExamenOpciones(periodoId?: string, modalidadId?: string) {
-  const suffix = queryString({ periodo_id: periodoId, modalidad_id: modalidadId })
+export async function getExamenOpciones(
+  periodoId?: string,
+  modalidadId?: string,
+) {
+  const suffix = queryString({
+    periodo_id: periodoId,
+    modalidad_id: modalidadId,
+  })
   return apiRequest<ExamenOpciones>(`/examenes/opciones${suffix}`)
 }
 
 export async function previewExamenes(body: ExamenPreviewRequest) {
-  return apiRequest<ExamenPreview>('/examenes/preview', { method: 'POST', body })
+  return apiRequest<ExamenPreview>('/examenes/preview', {
+    method: 'POST',
+    body,
+  })
 }
 
 export async function reaplicarExamenes(id: string) {
-  return apiRequest<ExamenReaplicarResult>(`/examenes/${id}/reaplicar`, { method: 'POST' })
+  return apiRequest<ExamenReaplicarResult>(`/examenes/${id}/reaplicar`, {
+    method: 'POST',
+  })
 }
 
 export async function publicarExamenes(id: string) {
-  return apiRequest<ExamenDetalle>(`/examenes/${id}/publicar`, { method: 'POST' })
+  return apiRequest<ExamenDetalle>(`/examenes/${id}/publicar`, {
+    method: 'POST',
+  })
 }
 
 export async function setExamenActiva(id: string, activa: boolean) {
@@ -547,15 +564,21 @@ export async function getMisExamenes(todas = false, periodoId?: string) {
 }
 
 export async function getExamenesSupervisionSemana(periodoId?: string) {
-  return apiRequest<ExamenMiosResponse>(`/examenes/supervision/semana${queryString({ periodo_id: periodoId })}`)
+  return apiRequest<ExamenMiosResponse>(
+    `/examenes/supervision/semana${queryString({ periodo_id: periodoId })}`,
+  )
 }
 
 export async function getExamenesSupervisionAhora(
   params: { fecha?: string; hora?: string; periodoId?: string } = {},
 ) {
-  return apiRequest<ExamenAhoraResponse>(`/examenes/supervision/ahora${queryString({
-    fecha: params.fecha, hora: params.hora, periodo_id: params.periodoId,
-  })}`)
+  return apiRequest<ExamenAhoraResponse>(
+    `/examenes/supervision/ahora${queryString({
+      fecha: params.fecha,
+      hora: params.hora,
+      periodo_id: params.periodoId,
+    })}`,
+  )
 }
 
 /** Examen(es) del bloque actual de las secciones que supervisa el maestro. */
@@ -609,17 +632,23 @@ export async function listExamenReportes(filtros: ExamenReporteFiltros = {}) {
 }
 
 export async function crearExamenReporte(body: ExamenReporteCrearRequest) {
-  return apiRequest<ExamenReporte>('/examenes/reportes', { method: 'POST', body })
+  return apiRequest<ExamenReporte>('/examenes/reportes', {
+    method: 'POST',
+    body,
+  })
 }
 
 export async function actualizarExamenReporte(
   id: string,
   body: ExamenReporteActualizarRequest,
 ) {
-  return apiRequest<ExamenReporte>(`/examenes/reportes/${encodeURIComponent(id)}`, {
-    method: 'PUT',
-    body,
-  })
+  return apiRequest<ExamenReporte>(
+    `/examenes/reportes/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body,
+    },
+  )
 }
 
 export async function eliminarExamenReporte(id: string) {
@@ -639,4 +668,20 @@ export function getPortalExamenes(alumnoId?: string | null, proximo = true) {
     proximo: proximo ? '1' : undefined,
   })
   return apiRequest<PortalExamenes>(`/portal/examenes${qs}`)
+}
+
+export function guardarAutorizacionMora(
+  examenId: string,
+  alumnoId: string,
+  habilitada: boolean,
+) {
+  return apiRequest<{
+    examen_asignacion_id: string
+    alumno_id: string
+    habilitada: boolean
+    tiene_pagos_pendientes: boolean
+  }>(
+    `/examenes/${encodeURIComponent(examenId)}/alumnos/${encodeURIComponent(alumnoId)}/autorizacion-mora`,
+    { method: 'PUT', body: { habilitada } },
+  )
 }

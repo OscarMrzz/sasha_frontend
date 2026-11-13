@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { ExamenAlumnoCard } from '#/components/examenes/ExamenAlumnoCard'
+import { ExamenAlumnosPendientes } from '#/components/examenes/ExamenAlumnosPendientes'
 import { useCan } from '#/components/gates/Can'
 import { Modal } from '#/components/ui/Modal'
 import { SearchInput } from '#/components/ui/SearchInput'
@@ -40,13 +40,20 @@ type AsistenciaState = {
 }
 
 /** Panel limpio del maestro: examen actual, morosos, lista A/T/E/F y reportes. */
-export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly = false }: ExamenAhoraPanelProps) {
+export function ExamenAhoraPanel({
+  data,
+  loading,
+  onReportar,
+  onSaved,
+  readOnly = false,
+}: ExamenAhoraPanelProps) {
   const { can } = useCan()
   const [asistencia, setAsistencia] = useState<AsistenciaState | null>(null)
   const [alumnoFilter, setAlumnoFilter] = useState('')
 
   const puedeAsistencia = !readOnly && can('examenes:asistencia')
-  const puedeReportar = !readOnly && Boolean(onReportar) && can('examenes:reportar')
+  const puedeReportar =
+    !readOnly && Boolean(onReportar) && can('examenes:reportar')
 
   async function abrirAsistencia(examen: ExamenAhora) {
     setAlumnoFilter('')
@@ -75,7 +82,9 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
 
   function marcar(alumnoId: string, estado: EstadoAsistenciaExamen) {
     setAsistencia((prev) =>
-      prev ? { ...prev, estados: { ...prev.estados, [alumnoId]: estado } } : prev,
+      prev
+        ? { ...prev, estados: { ...prev.estados, [alumnoId]: estado } }
+        : prev,
     )
   }
 
@@ -97,9 +106,7 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
         lista.alumnos.map((alumno) => [alumno.alumno_id, alumno.estado]),
       ) as Record<string, EstadoAsistenciaExamen>
       setAsistencia((prev) =>
-        prev
-          ? { ...prev, data: lista, estados, saving: false }
-          : prev,
+        prev ? { ...prev, data: lista, estados, saving: false } : prev,
       )
       toast.success('Lista guardada')
       onSaved?.()
@@ -136,20 +143,28 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
             <header className="examen-ahora__card-head">
               <div>
                 <span className="examen-ahora__etiqueta">Siguiente examen</span>
-                <h2 className="examen-ahora__curso">{data.siguiente.curso_nombre}</h2>
+                <h2 className="examen-ahora__curso">
+                  {data.siguiente.curso_nombre}
+                </h2>
                 <p className="examen-ahora__meta">
                   {labelGradoSeccion(
                     data.siguiente.grado_nombre,
                     data.siguiente.seccion_nombre,
                   )}{' '}
-                  · {horaRango(data.siguiente.hora_inicio, data.siguiente.hora_fin)}
+                  ·{' '}
+                  {horaRango(
+                    data.siguiente.hora_inicio,
+                    data.siguiente.hora_fin,
+                  )}
                 </p>
               </div>
             </header>
             <p className="examen-ahora__supervisores">
               Supervisores:{' '}
               {data.siguiente.supervisores.length > 0
-                ? data.siguiente.supervisores.map((s) => s.maestro_nombre).join(', ')
+                ? data.siguiente.supervisores
+                    .map((s) => s.maestro_nombre)
+                    .join(', ')
                 : '—'}
             </p>
           </article>
@@ -160,7 +175,10 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
 
   return (
     <div className="examen-ahora" data-testid="examen-ahora-panel">
-      <p className="examen-ahora__reloj texto-muted" data-testid="examen-ahora-hora">
+      <p
+        className="examen-ahora__reloj texto-muted"
+        data-testid="examen-ahora-hora"
+      >
         {fechaCorta(data.fecha)} · {data.hora}
       </p>
 
@@ -178,11 +196,16 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
                 </span>
                 <h2 className="examen-ahora__curso">{examen.curso_nombre}</h2>
                 <p className="examen-ahora__meta">
-                  {labelGradoSeccion(examen.grado_nombre, examen.seccion_nombre)} ·{' '}
-                  {horaRango(examen.hora_inicio, examen.hora_fin)}
+                  {labelGradoSeccion(
+                    examen.grado_nombre,
+                    examen.seccion_nombre,
+                  )}{' '}
+                  · {horaRango(examen.hora_inicio, examen.hora_fin)}
                 </p>
                 {examen.modalidad_nombre ? (
-                  <p className="examen-ahora__meta texto-muted">{examen.modalidad_nombre}</p>
+                  <p className="examen-ahora__meta texto-muted">
+                    {examen.modalidad_nombre}
+                  </p>
                 ) : null}
               </div>
               <div className="examen-ahora__acciones">
@@ -216,39 +239,7 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
                 : '—'}
             </p>
 
-            <section className="examen-ahora__alumnos">
-              <h3 className="examen-ahora__alumnos-title">
-                Alumnos con pagos pendientes
-              </h3>
-              {examen.es_final ? (
-                <p className="texto-muted">
-                  Examen final: se listan todos los pagos bloqueantes del
-                  periodo, aunque aún no venzan.
-                </p>
-              ) : null}
-              {examen.alumnos_pagos_pendientes.length === 0 ? (
-                <p className="texto-muted examen-ahora__sin-pagos">
-                  Sin pagos pendientes.
-                </p>
-              ) : (
-                <div className="examen-ahora__alumno-grid">
-                  {examen.alumnos_pagos_pendientes.map((alumno) => (
-                    <ExamenAlumnoCard
-                      key={alumno.alumno_id}
-                      alumno={{
-                        codigo: alumno.codigo,
-                        nombre: alumno.nombre,
-                        foto: alumno.foto,
-                        grado: alumno.grado,
-                        seccion: alumno.seccion,
-                        meses: alumno.meses,
-                        conceptos: alumno.conceptos,
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+            <ExamenAlumnosPendientes examen={examen} />
           </article>
         ))}
       </div>
@@ -289,9 +280,13 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
           <p className="texto-muted">Cargando alumnos…</p>
         ) : asistencia?.data ? (
           <div data-testid="examen-asistencia-grid">
-            <p className="texto-muted" style={{ marginTop: 0, fontSize: '0.85rem' }}>
+            <p
+              className="texto-muted"
+              style={{ marginTop: 0, fontSize: '0.85rem' }}
+            >
               Día {fechaCorta(asistencia.data.fecha)} ·{' '}
-              {horaRango(asistencia.data.hora_inicio, asistencia.data.hora_fin)} ·{' '}
+              {horaRango(asistencia.data.hora_inicio, asistencia.data.hora_fin)}{' '}
+              ·{' '}
               {labelGradoSeccion(
                 asistencia.data.grado_nombre,
                 asistencia.data.seccion_nombre,
@@ -315,14 +310,17 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
               style={{ fontSize: '0.8rem', marginBottom: '0.75rem' }}
             >
               Leyenda: <strong>A</strong> Asistió · <strong>T</strong> Tarde ·{' '}
-              <strong>E</strong> Excusa · <strong>F</strong> Falta · Clic en celda para
-              ciclar; los cambios se guardan con «Guardar lista».
+              <strong>E</strong> Excusa · <strong>F</strong> Falta · Clic en
+              celda para ciclar; los cambios se guardan con «Guardar lista».
             </div>
             {alumnosAsistencia.length === 0 ? (
               <div className="empty-state">Sin alumnos que coincidan.</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table className="data-table" data-testid="examen-asistencia-table">
+                <table
+                  className="data-table"
+                  data-testid="examen-asistencia-table"
+                >
                   <thead>
                     <tr>
                       <th>Código</th>
@@ -343,7 +341,9 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
                         >
                           <td>{alumno.codigo}</td>
                           <td>{alumno.nombre}</td>
-                          <td style={{ textAlign: 'center', padding: '0.15rem' }}>
+                          <td
+                            style={{ textAlign: 'center', padding: '0.15rem' }}
+                          >
                             <button
                               type="button"
                               className="asistencia-celda"
@@ -353,7 +353,9 @@ export function ExamenAhoraPanel({ data, loading, onReportar, onSaved, readOnly 
                               onClick={() =>
                                 marcar(
                                   alumno.alumno_id,
-                                  nextLetraSeccion(actual) as EstadoAsistenciaExamen,
+                                  nextLetraSeccion(
+                                    actual,
+                                  ) as EstadoAsistenciaExamen,
                                 )
                               }
                               data-testid={`examen-asistencia-${alumno.codigo}`}

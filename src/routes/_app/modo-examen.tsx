@@ -1,3 +1,4 @@
+import { ExamenPagosButton } from '#/components/examenes/ExamenPagosButton'
 import {
   createFileRoute,
   Outlet,
@@ -59,6 +60,7 @@ function ModoExamenSemanaPage() {
         <h1 className="page-title" style={{ margin: 0 }}>
           Semana de exámenes
         </h1>
+        <ExamenPagosButton />
       </header>
       <button
         type="button"

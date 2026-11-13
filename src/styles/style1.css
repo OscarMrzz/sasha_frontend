@@ -12122,3 +12122,17 @@ body::before {
     gap: 0.35rem;
   }
 }
+
+.examen-pagos__boton { min-height: 44px; }
+.examen-pagos__contador { display: inline-grid; place-items: center; min-width: 1.5rem; height: 1.5rem; padding-inline: 0.3rem; border-radius: 999px; background: var(--sasha-accent); color: #fff; font-size: 0.8rem; font-weight: 700; }
+.examen-pagos__opciones { display: grid; gap: 0.75rem; }
+.examen-pagos__opciones .btn { min-height: 48px; justify-content: center; }
+.examen-alumno-autorizacion { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+.examen-alumno-autorizacion > .btn { align-self: flex-start; min-height: 40px; }
+.examen-alumno-autorizacion > .badge { align-self: flex-start; }
+@media (max-width: 640px) {
+  .examen-pagos__boton { width: 100%; justify-content: center; }
+  .examen-alumno-autorizacion > .btn { width: 100%; justify-content: center; min-height: 44px; }
+  .recibo-validar { min-width: 0; }
+  .recibo-validar > div { min-width: 0; }
+}
