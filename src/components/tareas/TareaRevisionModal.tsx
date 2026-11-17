@@ -1,8 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { TareaChatModal } from '#/components/comentarios/TareaChatModal'
-import { Can } from '#/components/gates/Can'
 import { Modal, useDismiss } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
 import {
@@ -47,7 +45,6 @@ export function TareaRevisionModal({
   const [local, setLocal] = useState<Record<string, RevisionAlumno>>({})
   /** Borradores de puntos tipados (manual) antes de confirmar con blur/Enter. */
   const [drafts, setDrafts] = useState<Record<string, string>>({})
-  const [chatAbierto, setChatAbierto] = useState(false)
 
   const alumnos = useMemo(() => {
     const base = data?.alumnos ?? []
@@ -308,21 +305,9 @@ export function TareaRevisionModal({
         onClose={dismiss}
         wide
         footer={
-          <>
-            <Can permission="comentarios_tarea:get">
-              <button
-                type="button"
-                className="btn btn--ghost"
-                data-testid="tarea-revision-comentarios"
-                onClick={() => setChatAbierto(true)}
-              >
-                Comentarios
-              </button>
-            </Can>
-            <button type="button" className="btn btn--primary" onClick={dismiss}>
-              Listo
-            </button>
-          </>
+          <button type="button" className="btn btn--primary" onClick={dismiss}>
+            Listo
+          </button>
         }
       >
       {isLoading ? (
@@ -419,13 +404,6 @@ export function TareaRevisionModal({
       )}
       </Modal>
 
-      {chatAbierto ? (
-        <TareaChatModal
-          tareaId={tareaId}
-          titulo={data?.tarea.titulo ?? 'Comentarios'}
-          onClose={() => setChatAbierto(false)}
-        />
-      ) : null}
     </>
   )
 }

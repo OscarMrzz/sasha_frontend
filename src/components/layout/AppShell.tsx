@@ -57,9 +57,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const supervisionExamen = puedeSupervisarExamenes(roles) && can('examenes:get')
   const permiteModoExamen = maestro || supervisionExamen
   const rutaModoExamen = maestro ? '/maestro/examenes' : '/modo-examen'
-  const isExamenMode = (maestro && pathname.startsWith('/maestro/examenes')) ||
+  const isExamenMode = (maestro && (
+    pathname.startsWith('/maestro/examenes') || pathname.startsWith('/maestro/reportes-examen')
+  )) ||
     (supervisionExamen && pathname.startsWith('/modo-examen'))
-  const hubLike = isHubLauncher || isExamenMode
+  const hubLike = isHubLauncher || (isExamenMode && !maestro)
   const claseId = maestro ? (pathname.match(/^\/maestro\/clases\/([^/]+)/)?.[1] ?? null) : null
   const portalClase = usePortalClase()
   const [collapsed, setCollapsed] = useState(true)
@@ -106,13 +108,19 @@ export function AppShell({ children }: { children: ReactNode }) {
       : { to: '/dashboard', label: 'Inicio', permission: null, icon: 'home' }
     const rest = NAV_ITEMS.filter((i) => i.to !== '/dashboard')
     const base: Item[] = portal ? rest : [home, ...rest]
-    return base.filter(
+    const permitted = base.filter(
       (i) =>
         (i.permission ? can(i.permission) : true) &&
         (!i.showForRoles || i.showForRoles.some((r) => roles.includes(r))) &&
         !i.hideForRoles?.some((r) => roles.includes(r)),
     )
-  }, [can, roles, maestro, portal, navigate])
+    if (!maestro) return permitted
+
+    const examRoutes = new Set(['/maestro/examenes', '/maestro/reportes-examen'])
+    return permitted.filter((item) =>
+      isExamenMode ? examRoutes.has(item.to) : !examRoutes.has(item.to),
+    )
+  }, [can, roles, maestro, portal, navigate, isExamenMode])
 
   const comandos = useMemo<Comando[]>(() => {
     const navegar: Comando[] = items.map((item) => ({
@@ -403,7 +411,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <div className="app-shell__body">
-        {!hubLike ? (
+        {!isHubLauncher && (maestro || !hubLike) ? (
           <aside
             className={`app-shell__sidebar${collapsed ? ' app-shell__sidebar--collapsed' : ''}`}
             aria-label="Navegación principal"
@@ -484,7 +492,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ) : null}
 
           <nav className="sidebar-nav mobile-nav__list">
-            {maestro || portal ? (
+            {(portal || (maestro && !isExamenMode)) ? (
               <button
                 type="button"
                 className="sidebar-nav__item"
@@ -510,7 +518,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span>Analíticas</span>
               </button>
             ) : null}
-            {!isExamenMode && !isHubLauncher ? renderNavItems(true, closeMobileNav) : null}
+            {!isHubLauncher ? renderNavItems(true, closeMobileNav) : null}
           </nav>
 
           <div className="mobile-nav__foot">
