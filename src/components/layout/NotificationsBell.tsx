@@ -40,7 +40,10 @@ function formatFecha(fecha?: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
+    hour12: true,
+  }).replace(/\s?(AM|PM|a\.\s?m\.|p\.\s?m\.)$/i, (suffix) =>
+    ` ${suffix.trim().toLowerCase().replace(/\./g, '').replace(/\s/g, '')}`,
+  )
 }
 
 export function NotificationsBell() {

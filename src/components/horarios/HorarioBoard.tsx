@@ -4,6 +4,7 @@ import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { SearchInput } from '#/components/ui/SearchInput'
 import { DIA_SHORT, nextSlotAfter, sortSlots, type TimeInterval } from '#/lib/horarioGrid'
+import { horaRango12 } from '#/lib/examenes'
 import type { HorarioSlot } from '#/services/horarios'
 
 export type HorarioPill = {
@@ -451,7 +452,7 @@ export function HorarioBoard({
                 return (
                   <tr key={slot.start} className={isExtra ? 'horario-board__row--extra' : undefined}>
                     <td className={`horario-board__time${isExtra ? ' horario-board__time--extra' : ''}`}>
-                      {slot.start}–{slot.end}
+                      {horaRango12(slot.start, slot.end)}
                       {isExtra ? <span className="horario-board__extra-tag">extra</span> : null}
                     </td>
                     {days.map((d) => {

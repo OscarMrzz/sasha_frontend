@@ -24,6 +24,7 @@ function fechaHora(iso: string) {
   return new Date(iso).toLocaleString('es-HN', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    hour12: true,
   })
 }
 

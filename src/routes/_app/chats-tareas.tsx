@@ -21,7 +21,10 @@ function fechaCorta(iso: string) {
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(d)
+    hour12: true,
+  }).format(d).replace(/\s?(AM|PM|a\.\s?m\.|p\.\s?m\.)$/i, (suffix) =>
+    ` ${suffix.trim().toLowerCase().replace(/\./g, '').replace(/\s/g, '')}`,
+  )
 }
 
 function ChatsTareasPage() {

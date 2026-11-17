@@ -7,6 +7,7 @@ import { ReporteModal } from '#/components/examenes/ReporteModal'
 import type { ExamenReporteOpcion } from '#/components/examenes/ReporteModal'
 import { ExamenSemanaPanel } from '#/components/examenes/ExamenSemanaPanel'
 import { RequirePermission } from '#/components/gates/Can'
+import { horaRango12 } from '#/lib/examenes'
 import { userMessageFromError } from '#/lib/api'
 import { useSession } from '#/hooks/use-session'
 import { getExamenOpciones, getMisExamenes } from '#/services/examenes'
@@ -56,7 +57,7 @@ function MaestroExamenesSemanaPage() {
         if (!asignacion.id) continue
         out.push({
           examen_asignacion_id: asignacion.id,
-          etiqueta: `${asignacion.curso_nombre} · ${asignacion.grado_nombre} ${asignacion.seccion_nombre} · ${asignacion.fecha} ${asignacion.hora_inicio}–${asignacion.hora_fin}`,
+          etiqueta: `${asignacion.curso_nombre} · ${asignacion.grado_nombre} ${asignacion.seccion_nombre} · ${asignacion.fecha} ${horaRango12(asignacion.hora_inicio, asignacion.hora_fin)}`,
         })
       }
     }

@@ -36,7 +36,7 @@ function AuditoriaPage() {
     () => [
       col.accessor('creado_en', {
         header: 'Fecha',
-        cell: (i) => new Date(String(i.getValue())).toLocaleString('es-HN'),
+        cell: (i) => new Date(String(i.getValue())).toLocaleString('es-HN', { hour12: true }),
       }),
       col.accessor('actor_codigo', { header: 'Actor', cell: (i) => i.getValue() ?? '—' }),
       col.accessor('accion', { header: 'Acción' }),

@@ -6,9 +6,9 @@ import { SearchInput } from '#/components/ui/SearchInput'
 import {
   duracionTexto,
   hora12,
+  horaRango12,
   labelPill,
   minutosDeHora,
-  normalizarHora,
   soloFecha,
 } from '#/lib/examenes'
 
@@ -450,7 +450,7 @@ export function ExamenBoard({
           <span className="texto-muted" style={{ fontSize: '0.8rem' }}>
             {placed.length} exámenes colocados · {orderedBloques.length} bloques ·{' '}
             {bloques.length > 0
-              ? `${normalizarHora(bloques[0].hora_inicio)}–${normalizarHora(orderedBloques[orderedBloques.length - 1]?.hora_fin ?? '')}`
+              ? horaRango12(bloques[0].hora_inicio, orderedBloques[orderedBloques.length - 1]?.hora_fin)
               : 'sin bloques'}
           </span>
         </div>

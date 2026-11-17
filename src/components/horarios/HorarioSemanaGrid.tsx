@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { DIA_SHORT } from '#/lib/horarioGrid'
+import { hora12 } from '#/lib/examenes'
 
 export type SemanaSlot = {
   key: string
@@ -76,7 +77,7 @@ export function HorarioSemanaGrid({
             iv.recreo ? (
               <tr key={iv.start} className="ficha-semana-table__recreo-row">
                 <td className="texto-muted" style={{ whiteSpace: 'nowrap' }}>
-                  {iv.start}–{iv.end}
+                  {hora12(iv.start)}–{hora12(iv.end)}
                 </td>
                 <td
                   colSpan={days.length}
@@ -89,7 +90,7 @@ export function HorarioSemanaGrid({
             ) : (
               <tr key={iv.start}>
                 <td className="texto-muted" style={{ whiteSpace: 'nowrap' }}>
-                  {iv.start}–{iv.end}
+                  {hora12(iv.start)}–{hora12(iv.end)}
                 </td>
                 {days.map((d) => {
                   const cell = byCell.get(`${d}|${iv.start}`) ?? []

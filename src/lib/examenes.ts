@@ -74,24 +74,20 @@ export function normalizarHora(hora: string | null | undefined): string {
 
 /** Rango legible de una franja: `08:00–09:30`. */
 export function horaRango(inicio: string | null | undefined, fin: string | null | undefined): string {
-  const a = normalizarHora(inicio)
-  const b = normalizarHora(fin)
-  if (!a && !b) return '—'
-  if (!b || a === b) return a || '—'
-  return `${a}–${b}`
+  return horaRango12(inicio, fin)
 }
 
-/** Hora en formato de 12 horas: `07:00` → `7:00 a. m.`. */
+/** Hora legible en formato clásico de 12 horas: `08:00` → `08:00 am`. */
 export function hora12(hora: string | null | undefined): string {
   const h = normalizarHora(hora)
   if (!h) return ''
   const [hh, mm] = h.split(':').map(Number)
-  const sufijo = hh < 12 ? 'a. m.' : 'p. m.'
+  const sufijo = hh < 12 ? 'am' : 'pm'
   const h12 = hh % 12 || 12
-  return `${h12}:${String(mm || 0).padStart(2, '0')} ${sufijo}`
+  return `${String(h12).padStart(2, '0')}:${String(mm || 0).padStart(2, '0')} ${sufijo}`
 }
 
-/** Rango en 12 horas: `7:00 a. m. – 8:20 a. m.`. */
+/** Rango en 12 horas: `08:00 am – 08:20 am`. */
 export function horaRango12(
   inicio: string | null | undefined,
   fin: string | null | undefined,

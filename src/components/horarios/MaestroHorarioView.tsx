@@ -11,6 +11,7 @@ import { useEsMovil } from '#/hooks/use-media-query'
 import { userMessageFromError } from '#/lib/api'
 import { hoyISO } from '#/lib/fechas-padre'
 import { DIA_SHORT } from '#/lib/horarioGrid'
+import { horaRango12 } from '#/lib/examenes'
 import { getHorarioMio, getHorarioMioDetalle } from '#/services/horarios'
 import type { HorarioMioDetalle, HorarioSlotDetail } from '#/services/horarios'
 
@@ -313,7 +314,7 @@ export function MaestroHorarioView({
                   intervals.map((iv) => (
                     <tr key={iv.start}>
                       <td className="horario-board__time">
-                        {iv.start}–{iv.end}
+                        {horaRango12(iv.start, iv.end)}
                       </td>
                       {DAYS.map((d) => {
                         const cell = byCell.get(`${d}|${iv.start}`) ?? []

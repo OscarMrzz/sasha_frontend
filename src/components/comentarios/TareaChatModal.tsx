@@ -37,7 +37,10 @@ function dia(fecha: string) {
 function hora(iso: string) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
-  return new Intl.DateTimeFormat('es-HN', { hour: '2-digit', minute: '2-digit' }).format(d)
+  return new Intl.DateTimeFormat('es-HN', { hour: '2-digit', minute: '2-digit', hour12: true })
+    .format(d).replace(/\s?(AM|PM|a\.\s?m\.|p\.\s?m\.)$/i, (suffix) =>
+      ` ${suffix.trim().toLowerCase().replace(/\./g, '').replace(/\s/g, '')}`,
+    )
 }
 
 function iniciales(nombre: string) {

@@ -5,8 +5,9 @@ import {
   fechaCorta,
   fechasEntre,
   horaSalidaConBloques,
+  horaRango12,
+  hora12,
   labelPill,
-  normalizarHora,
   soloFecha,
 } from '#/lib/examenes'
 import type { ExamenAsignacion, ExamenDetalle } from '#/services/examenes'
@@ -66,7 +67,7 @@ export function downloadExamenHorarioPdf(opts: ExamenPdfOptions) {
           'Fecha / salida',
           ...bloques.map(
             (b) =>
-              `Bloque ${b.orden}\n${normalizarHora(b.hora_inicio)}–${normalizarHora(b.hora_fin)}`,
+              `Bloque ${b.orden}\n${horaRango12(b.hora_inicio, b.hora_fin)}`,
           ),
         ]]
       : [['Fecha', 'Exámenes']]
@@ -74,7 +75,7 @@ export function downloadExamenHorarioPdf(opts: ExamenPdfOptions) {
   const body = fechas.map((fecha) => {
     const delDia = asignaciones.filter((a) => soloFecha(a.fecha) === fecha)
     const salida = horaSalidaConBloques(delDia, bloques, fecha)
-    const primera = `${fechaCorta(fecha)}\nSalida ${salida || '—'}`
+    const primera = `${fechaCorta(fecha)}\nSalida ${hora12(salida) || '—'}`
     if (bloques.length === 0) {
       return [primera, delDia.map(cellText).join('\n') || '—']
     }

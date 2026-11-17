@@ -7,6 +7,7 @@ import { Combobox } from '#/components/ui/Combobox'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { SIN_HORARIOS_CONSEJERIA } from '#/helpers/nav'
+import { horaRango12 } from '#/lib/examenes'
 import { DIAS_SEMANA, listHorariosConsejeria  } from '#/services/consejeria'
 import type {SlotHorario} from '#/services/consejeria';
 
@@ -50,7 +51,7 @@ function HorariosConsejeria() {
         header: 'Día',
         cell: (i) => DIAS_SEMANA[i.row.original.dia_semana] ?? i.row.original.dia_semana,
       }),
-      col.accessor((s) => `${s.hora_inicio}–${s.hora_fin}`, { id: 'hora', header: 'Hora' }),
+      col.accessor((s) => horaRango12(s.hora_inicio, s.hora_fin), { id: 'hora', header: 'Hora' }),
       col.accessor('curso', { header: 'Clase' }),
       col.accessor((s) => `${s.maestro} ${s.maestro_codigo}`, {
         id: 'maestro',

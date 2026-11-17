@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { DIA_SHORT, type TimeInterval } from '#/lib/horarioGrid'
 import type { HorarioSlotDetail } from '#/services/horarios'
+import { hora12 } from '#/lib/examenes'
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7]
 
@@ -92,10 +93,11 @@ function buildTable(
   const extraRowIndexes: number[] = []
   const body = rows.map((row, idx) => {
     if (row.kind === 'recess') {
-      return [`${row.start}–${row.end} Recreo`, ...DAYS.map(() => 'Recreo')]
+      return [`${hora12(row.start)}–${hora12(row.end)} Recreo`, ...DAYS.map(() => 'Recreo')]
     }
     if (row.extra) extraRowIndexes.push(idx)
-    const label = row.extra ? `${row.start}–${row.end} (extra)` : `${row.start}–${row.end}`
+    const rango = `${hora12(row.start)}–${hora12(row.end)}`
+    const label = row.extra ? `${rango} (extra)` : rango
     const cells = [label]
     for (const d of DAYS) {
       const items = byKey.get(`${d}|${row.start}`) ?? []

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo, type ReactNode } from 'react'
 import { Modal } from '#/components/ui/Modal'
 import { formatHoras, minutosSemana } from '#/helpers/horas'
+import { horaRango12 } from '#/lib/examenes'
 import { roleLabel } from '#/helpers/permissions'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { userMessageFromError } from '#/lib/api'
@@ -342,7 +343,7 @@ function FichaBody({ ficha, photo }: { ficha: UserFicha; photo: string | null })
                       <td>{d.dia_semana ? DIAS[d.dia_semana] ?? d.dia_semana : '—'}</td>
                       <td>
                         {d.hora_inicio || d.hora_fin
-                          ? `${dash(d.hora_inicio?.slice(0, 5))} – ${dash(d.hora_fin?.slice(0, 5))}`
+                          ? horaRango12(d.hora_inicio, d.hora_fin)
                           : '—'}
                       </td>
                       <td>{yn(d.es_disponible)}</td>

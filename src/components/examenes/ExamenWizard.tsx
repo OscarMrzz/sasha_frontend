@@ -15,6 +15,7 @@ import {
   duracionTexto,
   fechasEntre,
   horaDeMinutos,
+  horaRango12,
   fechaCorta,
   minutosDeHora,
   normalizarHora,
@@ -633,7 +634,7 @@ export function ExamenWizard({ open, onClose, opciones, detail, onSaved }: Exame
                   onChange={handleModalidadChange}
                   options={opciones.modalidades.map((m) => ({
                     value: m.id,
-                    label: `${m.nombre} · ${m.hora_inicio}–${m.hora_fin}`,
+                    label: `${m.nombre} · ${horaRango12(m.hora_inicio, m.hora_fin)}`,
                     keywords: m.codigo,
                   }))}
                   placeholder="Buscar modalidad…"

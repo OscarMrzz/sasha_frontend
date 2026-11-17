@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { RowMenu } from '#/components/ui/RowMenu'
 import type { RowAction } from '#/components/ui/RowMenu'
+import { hora12 } from '#/lib/examenes'
 
 /** Bloque de un día del horario, ya normalizado (sirve al padre, al alumno y al maestro). */
 export type BloqueDia = {
@@ -115,11 +116,11 @@ export function HorarioDiasView({
                 className="app-list__item"
                 style={b.recreo ? { background: 'var(--sasha-bg-muted)' } : undefined}
               >
-                <span className="bloque-hora">{b.inicio}</span>
+                <span className="bloque-hora">{hora12(b.inicio)}</span>
                 <div className="app-list__cuerpo">
                   <span className="app-list__titulo">{b.titulo}</span>
                   <span className="app-list__sub">
-                    {b.inicio} a {b.fin}
+                    {hora12(b.inicio)} a {hora12(b.fin)}
                     {b.sub ? ` · ${b.sub}` : ''}
                   </span>
                 </div>

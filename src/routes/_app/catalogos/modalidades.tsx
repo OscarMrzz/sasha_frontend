@@ -11,6 +11,7 @@ import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
 import { WizardSteps } from '#/components/ui/WizardSteps'
 import { userMessageFromError } from '#/lib/api'
+import { horaRango12 } from '#/lib/examenes'
 import {
   createModalidad,
   deleteModalidad,
@@ -535,7 +536,7 @@ function ModalidadesPage() {
               <div className="wizard-summary__row">
                 <span className="wizard-summary__label">Horario</span>
                 <span className="wizard-summary__value">
-                  {form.hora_inicio} – {form.hora_fin}
+                  {horaRango12(form.hora_inicio, form.hora_fin)}
                 </span>
               </div>
               <div className="wizard-summary__row">

@@ -4,6 +4,7 @@ import { CheckSquare, Clock, UserX } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { RequirePermission } from '#/components/gates/Can'
+import { hora12, horaRango12 } from '#/lib/examenes'
 import { MonitorAsistenciaModal } from '#/components/monitores/MonitorAsistenciaModal'
 import type { MonitorAsistenciaTipo } from '#/components/monitores/MonitorAsistenciaModal'
 import { MonitorTareasModal } from '#/components/monitores/MonitorTareasModal'
@@ -117,7 +118,7 @@ function MonitorCard({ clase }: { clase: MonitorClase }) {
           {clase.curso_nombre} · {clase.maestro_nombre || '—'}
         </p>
         <span className="texto-muted" style={{ fontSize: '0.78rem' }}>
-          {clase.hora_inicio}–{clase.hora_fin} · {clase.modalidad_nombre} · {clase.alumnos_count}{' '}
+          {horaRango12(clase.hora_inicio, clase.hora_fin)} · {clase.modalidad_nombre} · {clase.alumnos_count}{' '}
           alumnos
         </span>
       </header>
@@ -251,10 +252,10 @@ function MonitoresPage() {
   const bloqueLabel = (() => {
     if (!data) return ''
     if (data.estado === 'en_clase' && data.bloque) {
-      return `${data.bloque.hora_inicio} – ${data.bloque.hora_fin}`
+      return horaRango12(data.bloque.hora_inicio, data.bloque.hora_fin)
     }
     if (data.estado === 'recreo' && data.bloque) {
-      return `Recreo ${data.bloque.hora_inicio} – ${data.bloque.hora_fin}`
+      return `Recreo ${horaRango12(data.bloque.hora_inicio, data.bloque.hora_fin)}`
     }
     return `Sin clases ahora`
   })()
@@ -344,14 +345,14 @@ function MonitoresPage() {
         </div>
       ) : data.estado === 'recreo' ? (
         <div className="empty-state" data-testid="monitor-recreo">
-          Es recreo{data.bloque ? ` (${data.bloque.hora_inicio} – ${data.bloque.hora_fin})` : ''}. No
+          Es recreo{data.bloque ? ` (${horaRango12(data.bloque.hora_inicio, data.bloque.hora_fin)})` : ''}. No
           hay clases en este momento.
         </div>
       ) : data.estado === 'sin_clase' ? (
         <div className="empty-state" data-testid="monitor-sin-clase">
           No hay clases en este momento.
           {data.proxima ? (
-            <span> La siguiente clase es a las {data.proxima.hora_inicio}.</span>
+            <span> La siguiente clase es a las {hora12(data.proxima.hora_inicio)}.</span>
           ) : (
             <span> Ya no hay más clases hoy.</span>
           )}

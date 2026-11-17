@@ -6,8 +6,8 @@ import {
   fechaCorta,
   fechasEntre,
   horaSalidaConBloques,
+  horaRango12,
   labelPill,
-  normalizarHora,
   soloFecha,
 } from '#/lib/examenes'
 import { downloadExamenHorarioPdf } from '#/lib/examenesPdf'
@@ -189,7 +189,7 @@ export function ExamenViewModal({ open, detail, loading, onClose }: ExamenViewMo
                         Bloque {bloque.orden}
                         <br />
                         <span className="texto-muted" style={{ fontSize: '0.75rem', fontWeight: 400 }}>
-                          {normalizarHora(bloque.hora_inicio)}–{normalizarHora(bloque.hora_fin)}
+                          {horaRango12(bloque.hora_inicio, bloque.hora_fin)}
                         </span>
                       </th>
                     ))

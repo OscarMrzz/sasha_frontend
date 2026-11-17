@@ -10,6 +10,7 @@ import { NotasDrawer } from '#/components/maestro/NotasDrawer'
 import { TareaRevisionModal } from '#/components/tareas/TareaRevisionModal'
 import { writeLastAsignacionId } from '#/lib/last-asignacion'
 import { userMessageFromError } from '#/lib/api'
+import { horaRango12 } from '#/lib/examenes'
 import { getMaestroDashboard } from '#/services/maestro-dashboard'
 import { listMateriasAsistencia } from '#/services/asistencia'
 import type { AsistenciaSeccion } from '#/services/asistencia'
@@ -323,7 +324,7 @@ function MaestroDashboardPage() {
               </p>
               <p className="mdash__hero-slot">
                 {data.slot.hora_inicio && data.slot.hora_fin
-                  ? `${data.slot.hora_inicio}–${data.slot.hora_fin}`
+                  ? horaRango12(data.slot.hora_inicio, data.slot.hora_fin)
                   : '—'}
                 {' · '}
                 {slotLabel}

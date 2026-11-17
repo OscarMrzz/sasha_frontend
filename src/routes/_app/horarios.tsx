@@ -17,6 +17,7 @@ import { AlumnoHorarioView } from '#/components/horarios/AlumnoHorarioView'
 import { RequirePortalClase } from '#/components/portal/RequirePortalClase'
 import { usePortalInicio } from '#/hooks/use-portal'
 import { isPortalRole } from '#/lib/home-path'
+import { horaRango12 } from '#/lib/examenes'
 import { Combobox } from '#/components/ui/Combobox'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
@@ -726,7 +727,7 @@ function HorariosAdminView() {
               </Field>
               {modalidad ? (
                 <p className="texto-muted" style={{ gridColumn: '1 / -1', fontSize: '0.85rem' }}>
-                  Jornada {modalidad.hora_inicio}–{modalidad.hora_fin} · clase{' '}
+                  Jornada {horaRango12(modalidad.hora_inicio, modalidad.hora_fin)} · clase{' '}
                   {modalidad.duracion_hora_clase_minutos} min · recreo {modalidad.cantidad_recreos}×
                   {modalidad.duracion_recreo_minutos} min
                 </p>

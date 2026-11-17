@@ -14,7 +14,7 @@ function formatDesde(desde: string | null): string | null {
   if (!desde) return null
   const date = new Date(desde)
   if (Number.isNaN(date.getTime())) return null
-  return date.toLocaleString('es-HN', { dateStyle: 'long', timeStyle: 'short' })
+  return date.toLocaleString('es-HN', { dateStyle: 'long', timeStyle: 'short', hour12: true })
 }
 
 function MantenimientoPage() {
