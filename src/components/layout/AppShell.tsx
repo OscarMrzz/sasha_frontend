@@ -292,7 +292,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        {maestro && (claseId || pathname === '/maestro') ? (
+        {maestro ? (
           <div className="app-shell__top-clase">
             <ClaseNavButtons asignacionId={claseId} />
           </div>
