@@ -216,6 +216,10 @@ export function AsistenciaGridModal({
         void qc.invalidateQueries({ queryKey: ['maestro-dashboard', materia.asignacion_docente_id] })
       }
       setCambios({})
+      if (mode === 'pasar' && !inline) {
+        dismiss()
+        return
+      }
       await load()
     } catch (e) {
       toast.error(userMessageFromError(e))
