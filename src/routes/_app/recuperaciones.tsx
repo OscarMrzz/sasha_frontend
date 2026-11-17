@@ -1,30 +1,27 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-table/legacy'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
-import { RequirePermission, Can, useCan } from '#/components/gates/Can'
+import { RequirePermission, useCan } from '#/components/gates/Can'
 import { RecuperacionModal } from '#/components/recuperaciones/RecuperacionModal'
-import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
 import { DataTable } from '#/components/ui/DataTable'
 import type { RowAction } from '#/components/ui/RowMenu'
-import { userMessageFromError } from '#/lib/api'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
 import { listMateriasAsistencia } from '#/services/asistencia'
-import { guardarRecuperaciones, listRecuperaciones } from '#/services/recuperaciones'
+import { listRecuperaciones } from '#/services/recuperaciones'
 import type { FilaRecuperacion } from '#/services/recuperaciones'
 
 export const Route = createFileRoute('/_app/recuperaciones')({ component: RecuperacionesPage })
 
-const col = createColumnHelper<FilaRecuperacion>()
+type GrupoRecuperacion = Pick<FilaRecuperacion, 'tipo' | 'parcial_id' | 'numero' | 'etiqueta'> & { id: string }
+
+const col = createColumnHelper<GrupoRecuperacion>()
 
 function RecuperacionesPage() {
   const { can } = useCan()
-  const qc = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
-  const [ctx, setCtx] = useState<{ x: number; y: number; row: FilaRecuperacion } | null>(null)
-  const [modal, setModal] = useState<{ row: FilaRecuperacion; soloVer: boolean } | null>(null)
-  const [eliminar, setEliminar] = useState<FilaRecuperacion | null>(null)
+  const [ctx, setCtx] = useState<{ x: number; y: number; row: GrupoRecuperacion } | null>(null)
+  const [modal, setModal] = useState<{ row: GrupoRecuperacion; soloVer: boolean } | null>(null)
 
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
@@ -54,44 +51,29 @@ function RecuperacionesPage() {
     queryFn: () => listRecuperaciones(asigEffective),
     enabled: Boolean(asigEffective),
   })
-  const filas = lista?.filas ?? []
-
-  const eliminarMut = useMutation({
-    mutationFn: (row: FilaRecuperacion) =>
-      guardarRecuperaciones({
-        asignacion_docente_id: asigEffective,
-        tipo: row.tipo,
-        parcial_id: row.tipo === 'parcial' ? row.parcial_id ?? undefined : undefined,
-        numero: row.tipo === 'periodo' ? row.numero : undefined,
-        items: [{ alumno_id: row.alumno_id, nota: null }],
-      }),
-    onSuccess: () => {
-      toast.success('Recuperación eliminada')
-      void qc.invalidateQueries({ queryKey: ['recuperaciones', asigEffective] })
-      setEliminar(null)
-    },
-    onError: (e) => {
-      toast.error(userMessageFromError(e))
-      setEliminar(null)
-    },
-  })
+  const grupos = useMemo(() => {
+    const porRecuperacion = new Map<string, GrupoRecuperacion>()
+    for (const fila of lista?.filas ?? []) {
+      const id = fila.tipo === 'parcial' ? `parcial-${fila.parcial_id}` : `periodo-${fila.numero}`
+      if (porRecuperacion.has(id)) continue
+      porRecuperacion.set(id, {
+        id,
+        tipo: fila.tipo,
+        parcial_id: fila.parcial_id,
+        numero: fila.numero,
+        etiqueta: fila.tipo === 'parcial'
+          ? lista?.parciales.find((p) => p.id === fila.parcial_id)?.etiqueta ?? fila.etiqueta
+          : fila.etiqueta,
+      })
+    }
+    return [...porRecuperacion.values()].sort((a, b) =>
+      a.tipo === b.tipo ? a.numero - b.numero : a.tipo === 'parcial' ? -1 : 1,
+    )
+  }, [lista])
 
   const columns = useMemo(
     () => [
-      col.accessor('codigo', { header: 'Cuenta' }),
-      col.accessor('nombre', { header: 'Nombre' }),
-      col.accessor('etiqueta', { header: 'Recuperación' }),
-      col.accessor('nota_original', { header: 'Nota original' }),
-      col.accessor('nota', { header: 'Nota recuperación' }),
-      col.accessor('cuenta', { header: 'Nota que cuenta' }),
-      col.accessor('aprobo', {
-        header: 'Estado',
-        cell: (i) => (
-          <span className={`badge ${i.getValue() ? 'badge--ok' : 'badge--danger'}`}>
-            {i.getValue() ? 'Aprobó' : 'Reprobó'}
-          </span>
-        ),
-      }),
+      col.accessor('etiqueta', { header: 'Parcial / Recuperación de periodo' }),
     ],
     [],
   )
@@ -101,20 +83,10 @@ function RecuperacionesPage() {
       {
         id: 'tipo',
         label: 'Tipo',
-        getValue: (r: FilaRecuperacion) => r.tipo,
+        getValue: (r: GrupoRecuperacion) => r.tipo,
         options: [
           { value: 'parcial', label: 'De parcial' },
           { value: 'periodo', label: 'De periodo' },
-        ],
-      },
-      { id: 'recuperacion', label: 'Recuperación', getValue: (r: FilaRecuperacion) => r.etiqueta },
-      {
-        id: 'estado',
-        label: 'Estado',
-        getValue: (r: FilaRecuperacion) => (r.aprobo ? 'aprobo' : 'reprobo'),
-        options: [
-          { value: 'aprobo', label: 'Aprobó' },
-          { value: 'reprobo', label: 'Reprobó' },
         ],
       },
     ],
@@ -148,56 +120,35 @@ function RecuperacionesPage() {
         ) : null}
         <DataTable
           title={`Recuperaciones · ${claseLabel}`}
-          data={filas}
+          data={grupos}
           columns={columns}
           filters={tableFilters}
-          canAdd={can('recuperaciones:post')}
+          canAdd={can('recuperaciones:post') && !lista.finalizado}
           addLabel="Agregar"
           onAdd={() => setModalOpen(true)}
           exportFilename="recuperaciones"
-          exportRows={filas.map((r) => ({
-            Cuenta: r.codigo,
-            Nombre: r.nombre,
-            Recuperación: r.etiqueta,
-            'Nota original': r.nota_original,
-            'Nota recuperación': r.nota,
-            'Nota que cuenta': r.cuenta,
-            Estado: r.aprobo ? 'Aprobó' : 'Reprobó',
+          exportRows={grupos.map((r) => ({
+            'Parcial / Recuperación de periodo': r.etiqueta,
           }))}
           onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
           card={{
-            title: (r) => r.nombre,
-            testId: (r) => `recuperacion-card-${r.alumno_id}`,
-            status: (r) =>
-              r.aprobo ? { label: 'Aprobó', tone: 'ok' } : { label: 'Reprobó', tone: 'mal' },
-            fields: (r) => [
-              { label: 'Recuperación', value: r.etiqueta },
-              { label: 'Original', value: r.nota_original },
-              { label: 'Nota rec.', value: r.nota },
-              { label: 'Cuenta', value: r.cuenta },
-            ],
+            title: (r) => r.etiqueta,
+            testId: (r) => `recuperacion-card-${r.id}`,
           }}
           rowActions={(r) => {
-            if (!can('recuperaciones:post')) return []
             const items: RowAction[] = [
               {
-                label: 'Ver',
-                testId: 'recuperaciones-ctx-ver',
+                label: 'Abrir',
+                testId: 'recuperaciones-ctx-abrir',
                 onClick: () => setModal({ row: r, soloVer: true }),
               },
             ]
-            if (!lista.finalizado) {
+            if (can('recuperaciones:post') && !lista.finalizado) {
               items.push(
                 {
                   label: 'Editar',
                   testId: 'recuperaciones-ctx-editar',
                   onClick: () => setModal({ row: r, soloVer: false }),
-                },
-                {
-                  label: 'Eliminar',
-                  danger: true,
-                  testId: 'recuperaciones-ctx-eliminar',
-                  onClick: () => setEliminar(r),
                 },
               )
             }
@@ -208,48 +159,32 @@ function RecuperacionesPage() {
 
       {ctx ? (
         <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }}>
-          <Can permission="recuperaciones:post">
+          <button
+            type="button"
+            className="ctx-menu__item"
+            data-testid="recuperaciones-ctx-abrir"
+            onClick={() => {
+              setModal({ row: ctx.row, soloVer: true })
+              closeCtx()
+            }}
+          >
+            Abrir
+          </button>
+          {can('recuperaciones:post') && !lista.finalizado ? (
             <button
               type="button"
               className="ctx-menu__item"
-              data-testid="recuperaciones-ctx-ver"
+              data-testid="recuperaciones-ctx-editar"
               onClick={() => {
-                setModal({ row: ctx.row, soloVer: true })
+                setModal({ row: ctx.row, soloVer: false })
                 closeCtx()
               }}
             >
-              Ver
+              Editar
             </button>
-            {lista.finalizado ? null : (
-              <>
-                <button
-                  type="button"
-                  className="ctx-menu__item"
-                  data-testid="recuperaciones-ctx-editar"
-                  onClick={() => {
-                    setModal({ row: ctx.row, soloVer: false })
-                    closeCtx()
-                  }}
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  className="ctx-menu__item ctx-menu__item--danger"
-                  data-testid="recuperaciones-ctx-eliminar"
-                  onClick={() => {
-                    setEliminar(ctx.row)
-                    closeCtx()
-                  }}
-                >
-                  Eliminar
-                </button>
-              </>
-            )}
-          </Can>
+          ) : null}
         </div>
       ) : null}
-
       {modalOpen ? (
         <RecuperacionModal
           asignacionId={asigEffective}
@@ -265,6 +200,7 @@ function RecuperacionesPage() {
           lista={lista}
           claseLabel={claseLabel}
           soloVer={modal.soloVer}
+          fijarSeleccion
           inicial={{
             tipo: modal.row.tipo,
             parcialId: modal.row.parcial_id ?? undefined,
@@ -274,17 +210,6 @@ function RecuperacionesPage() {
         />
       ) : null}
 
-      <ConfirmDialog
-        open={eliminar != null}
-        title="Eliminar recuperación"
-        message={`¿Eliminar la recuperación de ${eliminar?.nombre ?? ''}? La nota del alumno volverá a su valor original.`}
-        danger
-        confirmLabel="Eliminar"
-        onConfirm={() => {
-          if (eliminar) eliminarMut.mutate(eliminar)
-        }}
-        onCancel={() => setEliminar(null)}
-      />
     </RequirePermission>
   )
 }

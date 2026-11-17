@@ -27,6 +27,7 @@ export function RecuperacionModal({
   lista,
   claseLabel,
   soloVer = false,
+  fijarSeleccion = false,
   inicial,
   onClose,
 }: {
@@ -34,6 +35,7 @@ export function RecuperacionModal({
   lista: ListaRecuperaciones
   claseLabel: string
   soloVer?: boolean
+  fijarSeleccion?: boolean
   inicial?: { tipo?: TipoRecuperacion; parcialId?: string; numero?: number }
   onClose: () => void
 }) {
@@ -150,7 +152,7 @@ export function RecuperacionModal({
             <select
               className="field__select"
               data-testid="recuperacion-tipo"
-              disabled={soloVer}
+              disabled={soloVer || fijarSeleccion}
               value={tipo}
               onChange={(e) => cambiar(() => setTipo(e.target.value as TipoRecuperacion))}
             >
@@ -163,7 +165,7 @@ export function RecuperacionModal({
               <select
                 className="field__select"
                 data-testid="recuperacion-parcial"
-                disabled={soloVer}
+                disabled={soloVer || fijarSeleccion}
                 value={parcialId}
                 onChange={(e) => cambiar(() => setParcialId(e.target.value))}
               >
@@ -180,7 +182,7 @@ export function RecuperacionModal({
               <select
                 className="field__select"
                 data-testid="recuperacion-numero"
-                disabled={soloVer}
+                disabled={soloVer || fijarSeleccion}
                 value={numero}
                 onChange={(e) => cambiar(() => setNumero(Number(e.target.value)))}
               >

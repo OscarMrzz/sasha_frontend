@@ -23,8 +23,10 @@ test.describe('recuperaciones', () => {
     )
     const tabla = page.getByTestId('recuperacion-table')
     let encontrado = false
+    let etiquetaParcial = ''
     for (const id of parciales) {
       await page.getByTestId('recuperacion-parcial').selectOption(id)
+      etiquetaParcial = (await page.getByTestId('recuperacion-parcial').locator('option:checked').textContent()) ?? ''
       await expect(tabla.or(page.getByTestId('recuperacion-sin-alumnos'))).toBeVisible({ timeout: 10_000 })
       if (await tabla.isVisible()) {
         encontrado = true
@@ -41,7 +43,20 @@ test.describe('recuperaciones', () => {
     await page.getByRole('button', { name: 'Confirmar' }).click()
     await expect(page.getByText('Recuperaciones guardadas')).toBeVisible()
     await expect(modal).toHaveCount(0)
-    await expect(page.locator('table.data-table tbody tr', { hasText: '95' }).first()).toBeVisible()
+    const filasGrupo = page.locator('table.data-table tbody tr')
+    await expect(filasGrupo.first()).toBeVisible()
+    const etiquetas = await filasGrupo.locator('td').allTextContents()
+    expect(new Set(etiquetas).size).toBe(etiquetas.length)
+
+    const filaParcial = filasGrupo.filter({ hasText: etiquetaParcial.trim() }).first()
+    await expect(filaParcial).toBeVisible()
+    await filaParcial.click({ button: 'right' })
+    await page.getByTestId('recuperaciones-ctx-abrir').click()
+    await expect(modal).toBeVisible()
+    await expect(modal.locator('input[type="number"]').first()).toHaveValue('95')
+    await expect(modal.locator('input[type="number"]').first()).toBeDisabled()
+    await page.getByRole('button', { name: 'Cerrar' }).click()
+    await expect(modal).toHaveCount(0)
   })
 
   test('el padre de Luis espera el IV parcial y ve las recuperaciones por parcial', async ({ page }) => {
@@ -99,7 +114,7 @@ test.describe('recuperaciones', () => {
     await expect(page.getByTestId('periodo-tope-periodo')).toHaveValue('100')
   })
 
-  test('menú de fila Ver/Editar/Eliminar y Ver fuerza solo lectura', async ({ page }) => {
+  test('menú de grupo Abrir/Editar y Abrir fuerza solo lectura', async ({ page }) => {
     await loginAs(page, { code: PEDRO })
     await page.goto('/recuperaciones')
     await expect(page.getByTestId('recuperaciones-page')).toBeVisible({ timeout: 20_000 })
@@ -107,11 +122,11 @@ test.describe('recuperaciones', () => {
     const fila = page.locator('table.data-table tbody tr').first()
     await expect(fila).toBeVisible({ timeout: 15_000 })
     await fila.click({ button: 'right' })
-    await expect(page.getByTestId('recuperaciones-ctx-ver')).toBeVisible()
+    await expect(page.getByTestId('recuperaciones-ctx-abrir')).toBeVisible()
     await expect(page.getByTestId('recuperaciones-ctx-editar')).toBeVisible()
-    await expect(page.getByTestId('recuperaciones-ctx-eliminar')).toBeVisible()
+    await expect(page.getByTestId('recuperaciones-ctx-eliminar')).toHaveCount(0)
 
-    await page.getByTestId('recuperaciones-ctx-ver').click()
+    await page.getByTestId('recuperaciones-ctx-abrir').click()
     const modal = page.getByTestId('recuperacion-modal')
     await expect(modal).toBeVisible()
     // En modo Ver los selectores son de solo lectura.
@@ -125,8 +140,8 @@ test.describe('recuperaciones', () => {
     await expect(modal).toHaveCount(0)
   })
 
-  test('Eliminar vacía la nota de la fila', async ({ page }) => {
-    // Requiere backend + DB local (fixture data_test.sql): el PUT con nota null borra la recuperación.
+  test('Editar permite quitar una nota individual del grupo', async ({ page }) => {
+    // Requiere backend + DB local (fixture data_test.sql) con recuperaciones guardadas.
     await loginAs(page, { code: PEDRO })
     await page.goto('/recuperaciones')
     await expect(page.getByTestId('recuperaciones-page')).toBeVisible({ timeout: 20_000 })
@@ -134,14 +149,22 @@ test.describe('recuperaciones', () => {
     const fila = page.locator('table.data-table tbody tr').first()
     await expect(fila).toBeVisible({ timeout: 15_000 })
     await fila.click({ button: 'right' })
-    await page.getByTestId('recuperaciones-ctx-eliminar').click()
-    const confirm = page.getByRole('dialog', { name: 'Eliminar recuperación' })
-    await expect(confirm).toBeVisible()
-    await confirm.getByRole('button', { name: 'Eliminar' }).click()
-    await expect(page.getByText('Recuperación eliminada')).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId('recuperaciones-ctx-editar').click()
+    const modal = page.getByTestId('recuperacion-modal')
+    await expect(modal).toBeVisible()
+    const inputs = modal.getByTestId('recuperacion-table').locator('input[type="number"]')
+    await expect(inputs.first()).toBeVisible({ timeout: 10_000 })
+    const values = await inputs.evaluateAll((elements) => elements.map((el) => (el as HTMLInputElement).value))
+    const index = values.findIndex((value) => value !== '')
+    expect(index).toBeGreaterThanOrEqual(0)
+    await inputs.nth(index).fill('')
+    await page.getByTestId('recuperacion-guardar').click()
+    await page.getByRole('button', { name: 'Confirmar' }).click()
+    await expect(page.getByText('Recuperaciones guardadas')).toBeVisible({ timeout: 15_000 })
+    await expect(modal).toHaveCount(0)
   })
 
-  test('con el periodo finalizado el menú solo ofrece Ver', async ({ page }) => {
+  test('con el periodo finalizado el menú solo ofrece Abrir', async ({ page }) => {
     // Requiere un periodo finalizado en la BD (data_test.sql deja el IV parcial en curso).
     await loginAs(page, { code: PEDRO })
     await page.goto('/recuperaciones')
@@ -152,7 +175,7 @@ test.describe('recuperaciones', () => {
     const fila = page.locator('table.data-table tbody tr').first()
     await expect(fila).toBeVisible({ timeout: 15_000 })
     await fila.click({ button: 'right' })
-    await expect(page.getByTestId('recuperaciones-ctx-ver')).toBeVisible()
+    await expect(page.getByTestId('recuperaciones-ctx-abrir')).toBeVisible()
     await expect(page.getByTestId('recuperaciones-ctx-editar')).toHaveCount(0)
     await expect(page.getByTestId('recuperaciones-ctx-eliminar')).toHaveCount(0)
   })
