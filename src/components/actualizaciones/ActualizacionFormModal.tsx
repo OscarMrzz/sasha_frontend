@@ -12,6 +12,8 @@ import type {
   ActualizacionSistema,
   EstadoActualizacion,
 } from '#/services/actualizaciones'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 function hoyISO(): string {
   const ahora = new Date()
@@ -167,7 +169,7 @@ export function ActualizacionFormModal({
           </Field>
 
           <Field label="Orden" htmlFor="actualizacion-orden" error={intentado ? errores.orden : undefined}>
-            <input
+            <NumberInput
               id="actualizacion-orden"
               type="number"
               min={0}

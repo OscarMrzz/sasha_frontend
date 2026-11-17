@@ -7,6 +7,8 @@ import { RequirePermission } from '#/components/gates/Can'
 import { DataTable } from '#/components/ui/DataTable'
 import { Field } from '#/components/ui/Field'
 import { listAuditoria, type AuditoriaEvento, type AuditoriaListFilters } from '#/services/auditoria'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 export const Route = createFileRoute('/_app/auditoria')({ component: AuditoriaPage })
 
@@ -110,7 +112,7 @@ function AuditoriaPage() {
             />
           </Field>
           <Field label="Límite">
-            <input
+            <NumberInput
               type="number"
               className="field__input"
               value={filters.limite ?? 100}

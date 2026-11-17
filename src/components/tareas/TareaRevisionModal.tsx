@@ -10,6 +10,8 @@ import {
   listCriteriosEvaluacion,
 } from '#/services/tareas'
 import type { CriterioEvaluacion, RevisionAlumno } from '#/services/tareas'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 function nextCriterioId(
   current: string | null | undefined,
@@ -364,7 +366,7 @@ export function TareaRevisionModal({
                           {a.criterio_nombre ?? '—'}
                         </button>
                       ) : (
-                        <input
+                        <NumberInput
                           type="number"
                           min={0}
                           max={maxPts}

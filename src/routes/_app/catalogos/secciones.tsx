@@ -22,6 +22,8 @@ import {
 import type { ModoAsistencia, Seccion, SeccionCreate } from '#/services/catalogos'
 import { listMaestros } from '#/services/personas'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 export const Route = createFileRoute('/_app/catalogos/secciones')({ component: SeccionesPage })
 
@@ -395,7 +397,7 @@ function SeccionesPage() {
           ) : null}
         </div>
         <Field label="Cupo máximo">
-          <input
+          <NumberInput
             type="number"
             className="field__input"
             disabled={viewOnly}

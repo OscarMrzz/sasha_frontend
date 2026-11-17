@@ -21,6 +21,8 @@ import {
   updateConfiguracionPagos,
 } from '#/services/pagos-config'
 import type { PeriodoConfigLista } from '#/services/pagos-config'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 type Props = {
   /** Periodo que se está configurando. */
@@ -276,7 +278,7 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
                         <h4 className="pagos-config__grado-titulo">{grado.grado_nombre}</h4>
                         <div className="pagos-config__dias">
                           <Field label="Mensualidad">
-                            <input
+                            <NumberInput
                               type="number"
                               min={0}
                               className="field__input"
@@ -288,7 +290,7 @@ export function ConfiguracionPagosModal({ periodo, onClose }: Props) {
                             />
                           </Field>
                           <Field label="Matrícula">
-                            <input
+                            <NumberInput
                               type="number"
                               min={0}
                               className="field__input"

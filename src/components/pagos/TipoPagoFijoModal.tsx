@@ -17,6 +17,8 @@ import type {
   ModoDesglose,
   TipoPagoDetalle,
 } from '#/services/pagos-tipos'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 type Props = {
   periodoId: string
@@ -190,7 +192,7 @@ export function TipoPagoFijoModal({ periodoId, tipo, meses, onClose, onSaved }: 
           />
           {desglose === 'general' ? (
             <Field label="Monto para todos los grados (L)" htmlFor="tipo-pago-fijo-monto-general">
-              <input
+              <NumberInput
                 id="tipo-pago-fijo-monto-general"
                 type="number"
                 min={0}
@@ -251,7 +253,7 @@ export function TipoPagoFijoModal({ periodoId, tipo, meses, onClose, onSaved }: 
                     <h4 className="pagos-config__grado-titulo">{g.grado_nombre}</h4>
                     {desglose === 'por_grado' ? (
                       <Field label={esMensualidad ? 'Mensualidad (L)' : 'Matrícula (L)'}>
-                        <input
+                        <NumberInput
                           type="number"
                           min={0}
                           className="field__input"

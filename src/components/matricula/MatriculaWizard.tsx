@@ -49,6 +49,8 @@ import {
 } from '#/services/personas'
 import type { UserFicha } from '#/services/personas'
 import { createUser } from '#/services/users'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 const STEPS = [
   { id: 'alumno', label: 'Alumno' },
@@ -2091,7 +2093,7 @@ export function MatriculaWizard({
                           />
                         </Field>
                         <Field label="Año (opcional)">
-                          <input
+                          <NumberInput
                             className="field__input"
                             type="number"
                             min={1990}
@@ -2349,7 +2351,7 @@ export function MatriculaWizard({
                       />
                     </Field>
                     <Field label="Año previo">
-                      <input
+                      <NumberInput
                         className="field__input"
                         type="number"
                         min={1990}
@@ -2898,7 +2900,7 @@ export function MatriculaWizard({
             </div>
             {tipoBeca === 'especial' ? (
               <Field label="Monto por mes (L)" htmlFor="wiz-beca-monto">
-                <input
+                <NumberInput
                   id="wiz-beca-monto"
                   type="number"
                   min={0}

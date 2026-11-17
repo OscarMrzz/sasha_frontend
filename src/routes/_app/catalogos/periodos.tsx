@@ -26,6 +26,8 @@ import {
   MAX_PESO_ARCHIVO_MB_DEFAULT,
 } from '#/helpers/adjuntos'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 export const Route = createFileRoute('/_app/catalogos/periodos')({ component: PeriodosPage })
 
@@ -351,7 +353,7 @@ function PeriodosPage() {
           />
         </Field>
         <Field label="Año lectivo">
-          <input
+          <NumberInput
             type="number"
             className="field__input"
             disabled={viewOnly}
@@ -398,7 +400,7 @@ function PeriodosPage() {
           <div className="periodo-reglas__grid">
             {REGLAS.map((r) => (
               <Field key={r.key} label={r.label}>
-                <input
+                <NumberInput
                   type="number"
                   className="field__input"
                   data-testid={r.testid}

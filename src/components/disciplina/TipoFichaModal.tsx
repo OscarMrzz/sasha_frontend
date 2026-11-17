@@ -9,6 +9,8 @@ import { Modal, useDismiss } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
 import { ACUMULACIONES, acumulacionLabel, createTipoFicha, ordinal, updateTipoFicha } from '#/services/disciplina'
 import type { Acumulacion, TipoFicha, TipoFichaInput } from '#/services/disciplina'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 type NivelForm = { key: string; castigo: string; requiere_dias: boolean; dias: string }
 
@@ -302,7 +304,7 @@ export function TipoFichaModal({
                       Implica días
                     </label>
                     <div className={`nivel-fila__dias${n.requiere_dias ? '' : ' nivel-fila__dias--off'}`}>
-                      <input
+                      <NumberInput
                         type="number"
                         min={1}
                         className="field__input nivel-fila__input-dias"

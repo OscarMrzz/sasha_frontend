@@ -12,6 +12,8 @@ import {
   notaPeriodoEfectiva,
 } from '#/services/recuperaciones'
 import type { CandidatoRecuperacion, ListaRecuperaciones, TipoRecuperacion } from '#/services/recuperaciones'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 function parseNota(v: string): number | null | undefined {
   const t = v.trim()
@@ -230,7 +232,7 @@ export function RecuperacionModal({
                         <td>{a.nombre}</td>
                         <td>{a.nota_original}</td>
                         <td>
-                          <input
+                          <NumberInput
                             type="number"
                             min={0}
                             max={100}

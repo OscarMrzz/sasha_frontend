@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import { Field } from '#/components/ui/Field'
 import { parcialNombre } from '#/helpers/parciales'
 import type { ParcialForm } from '#/services/catalogos'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 type Props = {
   /** Filas de parciales controladas por el formulario del periodo. */
@@ -73,7 +75,7 @@ export function ParcialesPeriodoForm({ value, onChange, disabled = false }: Prop
                 />
               </Field>
               <Field label="Nota máxima">
-                <input
+                <NumberInput
                   type="number"
                   className="field__input"
                   disabled={disabled}

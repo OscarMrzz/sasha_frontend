@@ -17,6 +17,8 @@ import {
   listTiposPermiso,
 } from '#/services/permisos'
 import type { TipoPermiso } from '#/services/permisos'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 export const Route = createFileRoute('/_app/tipos-permiso')({
   component: TiposPermisoPage,
@@ -198,7 +200,7 @@ function TipoPermisoModal({ tipo, onClose }: { tipo: TipoPermiso | null; onClose
         />
       </Field>
       <Field label="Orden" htmlFor="tipo-permiso-orden">
-        <input
+        <NumberInput
           id="tipo-permiso-orden"
           type="number"
           min={0}

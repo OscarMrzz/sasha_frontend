@@ -14,6 +14,8 @@ import type {
   Recibo,
   ValidarReciboRequest,
 } from '#/services/pagos'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 const ESTADO_BADGE: Record<EstadoRecibo, string> = {
   sin_revisar: 'badge badge--warn',
@@ -226,7 +228,7 @@ export function ValidarReciboModal({
                 </select>
               </Field>
               <Field label="Año" htmlFor="recibo-anio">
-                <input
+                <NumberInput
                   id="recibo-anio"
                   type="number"
                   className="field__input"
@@ -245,7 +247,7 @@ export function ValidarReciboModal({
               </p>
             ) : null}
             <Field label="Cantidad (L)" htmlFor="recibo-monto">
-              <input
+              <NumberInput
                 id="recibo-monto"
                 type="number"
                 min={0}

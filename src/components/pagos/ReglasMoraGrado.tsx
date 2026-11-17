@@ -2,6 +2,8 @@ import { Plus, Trash2 } from 'lucide-react'
 import { Field } from '#/components/ui/Field'
 import { reglaVacia } from '#/helpers/configuracion-pagos'
 import type { ReglaMoraForm } from '#/helpers/configuracion-pagos'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 type Props = {
   /** Filas de reglas de mora controladas por el formulario del modal. */
@@ -45,7 +47,7 @@ export function ReglasMoraGrado({ value, onChange, disabled = false, gradoId }: 
               </span>
             </Field>
             <Field label="Monto">
-              <input
+              <NumberInput
                 type="number"
                 min={0}
                 className="field__input mora-regla__monto"

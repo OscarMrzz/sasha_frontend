@@ -23,6 +23,8 @@ import {
   updateTarea,
 } from '#/services/tareas'
 import type { Tarea, TareaCreate, TareaCriterioModo } from '#/services/tareas'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 type ParcialOpt = { id: string; nombre: string }
 
@@ -232,7 +234,7 @@ export function TareaCreateModal({
               />
             </Field>
             <Field label="Puntos">
-              <input
+              <NumberInput
                 type="number"
                 min={0}
                 step="0.5"

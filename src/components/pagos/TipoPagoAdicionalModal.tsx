@@ -18,6 +18,8 @@ import type {
   TipoPagoDetalle,
   TipoPagoReglaInput,
 } from '#/services/pagos-tipos'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 type Props = {
   periodoId: string
@@ -282,7 +284,7 @@ export function TipoPagoAdicionalModal({
             )}
             {avanzado || form.desglose === 'general' ? (
               <Field label="Monto (L)" htmlFor="tipo-pago-monto">
-                <input
+                <NumberInput
                   id="tipo-pago-monto"
                   type="number"
                   min={0}
@@ -399,7 +401,7 @@ export function TipoPagoAdicionalModal({
                       <h4 className="pagos-config__grado-titulo">{g.nombre}</h4>
                       {form.desglose === 'por_grado' ? (
                         <Field label="Monto (L)">
-                          <input
+                          <NumberInput
                             type="number"
                             min={0}
                             className="field__input"

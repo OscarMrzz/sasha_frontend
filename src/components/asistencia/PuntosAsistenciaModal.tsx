@@ -6,6 +6,8 @@ import { Modal, useDismiss } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
 import { getPuntosAsistencia, guardarPuntosAsistencia } from '#/services/asistencia'
 import type { AsistenciaMateria, PuntosAsistenciaParcial } from '#/services/asistencia'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 function fechaCorta(iso: string) {
   const [, m, d] = iso.slice(0, 10).split('-')
@@ -120,7 +122,7 @@ export function PuntosAsistenciaModal({
                         </div>
                       </td>
                       <td>
-                        <input
+                        <NumberInput
                           type="number"
                           min={0}
                           max={100}

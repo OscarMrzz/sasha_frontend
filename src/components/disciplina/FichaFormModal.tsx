@@ -21,6 +21,8 @@ import {
   rangoDiasClase,
 } from '#/services/disciplina'
 import type { AlumnoBusqueda, PreviaFicha } from '#/services/disciplina'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 function Seccion({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -269,7 +271,7 @@ export function FichaFormModal({ onClose }: { onClose: () => void }) {
             <Seccion title="Días de castigo">
               <div className="ficha-form__fila ficha-form__fila--3">
                 <Field label="Días" htmlFor="ficha-dias">
-                  <input
+                  <NumberInput
                     id="ficha-dias"
                     type="number"
                     min={1}

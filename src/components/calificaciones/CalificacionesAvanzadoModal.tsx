@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Field } from '#/components/ui/Field'
 import { Modal } from '#/components/ui/Modal'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 export type VistaCalif = 'total' | 'parcial'
 export type ResultadoCalif = 'aprobado' | 'reprobado' | 'sin_nota'
@@ -202,7 +204,7 @@ export function CalificacionesAvanzadoModal({
               {b.rango === 'custom' ? (
                 <div className="calif-avanzado__rango">
                   <Field label="Desde" htmlFor="calif-rango-desde">
-                    <input
+                    <NumberInput
                       id="calif-rango-desde"
                       className="field__input"
                       type="number"
@@ -214,7 +216,7 @@ export function CalificacionesAvanzadoModal({
                     />
                   </Field>
                   <Field label="Hasta" htmlFor="calif-rango-hasta">
-                    <input
+                    <NumberInput
                       id="calif-rango-hasta"
                       className="field__input"
                       type="number"

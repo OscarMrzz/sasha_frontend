@@ -21,6 +21,8 @@ import {
   type ModalidadCreate,
 } from '#/services/catalogos'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 export const Route = createFileRoute('/_app/catalogos/modalidades')({ component: ModalidadesPage })
 
@@ -408,7 +410,7 @@ function ModalidadesPage() {
             <p className="wizard-pane__title">Duración del periodo</p>
             <p className="wizard-pane__hint">¿Cuántos meses dura un periodo académico en este turno?</p>
             <Field label="Duración del periodo (meses)" htmlFor="modalidad-periodo-meses">
-              <input
+              <NumberInput
                 id="modalidad-periodo-meses"
                 type="number"
                 className="field__input"
@@ -429,7 +431,7 @@ function ModalidadesPage() {
             <p className="wizard-pane__hint">Cuántos parciales hay por periodo y cuánto dura cada uno.</p>
             <div className="wizard-grid">
               <Field label="Parciales por periodo">
-                <input
+                <NumberInput
                   type="number"
                   className="field__input"
                   disabled={viewOnly}
@@ -444,7 +446,7 @@ function ModalidadesPage() {
                 />
               </Field>
               <Field label="Duración de cada parcial (días)">
-                <input
+                <NumberInput
                   type="number"
                   className="field__input"
                   disabled={viewOnly}
@@ -467,7 +469,7 @@ function ModalidadesPage() {
             <p className="wizard-pane__title">Hora clase</p>
             <p className="wizard-pane__hint">¿Cuántos minutos dura cada hora de clase?</p>
             <Field label="Duración hora clase (min)" htmlFor="modalidad-hora-clase">
-              <input
+              <NumberInput
                 id="modalidad-hora-clase"
                 type="number"
                 className="field__input"
@@ -488,7 +490,7 @@ function ModalidadesPage() {
             <p className="wizard-pane__hint">Cuánto dura cada recreo y cuántos hay.</p>
             <div className="wizard-grid">
               <Field label="Duración del recreo (min)">
-                <input
+                <NumberInput
                   type="number"
                   className="field__input"
                   disabled={viewOnly}
@@ -500,7 +502,7 @@ function ModalidadesPage() {
                 />
               </Field>
               <Field label="Cantidad de recreos">
-                <input
+                <NumberInput
                   type="number"
                   className="field__input"
                   disabled={viewOnly}

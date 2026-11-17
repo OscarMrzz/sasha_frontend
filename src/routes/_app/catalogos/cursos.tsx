@@ -23,6 +23,8 @@ import {
   type CursoTextoItem,
 } from '#/services/catalogos'
 import { useAccionPalette } from '#/hooks/use-accion-palette'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 export const Route = createFileRoute('/_app/catalogos/cursos')({ component: CursosPage })
 
@@ -291,7 +293,7 @@ function CursosPage() {
         </Field>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
           <Field label="Horas semana mínimas">
-            <input
+            <NumberInput
               type="number"
               className="field__input"
               value={form.horas_semana_minimas}
@@ -299,7 +301,7 @@ function CursosPage() {
             />
           </Field>
           <Field label="Unidades académicas">
-            <input
+            <NumberInput
               type="number"
               className="field__input"
               value={form.unidades_academicas ?? ''}
@@ -312,7 +314,7 @@ function CursosPage() {
             />
           </Field>
           <Field label="Horas teóricas/semana">
-            <input
+            <NumberInput
               type="number"
               className="field__input"
               value={form.horas_teoricas_semana ?? ''}
@@ -325,7 +327,7 @@ function CursosPage() {
             />
           </Field>
           <Field label="Horas prácticas/semana">
-            <input
+            <NumberInput
               type="number"
               className="field__input"
               value={form.horas_practicas_semana ?? ''}

@@ -30,6 +30,8 @@ import {
 } from '#/services/personas'
 import { listRoles } from '#/services/roles'
 import { updateRoles, updateStatus } from '#/services/users'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 const SEXO_OPTIONS = [
   { value: 'M', label: 'Masculino', keywords: 'M masculino hombre' },
@@ -701,7 +703,7 @@ export function PersonaEditModal({
                           />
                         </Field>
                         <Field label="Año (opcional)">
-                          <input
+                          <NumberInput
                             className="field__input"
                             type="number"
                             min={1990}

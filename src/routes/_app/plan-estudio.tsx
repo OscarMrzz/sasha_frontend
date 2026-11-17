@@ -36,6 +36,8 @@ import {
   type PlanComentario,
   type PlanItem,
 } from '#/services/planestudio'
+import { NumberInput } from '#/components/ui/NumberInput'
+
 
 export const Route = createFileRoute('/_app/plan-estudio')({
   component: PlanEstudioPage,
@@ -1403,7 +1405,7 @@ function CrearPlanModal({
                       </select>
                     </Field>
                     <Field label="Puntos">
-                      <input
+                      <NumberInput
                         className="field__input"
                         type="number"
                         min={0}
@@ -1645,7 +1647,7 @@ function EditarPlanModal({
             }}
           >
             <Field label="Puntos">
-              <input
+              <NumberInput
                 className="field__input"
                 type="number"
                 min={0}
@@ -1918,7 +1920,7 @@ function ResolverModal({
                 />
               </Field>
               <Field label="Puntos">
-                <input
+                <NumberInput
                   className="field__input"
                   type="number"
                   min={0}
