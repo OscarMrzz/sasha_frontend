@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { ReporteModal } from '#/components/examenes/ReporteModal'
@@ -105,19 +105,6 @@ function MaestroReportesExamenPage() {
           <p className="texto-muted" style={{ margin: '0.35rem 0 0' }}>
             Incidencias de alumnos durante los exámenes de tus materias.
           </p>
-        </div>
-
-        <div className="maestro-examenes__acciones">
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={() => setNuevoOpen(true)}
-            disabled={!can('examenes:reportar')}
-            data-testid="maestro-reportes-nuevo"
-          >
-            <Plus size={16} aria-hidden />
-            Nuevo reporte
-          </button>
         </div>
       </header>
 
