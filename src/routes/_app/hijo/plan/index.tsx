@@ -1,5 +1,4 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
-import { BookOpen, ChevronRight } from 'lucide-react'
+import { createFileRoute } from '@tanstack/react-router'
 import { PadreScreen } from '#/components/portal/padre/PadreScreen'
 import { usePortalInicio } from '#/hooks/use-portal'
 
@@ -22,25 +21,15 @@ function Materias() {
 
   return (
     <section className="app-seccion">
-      <h2 className="app-seccion__titulo">Elija una materia</h2>
+      <h2 className="app-seccion__titulo">Materias</h2>
       <ul className="app-list" data-testid="padre-plan-materias">
         {data.clases.map((c) => (
-          <li key={c.asignacion_docente_id}>
-            <Link
-              to="/hijo/plan/$asignacionId"
-              params={{ asignacionId: c.asignacion_docente_id }}
-              className="app-list__item"
-              data-testid={`padre-plan-materia-${c.asignacion_docente_id}`}
-            >
-              <span className="app-tile__icono" aria-hidden style={{ width: 44, height: 44 }}>
-                <BookOpen size={22} />
-              </span>
-              <div className="app-list__cuerpo">
-                <span className="app-list__titulo">{c.curso_nombre}</span>
-                <span className="app-list__sub">{c.maestro_nombre}</span>
-              </div>
-              <ChevronRight size={22} className="app-tile__flecha" aria-hidden />
-            </Link>
+          <li
+            key={c.asignacion_docente_id}
+            className="app-list__item"
+            data-testid={`padre-plan-materia-${c.asignacion_docente_id}`}
+          >
+            <span className="app-list__titulo">{c.curso_nombre}</span>
           </li>
         ))}
       </ul>

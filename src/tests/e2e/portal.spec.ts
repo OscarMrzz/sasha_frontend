@@ -12,7 +12,7 @@ const PNG = Buffer.from(
 )
 
 test.describe('portal alumno y responsable @smoke', () => {
-  test('alumno: inicio con bienvenida y botones; horario, clases y modo clase', async ({ page }) => {
+  test('alumno: inicio, horario y lista informativa de clases', async ({ page }) => {
     await loginAs(page, { code: ALUMNO })
     await expect(page.getByTestId('alumno-home')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByTestId('sidebar-collapse')).toHaveCount(0)
@@ -30,49 +30,30 @@ test.describe('portal alumno y responsable @smoke', () => {
     await page.getByTestId('alumno-atras').click()
     await expect(page).toHaveURL(/\/alumno\/?$/, { timeout: 10_000 })
 
-    // Clases → modo clase
+    // Las clases se muestran como nombres informativos, no como navegación.
     await page.getByTestId('alumno-tile-clases').click()
     await expect(page).toHaveURL(/\/alumno\/clases$/, { timeout: 10_000 })
-    const card = page.getByTestId('alumno-clases-lista').locator('.app-tile').first()
-    await expect(card).toBeVisible({ timeout: 15_000 })
-    const curso = (await card.locator('.app-tile__label').textContent())?.trim() ?? ''
-    await card.click()
+    const lista = page.getByTestId('alumno-clases-lista')
+    const clase = lista.locator('[data-testid^="alumno-clase-"]').first()
+    await expect(clase).toBeVisible({ timeout: 15_000 })
+    await expect(lista.locator('a, button')).toHaveCount(0)
+    const urlClases = page.url()
+    await clase.click()
+    await expect(page).toHaveURL(urlClases)
 
-    await expect(page).toHaveURL(/\/tareas/, { timeout: 10_000 })
-    await expect(page.getByTestId('sidebar-collapse')).toBeVisible()
-    // El sidebar arranca colapsado: el curso va en el `title` y en el breadcrumb.
-    await expect(page.getByTestId('sidebar-clase')).toHaveAttribute('title', curso)
-    await expect(page.getByTestId('portal-tareas')).toContainText(`Tareas · ${curso}`, {
-      timeout: 15_000,
-    })
-    await expect(page.locator('.sidebar-nav').getByTitle('Inicio')).toHaveCount(0)
-
-    await page.getByRole('link', { name: 'Calificaciones' }).click()
-    await expect(page.getByTestId('portal-calificaciones')).toContainText(curso, {
-      timeout: 15_000,
-    })
-
-    await page.getByTestId('top-inicio').click()
+    await page.getByTestId('alumno-atras').click()
     await expect(page).toHaveURL(/\/alumno\/?$/, { timeout: 10_000 })
     await expect(page.getByTestId('sidebar-collapse')).toHaveCount(0)
   })
 
-  test('alumno: badge T y aviso de tareas para hoy/mañana sin revisar', async ({ page }) => {
+  test('alumno: clases muestra solo los nombres de las materias', async ({ page }) => {
     await loginAs(page, { code: ALUMNO })
     await expect(page.getByTestId('alumno-tile-clases')).toBeVisible({ timeout: 15_000 })
     await page.getByTestId('alumno-tile-clases').click()
-    await expect(page.getByTestId('alumno-clases-lista')).toBeVisible({ timeout: 15_000 })
-
-    const badges = page.locator('[data-testid^="alumno-clase-badge-"]')
-    const n = await badges.count()
-    for (let i = 0; i < n; i++) {
-      await expect(badges.nth(i)).toHaveText(/^T[1-9]\d*$/)
-    }
-
-    // data_test.sql: Pedro (Español) tiene 2 tareas sin calificar que vencen mañana.
-    const espanol = page.getByTestId('alumno-clases-lista').locator('.app-tile', { hasText: 'Español' })
-    await expect(espanol.locator('[data-testid^="alumno-clase-badge-"]')).toBeVisible()
-    await expect(espanol.locator('[data-testid^="alumno-clase-tareas-"]')).toContainText(/mañana/i)
+    const lista = page.getByTestId('alumno-clases-lista')
+    await expect(lista).toBeVisible({ timeout: 15_000 })
+    await expect(lista.getByText('Español', { exact: true })).toBeVisible()
+    await expect(lista.locator('a, button, .app-tile__detalle, .app-tile__badge, .app-tile__flecha')).toHaveCount(0)
   })
 
   test('alumno: tareas muestra todas sin importar la clase', async ({ page }) => {
@@ -88,24 +69,15 @@ test.describe('portal alumno y responsable @smoke', () => {
     )
   })
 
-  test('alumno: plan de estudio muestra pensum y plan activo, sin tabla ni filtros', async ({ page }) => {
+  test('alumno: las materias no abren una vista al tocarlas', async ({ page }) => {
     await loginAs(page, { code: ALUMNO })
     await page.getByTestId('alumno-tile-clases').click()
-    await page.getByTestId('alumno-clases-lista').locator('.app-tile', { hasText: 'Español' }).click()
-    await expect(page.getByTestId('portal-tareas')).toBeVisible({ timeout: 15_000 })
-    await page.getByRole('link', { name: 'Plan de estudio' }).click()
-
-    const plan = page.getByTestId('portal-plan')
-    await expect(plan).toContainText('Plan de estudio · Español', { timeout: 15_000 })
-    await expect(page.getByTestId('portal-plan-silabo')).toContainText('Prerrequisitos')
-    await expect(page.getByTestId('portal-plan-items').locator('.neon-card-row').first()).toBeVisible()
-    await expect(page.locator('table.data-table')).toHaveCount(0)
-    await expect(page.getByRole('searchbox')).toHaveCount(0)
-    await expect(page.getByRole('combobox')).toHaveCount(0)
-
-    const download = page.waitForEvent('download')
-    await page.getByTestId('portal-plan-pdf').click()
-    expect((await download).suggestedFilename()).toMatch(/\.pdf$/)
+    const lista = page.getByTestId('alumno-clases-lista')
+    await expect(lista).toBeVisible({ timeout: 15_000 })
+    const clase = lista.locator('[data-testid^="alumno-clase-"]').first()
+    const urlClases = page.url()
+    await clase.click()
+    await expect(page).toHaveURL(urlClases)
   })
 
   test('alumno: Notas abre el bento sin sidebar', async ({ page }) => {

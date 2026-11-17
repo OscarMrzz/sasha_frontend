@@ -9,24 +9,21 @@ const ALUMNO_DEBE_MARZO = '1002026704'
 
 async function abrirCalificacionesEspanol(page: Page, code: string) {
   await loginAs(page, { code })
-  await page.getByTestId('alumno-tile-clases').click()
-  await page.getByTestId('alumno-clases-lista').locator('.app-tile', { hasText: 'Español' }).click()
-  await expect(page.getByTestId('portal-tareas')).toBeVisible({ timeout: 15_000 })
-  await page.getByRole('link', { name: 'Calificaciones' }).click()
-  await expect(page.getByTestId('portal-calificaciones')).toContainText('Español', { timeout: 15_000 })
+  await page.goto('/alumno/resultados')
+  await expect(page.getByTestId('alumno-resultados')).toBeVisible({ timeout: 15_000 })
 }
 
 test.describe('liberación de notas por parcial', () => {
   test('alumno: bento con promedio y un tile por parcial, sin cuadro', async ({ page }) => {
     await abrirCalificacionesEspanol(page, ALUMNO_701)
-    await expect(page.getByTestId('portal-calif-promedio')).toBeVisible()
-    await expect(page.getByTestId('portal-calif-promedio-parcial')).toBeVisible()
-    await expect(page.getByTestId('portal-calif-cuadro')).toHaveCount(0)
-    await expect(page.getByTestId('portal-calif-parcial-1')).toHaveAttribute('data-estado', 'visible')
-    await expect(page.getByTestId('portal-calif-parcial-2')).toHaveAttribute('data-estado', 'visible')
-    await expect(page.getByTestId('portal-calif-parcial-3')).toHaveAttribute('data-estado', 'bloqueado_pago')
-    await expect(page.getByTestId('portal-calif-parcial-3')).toContainText(/julio/i)
-    await expect(page.getByTestId('portal-calif-parcial-4')).toHaveCount(0)
+    await expect(page.getByTestId('resultado-promedio')).toBeVisible()
+    await expect(page.getByTestId('resultado-promedio-parcial')).toBeVisible()
+    await expect(page.getByTestId('resultado-cuadro')).toBeVisible()
+    await expect(page.getByTestId('resultado-parcial-1')).toHaveAttribute('data-estado', 'visible')
+    await expect(page.getByTestId('resultado-parcial-2')).toHaveAttribute('data-estado', 'visible')
+    await expect(page.getByTestId('resultado-parcial-3')).toHaveAttribute('data-estado', 'bloqueado_pago')
+    await expect(page.getByTestId('resultado-parcial-3')).toContainText(/julio/i)
+    await expect(page.getByTestId('resultado-parcial-4')).toHaveCount(0)
     await expect(page.locator('table.data-table')).toHaveCount(0)
   })
 
@@ -62,12 +59,12 @@ test.describe('liberación de notas por parcial', () => {
 
   test('alumno que debe marzo ve P1 bloqueado con mensaje amable', async ({ page }) => {
     await abrirCalificacionesEspanol(page, ALUMNO_DEBE_MARZO)
-    const p1 = page.getByTestId('portal-calif-parcial-1')
+    const p1 = page.getByTestId('resultado-parcial-1')
     await expect(p1).toHaveAttribute('data-estado', 'bloqueado_pago')
     await expect(p1).toContainText(/marzo/i)
     // Con la regla nueva (vencidas hasta el corte) la mensualidad de octubre, ya vencida,
     // también bloquea el parcial: se documenta como cambio aprobado.
-    await expect(page.getByTestId('portal-calif-parcial-2')).toHaveAttribute('data-estado', 'bloqueado_pago')
+    await expect(page.getByTestId('resultado-parcial-2')).toHaveAttribute('data-estado', 'bloqueado_pago')
   })
 
   test('admin: panel con parciales, nada por liberar y tabla de bloqueados', async ({ page }) => {

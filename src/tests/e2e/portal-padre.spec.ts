@@ -37,17 +37,17 @@ test.describe('portal del padre estilo app', () => {
     await expect(lista).toContainText(/Recreo/i)
   })
 
-  test('plan de estudio: lista de materias y detalle de una', async ({ page }) => {
+  test('plan de estudio: lista informativa de nombres de materias', async ({ page }) => {
     await entrarComoPadre(page, PADRE_ANA)
     await page.getByTestId('padre-tile-plan').click()
     const materias = page.getByTestId('padre-plan-materias')
     await expect(materias).toBeVisible({ timeout: 15_000 })
-    await materias.locator('[data-testid^="padre-plan-materia-"]', { hasText: 'Español' }).click()
-    await expect(page.getByTestId('portal-plan-silabo')).toBeVisible({ timeout: 15_000 })
-    await expect(page.locator('table.data-table')).toHaveCount(0)
-
-    await page.getByTestId('padre-atras').click()
-    await expect(page.getByTestId('padre-plan-materias')).toBeVisible({ timeout: 10_000 })
+    const espanol = materias.locator('[data-testid^="padre-plan-materia-"]', { hasText: 'Español' })
+    await expect(espanol).toBeVisible()
+    await expect(materias.locator('a, button')).toHaveCount(0)
+    const urlPlan = page.url()
+    await espanol.click()
+    await expect(page).toHaveURL(urlPlan)
     await page.getByTestId('padre-atras').click()
     await expect(page.getByTestId('padre-tiles')).toBeVisible({ timeout: 10_000 })
   })
