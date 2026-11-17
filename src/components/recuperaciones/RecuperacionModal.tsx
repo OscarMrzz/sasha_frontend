@@ -92,6 +92,7 @@ export function RecuperacionModal({
       void qc.invalidateQueries({ queryKey: ['recuperaciones', asignacionId] })
       setDrafts({})
       setConfirm(false)
+      dismiss()
     },
     onError: (e) => {
       toast.error(userMessageFromError(e))

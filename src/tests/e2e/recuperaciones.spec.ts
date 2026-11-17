@@ -40,9 +40,6 @@ test.describe('recuperaciones', () => {
     await page.getByTestId('recuperacion-guardar').click()
     await page.getByRole('button', { name: 'Confirmar' }).click()
     await expect(page.getByText('Recuperaciones guardadas')).toBeVisible()
-    await expect(page.getByText(/¿Guardar \d+ nota/)).toHaveCount(0)
-
-    await page.getByRole('button', { name: 'Cancelar' }).click()
     await expect(modal).toHaveCount(0)
     await expect(page.locator('table.data-table tbody tr', { hasText: '95' }).first()).toBeVisible()
   })
