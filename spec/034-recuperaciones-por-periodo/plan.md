@@ -15,8 +15,8 @@ Estado: pendiente de aprobación. Backend relacionado: `backend_sasha/spec/027-r
 - Al entrar, queda seleccionado el período `ACTIVE`. Si no hay uno, el filtro queda sin selección y solicita elegir un período; no se elige otro silenciosamente.
 - El filtro usa `Combobox` y las etiquetas del proyecto. No hay botón Agregar.
 - Se conserva la última clase elegida si pertenece al período y sigue autorizada; en caso contrario, se usa la primera clase autorizada del período, ordenada de forma estable. El nombre de la clase continúa visible.
-- La tabla muestra I parcial, II parcial, etc., cuando su fecha de inicio ya llegó, incluso si no existen recuperaciones guardadas. Un parcial futuro no aparece. Las filas Final 1…N corresponden a `recuperaciones_periodo` y aparecen siempre según esa configuración, con un aviso de no disponibles antes del cierre del último parcial.
-- Un parcial en curso aparece con su disponibilidad y se puede consultar; el guardado respeta la condición actual de parcial terminado y evaluado. Final 1…N se pueden editar después de terminar el último parcial y según los candidatos permitidos.
+- La tabla muestra I parcial, II parcial, etc., cuando su fecha de inicio ya llegó, incluso si no existen recuperaciones guardadas. Un parcial futuro no aparece. Las filas Final 1…N corresponden a `recuperaciones_periodo` y aparecen siempre según esa configuración, con un aviso de no disponibles antes del inicio del último parcial.
+- Cada parcial aparece y se habilita al llegar su fecha de inicio; si aún no tiene notas no habrá candidatos. Final 1…N se habilitan al iniciar el último parcial configurado, cualquiera que sea su número.
 - Abrir y Editar fijan la etapa de la fila. La vista móvil presenta una card por etapa y las mismas acciones en su menú.
 - En recuperaciones de parcial, original 60 y recuperación 70 producen nota efectiva 70; ambas notas siguen identificadas. Una recuperación inferior no baja la nota original.
 - En finales, promedio original 50, Final 1 de 60 y Final 2 de 80 producen final 80. También prevalece 85 frente a una Final 2 de 80. Se respeta el tope configurado.
