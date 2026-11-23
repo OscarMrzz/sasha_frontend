@@ -5901,6 +5901,27 @@ a.app-list__item:hover {
   margin-bottom: 1.25rem;
 }
 
+.liberacion__periodo {
+  width: min(100%, 420px);
+  margin-bottom: 1.25rem;
+}
+
+.liberacion__parcial-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--sasha-border-suave);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.liberacion__parcial-control .switch {
+  flex: 0 0 auto;
+}
+
 .liberacion__parcial-meses {
   margin: 0.35rem 0 0;
   font-size: 0.82rem;

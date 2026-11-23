@@ -67,12 +67,21 @@ export interface ClaseNotasResponse {
   filas: NotaClaseRow[]
 }
 
-export async function upsertCalificacion(body: CalificacionUpsert, method: 'POST' | 'PUT' = 'POST') {
-  return apiRequest<CalificacionUpsertResponse>(`/calificaciones/upsert`, { method, body })
+export async function upsertCalificacion(
+  body: CalificacionUpsert,
+  method: 'POST' | 'PUT' = 'POST',
+) {
+  return apiRequest<CalificacionUpsertResponse>(`/calificaciones/upsert`, {
+    method,
+    body,
+  })
 }
 
 export async function liberarCalificaciones(body: LiberacionCreate) {
-  return apiRequest<{ id: string }>('/calificaciones/liberacion', { method: 'POST', body })
+  return apiRequest<{ id: string }>('/calificaciones/liberacion', {
+    method: 'POST',
+    body,
+  })
 }
 
 export interface MesRef {
@@ -99,7 +108,7 @@ export interface LiberacionEstado {
   periodo_id: string
   periodo_nombre: string
   parciales: ParcialLiberacion[]
-  /** Parciales terminados que se liberarán al presionar «Liberar calificaciones». */
+  /** Cantidad de parciales terminados que aún no están liberados. */
   por_liberar: number
 }
 
@@ -107,6 +116,15 @@ export interface LiberacionResultado {
   parciales_liberados: string[]
   alumnos_bloqueados: number
   avisos_enviados: number
+}
+
+export interface LiberacionParcialResultado {
+  parcial_id: string
+  liberado: boolean
+  cambio: boolean
+  alumnos_bloqueados: number
+  avisos_enviados: number
+  advertencia?: string
 }
 
 export interface MesPendiente {
@@ -136,23 +154,56 @@ export interface AlumnoBloqueado {
   monto_total: number
 }
 
-export async function getLiberacionEstado() {
-  return apiRequest<LiberacionEstado>('/calificaciones/liberacion/estado')
+export async function getLiberacionEstado(periodoAcademicoId?: string) {
+  const qs = periodoAcademicoId
+    ? `?${new URLSearchParams({ periodo_academico_id: periodoAcademicoId })}`
+    : ''
+  return apiRequest<LiberacionEstado>(`/calificaciones/liberacion/estado${qs}`)
+}
+
+export async function cambiarLiberacionParcial(body: {
+  periodo_academico_id: string
+  parcial_id: string
+  liberado: boolean
+}) {
+  return apiRequest<LiberacionParcialResultado>('/calificaciones/liberacion/parcial', {
+    method: 'PUT',
+    body,
+  })
 }
 
 export async function liberarParciales() {
-  return apiRequest<LiberacionResultado>('/calificaciones/liberacion/parciales', { method: 'POST' })
+  return apiRequest<LiberacionResultado>(
+    '/calificaciones/liberacion/parciales',
+    { method: 'POST' },
+  )
 }
 
-export async function listAlumnosBloqueados() {
-  return apiRequestList<AlumnoBloqueado>('/calificaciones/liberacion/bloqueados')
+export async function listAlumnosBloqueados(periodoAcademicoId?: string) {
+  const qs = periodoAcademicoId
+    ? `?${new URLSearchParams({ periodo_academico_id: periodoAcademicoId })}`
+    : ''
+  return apiRequestList<AlumnoBloqueado>(
+    `/calificaciones/liberacion/bloqueados${qs}`,
+  )
 }
 
-export async function forzarLiberacion(alumnoId: string, codigoConfirmacion: string) {
-  return apiRequest<{ alumno_id: string }>('/calificaciones/liberacion/forzar', {
-    method: 'POST',
-    body: { alumno_id: alumnoId, codigo_confirmacion: codigoConfirmacion },
-  })
+export async function forzarLiberacion(
+  alumnoId: string,
+  codigoConfirmacion: string,
+  periodoAcademicoId?: string,
+) {
+  return apiRequest<{ alumno_id: string }>(
+    '/calificaciones/liberacion/forzar',
+    {
+      method: 'POST',
+      body: {
+        alumno_id: alumnoId,
+        codigo_confirmacion: codigoConfirmacion,
+        periodo_academico_id: periodoAcademicoId,
+      },
+    },
+  )
 }
 
 export async function getNotas(alumnoId: string, periodoAcademicoId: string) {
@@ -175,14 +226,22 @@ export interface ResumenCalificaciones {
   secciones: ResumenOpcion[]
   cursos: ResumenOpcion[]
   alumnos: { id: string; codigo: string; nombre: string; seccion_id: string }[]
-  notas: { alumno_id: string; curso_id: string; parcial: number; puntos: number }[]
+  notas: {
+    alumno_id: string
+    curso_id: string
+    parcial: number
+    puntos: number
+  }[]
 }
 
 export async function getResumenCalificaciones() {
   return apiRequest<ResumenCalificaciones>('/calificaciones/resumen')
 }
 
-export async function listNotasClase(asignacionDocenteId: string, parcialId?: string) {
+export async function listNotasClase(
+  asignacionDocenteId: string,
+  parcialId?: string,
+) {
   const qs = new URLSearchParams({ asignacion_docente_id: asignacionDocenteId })
   if (parcialId) qs.set('parcial_id', parcialId)
   return apiRequest<ClaseNotasResponse>(`/calificaciones/clase?${qs}`)

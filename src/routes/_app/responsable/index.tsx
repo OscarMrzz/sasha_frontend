@@ -27,6 +27,8 @@ function ResponsableHomePage() {
   const navigate = useNavigate()
   const responsable = isResponsableRole(roles)
   const config = useQuery({ queryKey: ['modos-institucion'], queryFn: getModos })
+  const modo = config.data?.modo_efectivo ?? config.data?.modo
+  const esPrematricula = modo === 'prematricula'
   const seguimiento = useQuery({
     queryKey: ['prematriculas-responsable'],
     queryFn: listPrematriculas,
@@ -39,7 +41,7 @@ function ResponsableHomePage() {
     enabled: responsable,
   })
   const pagos = useQueries({
-    queries: data.map((h) => ({
+    queries: (esPrematricula ? data : []).map((h) => ({
       queryKey: ['portal-pagos', h.alumno_id],
       queryFn: () => getPagosHijo(h.alumno_id),
       enabled: responsable,
@@ -71,13 +73,13 @@ function ResponsableHomePage() {
 
   return (
     <div className="maestro-hub" data-testid="responsable-home">
-      {isLoading || config.isPending || (data.length > 0 && pagos.some((p) => p.isPending)) ? <div className="empty-state">Cargando…</div> : isError || config.isError || pagos.some((p) => p.isError) ? <div className="empty-state" role="alert">{userMessageFromError(errorConsulta)}</div> : mora.length > 0 ? (
+      {isLoading || config.isPending || (esPrematricula && pagos.some((p) => p.isPending)) ? <div className="empty-state">Cargando…</div> : isError || config.isError || (esPrematricula && pagos.some((p) => p.isError)) ? <div className="empty-state" role="alert">{userMessageFromError(errorConsulta)}</div> : esPrematricula && mora.length > 0 ? (
         <section className="responsable-deuda" data-testid="responsable-mora">
           <header className="responsable-deuda__heading">
             <AlertCircle size={22} aria-hidden="true" />
             <div><h1>Pagos pendientes</h1><p>Revisa los cargos vencidos y adjunta el recibo de pago.</p></div>
           </header>
-          {(config.data.modo_efectivo ?? config.data.modo) === 'prematricula' && (
+          {esPrematricula && (
             <p className="responsable-deuda__aviso" role="status">
               Estamos en período de prematrícula. Tiene pagos pendientes. Cuando sus pagos sean confirmados, podrá acceder al panel de prematrícula.
             </p>
@@ -87,7 +89,7 @@ function ResponsableHomePage() {
             return <MoraCard key={hijo.alumno_id} hijo={hijo} obligaciones={obligaciones} uploadables={uploadables} />
           })}
         </section>
-      ) : config.data.modo_efectivo === 'prematricula' || config.data.modo === 'prematricula' ? (
+      ) : esPrematricula ? (
         <div className="responsable-prematricula-layout">
           <PrematriculaPortal responsable />
           <section className="portal-home__section responsable-calificaciones">
@@ -95,7 +97,7 @@ function ResponsableHomePage() {
             <ListaHijos data={data} loading={isLoading} error={isError} onChoose={elegirNotas} grades />
           </section>
         </div>
-      ) : config.data.modo_efectivo === 'cierre' || config.data.modo === 'cierre' ? (
+      ) : modo === 'cierre' ? (
         <section className="portal-home__section">
           <h1 className="portal-home__section-title">Calificaciones</h1>
           <ListaHijos data={data} loading={isLoading} error={isError} onChoose={elegirNotas} grades />
