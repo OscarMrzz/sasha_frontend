@@ -4,19 +4,27 @@ import { getResultadoPeriodo } from '#/services/portal'
 import type { ResultadoAlumno, ResultadoClase } from '#/services/portal'
 
 function Recuperaciones({ c }: { c: ResultadoClase }) {
-  const notas = c.recuperaciones_periodo.flatMap((n, k) => (n == null ? [] : [`Rec. ${k + 1}: ${n}`]))
+  const notas = c.recuperaciones_periodo.flatMap((n, k) =>
+    n == null ? [] : [`Final ${k + 1}: ${n}`],
+  )
   if (notas.length === 0) return null
   return (
     <small className="resultado-periodo__recups">
-      {notas.join(' · ')}
-      {c.recuperacion_aprobada > 0 ? ` · aprobó con recuperación ${c.recuperacion_aprobada}` : ''}
+      Original {c.promedio} · {notas.join(' · ')}
+      {c.recuperacion_aprobada > 0
+        ? ` · cuenta Final ${c.recuperacion_aprobada}`
+        : ''}
     </small>
   )
 }
 
 function lista(nombres: string[]) {
-  return nombres.length < 2 ? nombres.join('') : `${nombres.slice(0, -1).join(', ')} y ${nombres.at(-1) ?? ''}`
+  return nombres.length < 2
+    ? nombres.join('')
+    : `${nombres.slice(0, -1).join(', ')} y ${nombres.at(-1) ?? ''}`
 }
+
+const formatoNota = new Intl.NumberFormat('es-HN', { maximumFractionDigits: 1 })
 
 /** «Se confirma que…»: explica el resultado con el grado y las clases. */
 function detalle(r: ResultadoAlumno) {
@@ -24,9 +32,12 @@ function detalle(r: ResultadoAlumno) {
     const clases = r.reprobadas === 1 ? '1 clase' : `${r.reprobadas} clases`
     return `Se confirma que el alumno tendrá que repetir el grado, ya que reprobó ${clases}.`
   }
-  const destino = r.grado_siguiente ? `pasa a ${r.grado_siguiente.nombre}` : 'completó el último grado'
+  const destino = r.grado_siguiente
+    ? `pasa a ${r.grado_siguiente.nombre}`
+    : 'completó el último grado'
   const n = r.retrasadas.length
-  if (n === 0) return `Se confirma que el alumno ${destino} con todas sus clases aprobadas.`
+  if (n === 0)
+    return `Se confirma que el alumno ${destino} con todas sus clases aprobadas.`
   const clases = n === 1 ? 'una clase retrasada' : `${n} clases retrasadas`
   return `Se confirma que el alumno ${destino} con ${clases} (${lista(r.retrasadas.map((c) => c.curso))}).`
 }
@@ -42,7 +53,11 @@ export function ResultadoPeriodo({ alumnoId }: { alumnoId: string | null }) {
   if (data.estado !== 'disponible' || !data.resultado) {
     const Icon = data.estado === 'bloqueado' ? Lock : Clock
     return (
-      <section className="mdash__tile resultado-periodo" data-testid="resultado-periodo" data-estado={data.estado}>
+      <section
+        className="mdash__tile resultado-periodo"
+        data-testid="resultado-periodo"
+        data-estado={data.estado}
+      >
         <h2 className="mdash__tile-title">Resultado del periodo</h2>
         <div className="notas-bento__bloqueo notas-bento__bloqueo--espera">
           <Icon size={22} aria-hidden />
@@ -60,18 +75,33 @@ export function ResultadoPeriodo({ alumnoId }: { alumnoId: string | null }) {
       data-testid="resultado-periodo"
       data-estado={r.aprueba ? 'aprueba' : 'repite'}
     >
-      <h2 className="mdash__tile-title">Resultado del periodo · {r.periodo_nombre}</h2>
+      <h2 className="mdash__tile-title">
+        Resultado del periodo · {r.periodo_nombre}
+      </h2>
       <div className="resultado-periodo__cabecera">
         <Icon size={36} aria-hidden />
         <div>
-          <p className="resultado-periodo__mensaje" data-testid="resultado-periodo-mensaje">
+          <p
+            className="resultado-periodo__mensaje"
+            data-testid="resultado-periodo-mensaje"
+          >
             {r.mensaje}
           </p>
-          <p className="notas-bento__nota" data-testid="resultado-periodo-detalle">
+          <p
+            className="notas-bento__nota"
+            data-testid="resultado-periodo-detalle"
+          >
             {detalle(r)}
           </p>
         </div>
       </div>
+      <p
+        className="resultado-periodo__limite"
+        data-testid="resultado-periodo-limite"
+      >
+        Clases retrasadas: {r.reprobadas} de {r.config.max_clases_reprobadas}{' '}
+        permitidas.
+      </p>
       <ul className="resultado-periodo__clases">
         {r.clases.map((c) => (
           <li
@@ -83,7 +113,27 @@ export function ResultadoPeriodo({ alumnoId }: { alumnoId: string | null }) {
               {c.curso}
               <Recuperaciones c={c} />
             </span>
-            <span className="resultado-periodo__nota">{c.final}</span>
+            <span className="resultado-periodo__valores">
+              <span className="resultado-periodo__promedio">
+                <small>Promedio</small>
+                <strong>{formatoNota.format(c.promedio)}</strong>
+              </span>
+              {c.final !== c.promedio ? (
+                <span className="resultado-periodo__final">
+                  <small>Final</small>
+                  <strong>{formatoNota.format(c.final)}</strong>
+                </span>
+              ) : null}
+              <span
+                className={`resultado-periodo__estado-clase${c.aprobada ? ' resultado-periodo__estado-clase--aprobada' : ' resultado-periodo__estado-clase--retrasada'}`}
+              >
+                {c.aprobada
+                  ? 'Aprobada'
+                  : r.aprueba
+                    ? 'Retrasada'
+                    : 'Reprobada'}
+              </span>
+            </span>
           </li>
         ))}
       </ul>

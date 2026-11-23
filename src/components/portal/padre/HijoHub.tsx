@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { useBovedaImage } from '#/hooks/use-boveda-image'
 import { usePortalInicio } from '#/hooks/use-portal'
 import { getPagosHijo, listHijos } from '#/services/portal'
+import { getModos } from '#/services/prematricula'
 
 type Tile = {
   to:
@@ -27,6 +28,7 @@ type Tile = {
 export function HijoHub({ alumnoId }: { alumnoId: string }) {
   const { data: inicio } = usePortalInicio()
   const { data: hijos = [] } = useQuery({ queryKey: ['portal-hijos'], queryFn: listHijos })
+  const { data: modos } = useQuery({ queryKey: ['modos-institucion'], queryFn: getModos })
   const { data: pagos } = useQuery({
     queryKey: ['portal-pagos', alumnoId],
     queryFn: () => getPagosHijo(alumnoId),
@@ -38,6 +40,7 @@ export function HijoHub({ alumnoId }: { alumnoId: string }) {
 
   const tareasPendientes = (inicio?.clases ?? []).reduce((n, c) => n + c.tareas_pendientes, 0)
   const vencidos = pagos?.vencidos ?? 0
+  const modo = modos?.modo_efectivo ?? modos?.modo
 
   const tiles: Tile[] = [
     {
@@ -98,6 +101,9 @@ export function HijoHub({ alumnoId }: { alumnoId: string }) {
       icon: <Award size={30} />,
     },
   ]
+  const tilesVisibles = modo === 'cierre'
+    ? tiles.filter((t) => t.id === 'calificaciones' || t.id === 'pagos')
+    : tiles
 
   return (
     <div className="padre-hub">
@@ -131,7 +137,7 @@ export function HijoHub({ alumnoId }: { alumnoId: string }) {
       </header>
 
       <nav className="app-tiles" aria-label="Secciones" data-testid="padre-tiles">
-        {tiles.map((t) => (
+        {tilesVisibles.map((t) => (
           <Link
             key={t.id}
             to={t.to}

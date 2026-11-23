@@ -4,159 +4,186 @@ import { legacyCreateColumnHelper as createColumnHelper } from '@tanstack/react-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RequirePermission, useCan } from '#/components/gates/Can'
 import { RecuperacionModal } from '#/components/recuperaciones/RecuperacionModal'
+import { Combobox } from '#/components/ui/Combobox'
 import { DataTable } from '#/components/ui/DataTable'
+import { Field } from '#/components/ui/Field'
 import type { RowAction } from '#/components/ui/RowMenu'
+import { userMessageFromError } from '#/lib/api'
 import { readLastAsignacionId } from '#/lib/last-asignacion'
-import { listMateriasAsistencia } from '#/services/asistencia'
-import { listRecuperaciones } from '#/services/recuperaciones'
-import type { FilaRecuperacion } from '#/services/recuperaciones'
+import {
+  listOpcionesRecuperaciones,
+  listRecuperaciones,
+} from '#/services/recuperaciones'
+import type { EtapaRecuperacion } from '#/services/recuperaciones'
 
-export const Route = createFileRoute('/_app/recuperaciones')({ component: RecuperacionesPage })
-
-type GrupoRecuperacion = Pick<FilaRecuperacion, 'tipo' | 'parcial_id' | 'numero' | 'etiqueta'> & { id: string }
-
-const col = createColumnHelper<GrupoRecuperacion>()
+export const Route = createFileRoute('/_app/recuperaciones')({
+  component: RecuperacionesPage,
+})
+const col = createColumnHelper<EtapaRecuperacion>()
 
 function RecuperacionesPage() {
   const { can } = useCan()
-  const [modalOpen, setModalOpen] = useState(false)
-  const [ctx, setCtx] = useState<{ x: number; y: number; row: GrupoRecuperacion } | null>(null)
-  const [modal, setModal] = useState<{ row: GrupoRecuperacion; soloVer: boolean } | null>(null)
-
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState('')
+  const [ctx, setCtx] = useState<{
+    x: number
+    y: number
+    row: EtapaRecuperacion
+  } | null>(null)
+  const [modal, setModal] = useState<{
+    row: EtapaRecuperacion
+    soloVer: boolean
+  } | null>(null)
   const closeCtx = useCallback(() => setCtx(null), [])
   useEffect(() => {
     if (!ctx) return
-    const h = () => closeCtx()
-    window.addEventListener('click', h)
-    return () => window.removeEventListener('click', h)
+    window.addEventListener('click', closeCtx)
+    return () => window.removeEventListener('click', closeCtx)
   }, [ctx, closeCtx])
 
-  const { data: materias = [], isLoading: loadingMaterias } = useQuery({
-    queryKey: ['asistencia-materias'],
-    queryFn: listMateriasAsistencia,
+  const opcionesQ = useQuery({
+    queryKey: ['recuperaciones-opciones'],
+    queryFn: () => listOpcionesRecuperaciones(),
   })
-
+  const periodoActualId = opcionesQ.data?.periodo_id ?? ''
+  const periodoId = periodoSeleccionado || periodoActualId
+  const contextoQ = useQuery({
+    queryKey: ['recuperaciones-opciones-periodo', periodoId],
+    queryFn: () => listOpcionesRecuperaciones(periodoId),
+    enabled: Boolean(periodoId && periodoId !== periodoActualId),
+  })
+  const contexto =
+    periodoId === periodoActualId ? opcionesQ.data : contextoQ.data
+  const periodos = opcionesQ.data?.periodos ?? []
+  const materias = contexto?.clases ?? []
   const lastId = readLastAsignacionId()
-  const asigEffective =
+  const asignacionId =
     lastId && materias.some((m) => m.asignacion_docente_id === lastId)
       ? lastId
       : (materias[0]?.asignacion_docente_id ?? '')
-  const materiaRow = materias.find((m) => m.asignacion_docente_id === asigEffective)
-  const claseLabel = materiaRow
-    ? `${materiaRow.curso_nombre} · ${materiaRow.grado_nombre} sec${materiaRow.seccion_nombre}`
+  const materia = materias.find((m) => m.asignacion_docente_id === asignacionId)
+  const claseLabel = materia
+    ? `${materia.curso_nombre} · ${materia.grado_nombre} sec. ${materia.seccion_nombre}`
     : ''
-
-  const { data: lista, isLoading } = useQuery({
-    queryKey: ['recuperaciones', asigEffective],
-    queryFn: () => listRecuperaciones(asigEffective),
-    enabled: Boolean(asigEffective),
+  const listaQ = useQuery({
+    queryKey: ['recuperaciones', periodoId, asignacionId],
+    queryFn: () => listRecuperaciones(asignacionId, periodoId),
+    enabled: Boolean(periodoId && asignacionId),
   })
-  const grupos = useMemo(() => {
-    const porRecuperacion = new Map<string, GrupoRecuperacion>()
-    for (const fila of lista?.filas ?? []) {
-      const id = fila.tipo === 'parcial' ? `parcial-${fila.parcial_id}` : `periodo-${fila.numero}`
-      if (porRecuperacion.has(id)) continue
-      porRecuperacion.set(id, {
-        id,
-        tipo: fila.tipo,
-        parcial_id: fila.parcial_id,
-        numero: fila.numero,
-        etiqueta: fila.tipo === 'parcial'
-          ? lista?.parciales.find((p) => p.id === fila.parcial_id)?.etiqueta ?? fila.etiqueta
-          : fila.etiqueta,
-      })
-    }
-    return [...porRecuperacion.values()].sort((a, b) =>
-      a.tipo === b.tipo ? a.numero - b.numero : a.tipo === 'parcial' ? -1 : 1,
-    )
-  }, [lista])
-
+  const lista = listaQ.data
+  const grupos = lista?.etapas ?? []
+  const editable = (r: EtapaRecuperacion) =>
+    can('recuperaciones:post') && !lista?.finalizado && r.disponible
   const columns = useMemo(
     () => [
-      col.accessor('etiqueta', { header: 'Parcial / Recuperación de periodo' }),
+      col.accessor('etiqueta', { header: 'Parcial / Final' }),
+      col.accessor('disponible', {
+        header: 'Disponibilidad',
+        cell: ({ row }) =>
+          row.original.disponible
+            ? 'Disponible'
+            : row.original.mensaje || 'No disponible',
+      }),
     ],
     [],
   )
-
-  const tableFilters = useMemo(
-    () => [
-      {
-        id: 'tipo',
-        label: 'Tipo',
-        getValue: (r: GrupoRecuperacion) => r.tipo,
-        options: [
-          { value: 'parcial', label: 'De parcial' },
-          { value: 'periodo', label: 'De periodo' },
-        ],
-      },
-    ],
-    [],
-  )
-
-  if (loadingMaterias || (asigEffective && isLoading)) {
-    return (
-      <RequirePermission permission="recuperaciones:get">
-        <div className="empty-state">Cargando recuperaciones…</div>
-      </RequirePermission>
-    )
+  const cambiarPeriodo = (id: string) => {
+    setModal(null)
+    setCtx(null)
+    setPeriodoSeleccionado(id)
   }
-  if (!asigEffective || !lista) {
-    return (
-      <RequirePermission permission="recuperaciones:get">
-        <div className="empty-state" data-testid="recuperaciones-sin-clase">
-          No tienes clases asignadas.
-        </div>
-      </RequirePermission>
-    )
-  }
+  const error =
+    opcionesQ.error ||
+    (periodoId !== periodoActualId ? contextoQ.error : null) ||
+    listaQ.error
 
   return (
     <RequirePermission permission="recuperaciones:get">
       <div data-testid="recuperaciones-page">
-        {lista.finalizado ? (
-          <p className="recuperacion-aviso" data-testid="recuperaciones-finalizado">
-            El periodo está finalizado: las recuperaciones son de solo lectura.
-          </p>
-        ) : null}
-        <DataTable
-          title={`Recuperaciones · ${claseLabel}`}
-          data={grupos}
-          columns={columns}
-          filters={tableFilters}
-          canAdd={can('recuperaciones:post') && !lista.finalizado}
-          addLabel="Agregar"
-          onAdd={() => setModalOpen(true)}
-          exportFilename="recuperaciones"
-          exportRows={grupos.map((r) => ({
-            'Parcial / Recuperación de periodo': r.etiqueta,
-          }))}
-          onRowContextMenu={(row, e) => setCtx({ x: e.clientX, y: e.clientY, row })}
-          card={{
-            title: (r) => r.etiqueta,
-            testId: (r) => `recuperacion-card-${r.id}`,
-          }}
-          rowActions={(r) => {
-            const items: RowAction[] = [
-              {
-                label: 'Abrir',
-                testId: 'recuperaciones-ctx-abrir',
-                onClick: () => setModal({ row: r, soloVer: true }),
-              },
-            ]
-            if (can('recuperaciones:post') && !lista.finalizado) {
-              items.push(
-                {
-                  label: 'Editar',
-                  testId: 'recuperaciones-ctx-editar',
-                  onClick: () => setModal({ row: r, soloVer: false }),
-                },
-              )
-            }
-            return items
-          }}
-        />
+        <div className="recuperaciones-filtros">
+          <Field label="Período">
+            <Combobox
+              value={periodoId}
+              options={periodos.map((p) => ({
+                value: p.id,
+                label: p.nombre,
+              }))}
+              onChange={cambiarPeriodo}
+              disabled={opcionesQ.isLoading}
+              data-testid="recuperaciones-periodo"
+            />
+          </Field>
+        </div>
+        {opcionesQ.isLoading ||
+        (periodoId !== periodoActualId && contextoQ.isLoading) ||
+        (asignacionId && listaQ.isLoading) ? (
+          <div className="empty-state">Cargando recuperaciones…</div>
+        ) : error ? (
+          <div className="empty-state" role="alert">
+            {userMessageFromError(error)}
+          </div>
+        ) : !periodoId ? (
+          <div className="empty-state">Selecciona un período.</div>
+        ) : !asignacionId || !lista ? (
+          <div className="empty-state" data-testid="recuperaciones-sin-clase">
+            No tienes clases asignadas en este período.
+          </div>
+        ) : (
+          <>
+            {lista.finalizado ? (
+              <p
+                className="recuperacion-aviso"
+                data-testid="recuperaciones-finalizado"
+              >
+                El período está finalizado: las recuperaciones son de solo
+                lectura.
+              </p>
+            ) : null}
+            <DataTable
+              title={`Recuperaciones · ${claseLabel}`}
+              data={grupos}
+              columns={columns}
+              exportFilename="recuperaciones"
+              exportRows={grupos.map((r) => ({
+                'Parcial / Final': r.etiqueta,
+                Disponibilidad: r.disponible
+                  ? 'Disponible'
+                  : r.mensaje || 'No disponible',
+              }))}
+              onRowContextMenu={(row, e) =>
+                setCtx({ x: e.clientX, y: e.clientY, row })
+              }
+              card={{
+                title: (r) => r.etiqueta,
+                fields: (r) => [
+                  {
+                    label: 'Disponibilidad',
+                    value: r.disponible
+                      ? 'Disponible'
+                      : r.mensaje || 'No disponible',
+                  },
+                ],
+                testId: (r) => `recuperacion-card-${r.id}`,
+              }}
+              rowActions={(r) => {
+                const items: RowAction[] = [
+                  {
+                    label: 'Abrir',
+                    testId: 'recuperaciones-ctx-abrir',
+                    onClick: () => setModal({ row: r, soloVer: true }),
+                  },
+                ]
+                if (editable(r))
+                  items.push({
+                    label: 'Editar',
+                    testId: 'recuperaciones-ctx-editar',
+                    onClick: () => setModal({ row: r, soloVer: false }),
+                  })
+                return items
+              }}
+            />
+          </>
+        )}
       </div>
-
       {ctx ? (
         <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }}>
           <button
@@ -170,7 +197,7 @@ function RecuperacionesPage() {
           >
             Abrir
           </button>
-          {can('recuperaciones:post') && !lista.finalizado ? (
+          {editable(ctx.row) ? (
             <button
               type="button"
               className="ctx-menu__item"
@@ -185,18 +212,10 @@ function RecuperacionesPage() {
           ) : null}
         </div>
       ) : null}
-      {modalOpen ? (
+      {modal && lista ? (
         <RecuperacionModal
-          asignacionId={asigEffective}
-          lista={lista}
-          claseLabel={claseLabel}
-          onClose={() => setModalOpen(false)}
-        />
-      ) : null}
-
-      {modal ? (
-        <RecuperacionModal
-          asignacionId={asigEffective}
+          key={`${periodoId}-${asignacionId}-${modal.row.id}`}
+          asignacionId={asignacionId}
           lista={lista}
           claseLabel={claseLabel}
           soloVer={modal.soloVer}
@@ -209,7 +228,6 @@ function RecuperacionesPage() {
           onClose={() => setModal(null)}
         />
       ) : null}
-
     </RequirePermission>
   )
 }

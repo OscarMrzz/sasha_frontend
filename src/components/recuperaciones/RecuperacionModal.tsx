@@ -11,15 +11,19 @@ import {
   notaParcialEfectiva,
   notaPeriodoEfectiva,
 } from '#/services/recuperaciones'
-import type { CandidatoRecuperacion, ListaRecuperaciones, TipoRecuperacion } from '#/services/recuperaciones'
+import type {
+  CandidatoRecuperacion,
+  ListaRecuperaciones,
+  TipoRecuperacion,
+} from '#/services/recuperaciones'
 import { NumberInput } from '#/components/ui/NumberInput'
-
+import { useEsMovil } from '#/hooks/use-media-query'
 
 function parseNota(v: string): number | null | undefined {
   const t = v.trim()
   if (t === '') return null
   const n = Number(t.replace(',', '.'))
-  return Number.isNaN(n) ? undefined : n
+  return Number.isFinite(n) ? n : undefined
 }
 
 export function RecuperacionModal({
@@ -41,18 +45,36 @@ export function RecuperacionModal({
 }) {
   const { open, dismiss } = useDismiss(onClose)
   const qc = useQueryClient()
+  const esMovil = useEsMovil()
   const terminados = lista.parciales.filter((p) => p.terminado)
   const [tipo, setTipo] = useState<TipoRecuperacion>(inicial?.tipo ?? 'parcial')
   const [parcialId, setParcialId] = useState(
-    () => inicial?.parcialId ?? (terminados.at(-1) ?? lista.parciales.at(0))?.id ?? '',
+    () =>
+      inicial?.parcialId ??
+      (terminados.at(-1) ?? lista.parciales.at(0))?.id ??
+      '',
   )
   const [numero, setNumero] = useState(inicial?.numero ?? 1)
   const [drafts, setDrafts] = useState<Partial<Record<string, string>>>({})
   const [confirm, setConfirm] = useState(false)
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['recuperaciones-candidatos', asignacionId, tipo, parcialId, numero],
-    queryFn: () => getCandidatos(asignacionId, tipo, tipo === 'parcial' ? parcialId : undefined, tipo === 'periodo' ? numero : undefined),
+    queryKey: [
+      'recuperaciones-candidatos',
+      lista.periodo_id,
+      asignacionId,
+      tipo,
+      parcialId,
+      numero,
+    ],
+    queryFn: () =>
+      getCandidatos(
+        asignacionId,
+        tipo,
+        tipo === 'parcial' ? parcialId : undefined,
+        tipo === 'periodo' ? numero : undefined,
+        lista.periodo_id,
+      ),
     enabled: tipo === 'periodo' || Boolean(parcialId),
   })
 
@@ -63,7 +85,8 @@ export function RecuperacionModal({
     setDrafts({})
   }
 
-  const valor = (a: CandidatoRecuperacion) => drafts[a.alumno_id] ?? (a.nota != null ? String(a.nota) : '')
+  const valor = (a: CandidatoRecuperacion) =>
+    drafts[a.alumno_id] ?? (a.nota != null ? String(a.nota) : '')
 
   const cambios = (data?.alumnos ?? []).flatMap((a) => {
     const d = drafts[a.alumno_id]
@@ -88,10 +111,32 @@ export function RecuperacionModal({
         numero: tipo === 'periodo' ? numero : undefined,
         items: cambios,
       }),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       toast.success('Recuperaciones guardadas')
-      qc.setQueryData(['recuperaciones-candidatos', asignacionId, tipo, parcialId, numero], res)
-      void qc.invalidateQueries({ queryKey: ['recuperaciones', asignacionId] })
+      qc.setQueryData(
+        [
+          'recuperaciones-candidatos',
+          lista.periodo_id,
+          asignacionId,
+          tipo,
+          parcialId,
+          numero,
+        ],
+        res,
+      )
+      await Promise.all(
+        [
+          'recuperaciones',
+          'recuperaciones-candidatos',
+          'portal-calificaciones',
+          'portal-resumen',
+          'portal-resultado',
+          'portal-inicio',
+          'matricula-sugerencia',
+          'prematricula-portal',
+          'prematricula-hijos',
+        ].map((key) => qc.invalidateQueries({ queryKey: [key] })),
+      )
       setDrafts({})
       setConfirm(false)
       dismiss()
@@ -108,15 +153,53 @@ export function RecuperacionModal({
     const rec = n === undefined ? null : n
     return tipo === 'parcial'
       ? notaParcialEfectiva(a.nota_original, rec, data.tope)
-      : notaPeriodoEfectiva(a.nota_original, rec, data.tope, data.nota_minima)
+      : notaPeriodoEfectiva(a.nota_original, finales(a, rec), data.tope)
   }
 
-  const numeros = Array.from({ length: lista.config.recuperaciones_periodo }, (_, i) => i + 1)
+  const finales = (a: CandidatoRecuperacion, nota: number | null) => {
+    const notas = [...a.recuperaciones_periodo].slice(
+      0,
+      lista.config.recuperaciones_periodo,
+    )
+    notas[numero - 1] = nota
+    return notas
+  }
+  const historial = (a: CandidatoRecuperacion) => {
+    const nota = parseNota(valor(a))
+    return [
+      `Original ${a.nota_original}`,
+      ...finales(a, nota === undefined ? null : nota).flatMap((n, k) =>
+        n == null ? [] : [`Final ${k + 1}: ${n}`],
+      ),
+    ].join(' · ')
+  }
+
+  const campoNota = (a: CandidatoRecuperacion) => (
+    <NumberInput
+      type="number"
+      min={0}
+      max={100}
+      step="0.5"
+      className="field__input tarea-rev-manual"
+      data-testid={`recuperacion-nota-${a.alumno_id}`}
+      disabled={soloLectura}
+      placeholder="—"
+      value={valor(a)}
+      onChange={(e) =>
+        setDrafts((d) => ({ ...d, [a.alumno_id]: e.target.value }))
+      }
+    />
+  )
+
+  const numeros = Array.from(
+    { length: lista.config.recuperaciones_periodo },
+    (_, i) => i + 1,
+  )
 
   return (
     <Modal
       open={open}
-      title="Recuperaciones"
+      title={data?.etiqueta ?? 'Recuperaciones'}
       onClose={dismiss}
       wide
       footer={
@@ -129,7 +212,11 @@ export function RecuperacionModal({
               type="button"
               className="btn btn--primary"
               data-testid="recuperacion-guardar"
-              disabled={cambios.length === 0 || invalidos.length > 0 || guardarMut.isPending}
+              disabled={
+                cambios.length === 0 ||
+                invalidos.length > 0 ||
+                guardarMut.isPending
+              }
               onClick={() => setConfirm(true)}
             >
               Guardar
@@ -139,62 +226,76 @@ export function RecuperacionModal({
       }
     >
       <div data-testid="recuperacion-modal">
-        <p className="texto-muted" style={{ marginTop: 0, fontSize: '0.85rem' }}>
+        <p
+          className="texto-muted"
+          style={{ marginTop: 0, fontSize: '0.85rem' }}
+        >
           {claseLabel} · nota mínima {lista.config.nota_minima}
         </p>
         {lista.finalizado ? (
-          <p className="recuperacion-aviso" data-testid="recuperacion-finalizado">
+          <p
+            className="recuperacion-aviso"
+            data-testid="recuperacion-finalizado"
+          >
             El periodo está finalizado: las recuperaciones son de solo lectura.
           </p>
         ) : null}
-        <div className="recuperacion-tipo">
-          <Field label="Tipo">
-            <select
-              className="field__select"
-              data-testid="recuperacion-tipo"
-              disabled={soloVer || fijarSeleccion}
-              value={tipo}
-              onChange={(e) => cambiar(() => setTipo(e.target.value as TipoRecuperacion))}
-            >
-              <option value="parcial">Recuperación de parcial</option>
-              {numeros.length > 0 ? <option value="periodo">Recuperación de periodo</option> : null}
-            </select>
-          </Field>
-          {tipo === 'parcial' ? (
-            <Field label="Parcial">
+        {!fijarSeleccion ? (
+          <div className="recuperacion-tipo">
+            <Field label="Tipo">
               <select
                 className="field__select"
-                data-testid="recuperacion-parcial"
+                data-testid="recuperacion-tipo"
                 disabled={soloVer || fijarSeleccion}
-                value={parcialId}
-                onChange={(e) => cambiar(() => setParcialId(e.target.value))}
+                value={tipo}
+                onChange={(e) =>
+                  cambiar(() => setTipo(e.target.value as TipoRecuperacion))
+                }
               >
-                {lista.parciales.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.etiqueta}
-                    {p.terminado ? '' : ' (en curso)'}
-                  </option>
-                ))}
+                <option value="parcial">Recuperación de parcial</option>
+                {numeros.length > 0 ? (
+                  <option value="periodo">Recuperación de periodo</option>
+                ) : null}
               </select>
             </Field>
-          ) : (
-            <Field label="Recuperación">
-              <select
-                className="field__select"
-                data-testid="recuperacion-numero"
-                disabled={soloVer || fijarSeleccion}
-                value={numero}
-                onChange={(e) => cambiar(() => setNumero(Number(e.target.value)))}
-              >
-                {numeros.map((n) => (
-                  <option key={n} value={n}>
-                    Recuperación {n}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          )}
-        </div>
+            {tipo === 'parcial' ? (
+              <Field label="Parcial">
+                <select
+                  className="field__select"
+                  data-testid="recuperacion-parcial"
+                  disabled={soloVer || fijarSeleccion}
+                  value={parcialId}
+                  onChange={(e) => cambiar(() => setParcialId(e.target.value))}
+                >
+                  {lista.parciales.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.etiqueta}
+                      {p.terminado ? '' : ' (en curso)'}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : (
+              <Field label="Recuperación">
+                <select
+                  className="field__select"
+                  data-testid="recuperacion-numero"
+                  disabled={soloVer || fijarSeleccion}
+                  value={numero}
+                  onChange={(e) =>
+                    cambiar(() => setNumero(Number(e.target.value)))
+                  }
+                >
+                  {numeros.map((n) => (
+                    <option key={n} value={n}>
+                      Recuperación {n}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+          </div>
+        ) : null}
 
         {isLoading ? (
           <div className="empty-state">Cargando alumnos…</div>
@@ -210,56 +311,123 @@ export function RecuperacionModal({
           </div>
         ) : (
           <>
-            <p className="texto-muted" style={{ fontSize: '0.8rem', marginTop: 0 }}>
+            <p
+              className="texto-muted"
+              style={{ fontSize: '0.8rem', marginTop: 0 }}
+            >
               {tipo === 'parcial'
                 ? `Cuenta la nota más alta entre el parcial y la recuperación (tope ${data.tope}). Vacío quita la recuperación.`
-                : `Si la recuperación llega a ${data.nota_minima}, es la nota final (tope ${data.tope}). Vacío quita la recuperación.`}
+                : `Cuenta la nota más alta entre el promedio anual y todas las finales (tope ${data.tope}). Vacío quita la nota de esta final.`}
             </p>
-            <div className="tarea-revision-table-wrap">
-              <table className="tarea-revision-table" data-testid="recuperacion-table">
-                <thead>
-                  <tr>
-                    <th>Cuenta</th>
-                    <th>Nombre</th>
-                    <th>{tipo === 'parcial' ? 'Nota del parcial' : 'Promedio'}</th>
-                    <th>Recuperación (0–100)</th>
-                    <th>Nota que cuenta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.alumnos.map((a) => {
-                    const c = cuenta(a)
-                    return (
-                      <tr key={a.alumno_id} data-testid={`recuperacion-fila-${a.alumno_id}`}>
-                        <td>{a.codigo}</td>
-                        <td>{a.nombre}</td>
-                        <td>{a.nota_original}</td>
-                        <td>
-                          <NumberInput
-                            type="number"
-                            min={0}
-                            max={100}
-                            step="0.5"
-                            className="field__input tarea-rev-manual"
-                            data-testid={`recuperacion-nota-${a.alumno_id}`}
-                            disabled={soloLectura}
-                            placeholder="—"
-                            value={valor(a)}
-                            onChange={(e) => setDrafts((d) => ({ ...d, [a.alumno_id]: e.target.value }))}
-                          />
-                        </td>
-                        <td
-                          className={c >= data.nota_minima ? 'recuperacion-cuenta--ok' : 'recuperacion-cuenta--mal'}
-                          data-testid={`recuperacion-cuenta-${a.alumno_id}`}
+            {esMovil ? (
+              <div className="recuperacion-alumnos-cards">
+                {data.alumnos.map((a) => {
+                  const c = cuenta(a)
+                  return (
+                    <article
+                      className="recuperacion-alumno-card"
+                      key={a.alumno_id}
+                      data-testid={`recuperacion-fila-${a.alumno_id}`}
+                    >
+                      <strong>{a.nombre}</strong>
+                      <small className="texto-muted">{a.codigo}</small>
+                      <div className="recuperacion-alumno-card__notas">
+                        <span>
+                          {tipo === 'parcial'
+                            ? 'Nota normal'
+                            : 'Promedio anual'}
+                          : <strong>{a.nota_original}</strong>
+                        </span>
+                        <span
+                          className={
+                            c >= data.nota_minima
+                              ? 'recuperacion-cuenta--ok'
+                              : 'recuperacion-cuenta--mal'
+                          }
                         >
-                          {c}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          Cuenta:{' '}
+                          <strong
+                            data-testid={`recuperacion-cuenta-${a.alumno_id}`}
+                          >
+                            {c}
+                          </strong>
+                        </span>
+                      </div>
+                      <Field
+                        label={
+                          tipo === 'parcial'
+                            ? 'Recuperación (0–100)'
+                            : `Final ${numero} (0–100)`
+                        }
+                      >
+                        {campoNota(a)}
+                      </Field>
+                      {tipo === 'periodo' ? (
+                        <small className="recuperacion-historial">
+                          {historial(a)}
+                        </small>
+                      ) : null}
+                    </article>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="tarea-revision-table-wrap">
+                <table
+                  className="tarea-revision-table"
+                  data-testid="recuperacion-table"
+                >
+                  <thead>
+                    <tr>
+                      <th>Cuenta</th>
+                      <th>Nombre</th>
+                      <th>
+                        {tipo === 'parcial' ? 'Nota normal' : 'Promedio anual'}
+                      </th>
+                      <th>
+                        {tipo === 'parcial'
+                          ? 'Recuperación (0–100)'
+                          : `Final ${numero} (0–100)`}
+                      </th>
+                      <th>Nota que cuenta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.alumnos.map((a) => {
+                      const c = cuenta(a)
+                      return (
+                        <tr
+                          key={a.alumno_id}
+                          data-testid={`recuperacion-fila-${a.alumno_id}`}
+                        >
+                          <td>{a.codigo}</td>
+                          <td>
+                            {a.nombre}
+                            {tipo === 'periodo' ? (
+                              <small className="recuperacion-historial">
+                                {historial(a)}
+                              </small>
+                            ) : null}
+                          </td>
+                          <td>{a.nota_original}</td>
+                          <td>{campoNota(a)}</td>
+                          <td
+                            className={
+                              c >= data.nota_minima
+                                ? 'recuperacion-cuenta--ok'
+                                : 'recuperacion-cuenta--mal'
+                            }
+                            data-testid={`recuperacion-cuenta-${a.alumno_id}`}
+                          >
+                            {c}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </>
         )}
       </div>

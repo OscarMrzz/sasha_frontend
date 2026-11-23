@@ -36,7 +36,8 @@ export function ModoPortal({ children }: { children: ReactNode }) {
     enabled: portal && !responsable && path === '/alumno' && modoConfigurado === 'prematricula',
   })
   const navigate = useNavigate()
-  if (!portal || path === '/responsable') return children
+  const rutaResponsable = path === '/responsable' || path === '/responsable/'
+  if (!portal || rutaResponsable) return children
   if (config.isPending)
     return (
       <p className="empty-state" role="status">
@@ -67,10 +68,15 @@ export function ModoPortal({ children }: { children: ReactNode }) {
       )
     }
   }
-  if (responsable && path === '/alumno' && modo !== 'normal') {
+  if (responsable && path === '/alumno' && modo !== 'normal' && modo !== 'cierre') {
     return <Navigate to="/responsable" replace />
   }
-  if (modo === 'normal' || path === '/alumno/resultados') return children
+  if (
+    modo === 'normal' ||
+    (responsable && modo === 'cierre' && path === '/alumno') ||
+    path === '/alumno/resultados' ||
+    (responsable && modo === 'cierre' && path === '/hijo/pagos')
+  ) return children
   const verCalificaciones = (alumnoId?: string) => {
     if (alumnoId) writePortalAlumnoId(alumnoId)
     void navigate({ to: '/alumno/resultados' })

@@ -99,8 +99,8 @@ function ResponsableHomePage() {
         </div>
       ) : modo === 'cierre' ? (
         <section className="portal-home__section">
-          <h1 className="portal-home__section-title">Calificaciones</h1>
-          <ListaHijos data={data} loading={isLoading} error={isError} onChoose={elegirNotas} grades />
+          <h1 className="portal-home__section-title">Selecciona un hijo</h1>
+          <ListaHijos data={data} loading={isLoading} error={isError} onChoose={elegir} />
         </section>
       ) : <ListaHijos data={data} loading={isLoading} error={isError} onChoose={elegir} />}
       <SeguimientoPrematriculas solicitudes={seguimiento.data ?? []} loading={seguimiento.isPending} error={seguimiento.isError} />

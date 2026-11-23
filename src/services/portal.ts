@@ -219,7 +219,10 @@ export function getPortalInicio(alumnoId?: string | null) {
   return apiRequest<PortalInicio>(`/portal/inicio${alumnoQs(alumnoId)}`)
 }
 
-export function listTareasClase(asignacionId: string, alumnoId?: string | null) {
+export function listTareasClase(
+  asignacionId: string,
+  alumnoId?: string | null,
+) {
   return apiRequestList<PortalTarea>(
     `/portal/clases/${encodeURIComponent(asignacionId)}/tareas${alumnoQs(alumnoId)}`,
   )
@@ -231,7 +234,11 @@ export function getPlanClase(asignacionId: string, alumnoId?: string | null) {
   )
 }
 
-export async function downloadPlanClasePdf(asignacionId: string, nombre: string, alumnoId?: string | null) {
+export async function downloadPlanClasePdf(
+  asignacionId: string,
+  nombre: string,
+  alumnoId?: string | null,
+) {
   const res = await apiRequest<Response>(
     `/portal/clases/${encodeURIComponent(asignacionId)}/plan/pdf${alumnoQs(alumnoId)}`,
     { raw: true },
@@ -244,7 +251,10 @@ export async function downloadPlanClasePdf(asignacionId: string, nombre: string,
   URL.revokeObjectURL(url)
 }
 
-export function getCalificacionesClase(asignacionId: string, alumnoId?: string | null) {
+export function getCalificacionesClase(
+  asignacionId: string,
+  alumnoId?: string | null,
+) {
   return apiRequest<PortalCalificaciones>(
     `/portal/clases/${encodeURIComponent(asignacionId)}/calificaciones${alumnoQs(alumnoId)}`,
   )
@@ -261,7 +271,7 @@ export interface ResultadoClase {
   promedio: number
   final: number
   aprobada: boolean
-  /** Número de la recuperación de periodo con la que aprobó; 0 si no la necesitó. */
+  /** Final que aporta la mayor nota aprobada; 0 si cuenta el promedio o no aprueba. */
   recuperacion_aprobada: number
   /** [k] = nota de la recuperación de periodo k+1; null sin nota. */
   recuperaciones_periodo: (number | null)[]
@@ -299,12 +309,18 @@ export function listTareasHijo(alumnoId?: string | null) {
 }
 
 /** Ruta del binario de un adjunto en el portal (para `useArchivoAutenticado`). */
-export function adjuntoPortalArchivoPath(adjuntoId: string, alumnoId?: string | null) {
+export function adjuntoPortalArchivoPath(
+  adjuntoId: string,
+  alumnoId?: string | null,
+) {
   return `/portal/adjuntos/${encodeURIComponent(adjuntoId)}/archivo${alumnoQs(alumnoId)}`
 }
 
 /** Descarga el binario del adjunto con su nombre original (autoriza por matrícula). */
-export function descargarAdjuntoPortal(adjunto: PortalAdjunto, alumnoId?: string | null) {
+export function descargarAdjuntoPortal(
+  adjunto: PortalAdjunto,
+  alumnoId?: string | null,
+) {
   return descargarArchivo(
     adjuntoPortalArchivoPath(adjunto.id, alumnoId),
     adjunto.nombre_original,
@@ -372,7 +388,8 @@ export function subirRecibo(
   const form = new FormData()
   form.append('file', file)
   form.append('alumno_id', alumnoId)
-  if (opciones.obligacionId) form.append('obligacion_pago_id', opciones.obligacionId)
+  if (opciones.obligacionId)
+    form.append('obligacion_pago_id', opciones.obligacionId)
   if (opciones.anio) form.append('anio', String(opciones.anio))
   if (opciones.mes) form.append('mes', String(opciones.mes))
   return apiRequest<Recibo>('/portal/recibos', { method: 'POST', body: form })
