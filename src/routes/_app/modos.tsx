@@ -2,10 +2,12 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { CalendarDays, Check, ExternalLink, Globe2, GraduationCap, LockKeyhole, Save, Settings2, X } from 'lucide-react'
+import QRCode from 'qrcode'
+import { CalendarDays, Check, Copy, Download, ExternalLink, Globe2, GraduationCap, LockKeyhole, QrCode, Save, Settings2, X } from 'lucide-react'
 import { useCan } from '#/components/gates/Can'
 import { Field } from '#/components/ui/Field'
 import { Combobox } from '#/components/ui/Combobox'
+import { Modal } from '#/components/ui/Modal'
 import {
   getModos,
   getOpcionesPrematricula,
@@ -38,6 +40,10 @@ function ModosPage() {
     periodo_destino_id: null,
   })
   const [pendingMode, setPendingMode] = useState<'cierre' | 'prematricula' | null>(null)
+  const [qrOpen, setQrOpen] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState('')
+  const [publicUrl, setPublicUrl] = useState('')
+  const [qrLoading, setQrLoading] = useState(false)
   useEffect(() => {
     if (config.data) setForm(config.data)
   }, [config.data])
@@ -85,6 +91,35 @@ function ModosPage() {
     },
   ] as const
   const selectedModeTitle = modos.find((m) => m.value === form.modo)?.title ?? 'Modo normal'
+  const copyPublicUrl = async () => {
+    const url = new URL('/prematricula', window.location.origin).toString()
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success('Enlace de prematrícula copiado')
+    } catch {
+      toast.error('No se pudo copiar el enlace')
+    }
+  }
+  const showPublicQr = async () => {
+    const url = new URL('/prematricula', window.location.origin).toString()
+    setPublicUrl(url)
+    setQrOpen(true)
+    setQrLoading(true)
+    try {
+      const dataUrl = await QRCode.toDataURL(url, {
+        errorCorrectionLevel: 'M',
+        margin: 3,
+        width: 360,
+        color: { dark: '#17212b', light: '#ffffff' },
+      })
+      setQrDataUrl(dataUrl)
+    } catch {
+      toast.error('No se pudo generar el código QR')
+      setQrOpen(false)
+    } finally {
+      setQrLoading(false)
+    }
+  }
   const startModeSelection = (value: 'normal' | 'cierre' | 'prematricula') => {
     if (value === 'normal') {
       const nextForm = { ...form, modo: value, inicio: null, fin: null }
@@ -155,7 +190,14 @@ function ModosPage() {
               />
               <span className="pre-mode__top"><span className="pre-mode__icon"><m.Icon aria-hidden="true" /></span><span className="pre-mode__number">{m.number}</span></span>
               <strong>{m.title}</strong>
-              <span className="pre-mode__description">{m.desc}{m.value === 'prematricula' && <> <a className="pre-mode__public-link" href="/prematricula" target="_blank" rel="noreferrer">Abrir página pública ↗</a></>}</span>
+              <span className="pre-mode__description">{m.desc}</span>
+              {m.value === 'prematricula' && (
+                <span className="pre-mode__public-actions">
+                  <a className="pre-mode__public-link" href="/prematricula" target="_blank" rel="noreferrer">Abrir página pública <ExternalLink size={14} /></a>
+                  <button type="button" className="btn btn--secondary" onClick={() => void copyPublicUrl()}><Copy size={15} /> Copiar enlace</button>
+                  <button type="button" className="btn btn--primary" onClick={() => void showPublicQr()}><QrCode size={15} /> Ver QR</button>
+                </span>
+              )}
               <span className="pre-mode__select">{form.modo === m.value ? <><Check size={15} /> Seleccionado</> : 'Elegir modo'}</span>
             </label>
           ))}
@@ -177,6 +219,41 @@ function ModosPage() {
           </button>
         </div>
       </form>
+      <Modal
+        open={qrOpen}
+        title="Código QR de prematrícula"
+        onClose={() => setQrOpen(false)}
+        footer={
+          <>
+            <button type="button" className="btn btn--ghost" onClick={() => setQrOpen(false)}>Cerrar</button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={!qrDataUrl}
+              onClick={() => {
+                if (!qrDataUrl) return
+                const link = document.createElement('a')
+                link.href = qrDataUrl
+                link.download = 'prematricula-qr.png'
+                link.click()
+              }}
+            >
+              <Download size={17} /> Descargar PNG
+            </button>
+          </>
+        }
+      >
+        <div className="pre-qr-modal">
+          <p>Comparte este código para que las familias abran la página pública de prematrícula.</p>
+          <div className="pre-qr-modal__image">
+            {qrLoading ? <span role="status">Generando código QR…</span> : <img src={qrDataUrl} alt="Código QR para abrir la página pública de prematrícula" />}
+          </div>
+          <div className="pre-qr-modal__url">
+            <span>Enlace público</span>
+            <code>{publicUrl}</code>
+          </div>
+        </div>
+      </Modal>
       {pendingMode && (
         <div className="pre-mode-modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setPendingMode(null) }}>
           <section className="pre-mode-modal" role="dialog" aria-modal="true" aria-labelledby="pre-mode-modal-title">

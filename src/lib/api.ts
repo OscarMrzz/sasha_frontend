@@ -298,9 +298,15 @@ export function userMessageFromError(err: unknown): string {
       return 'Sesión expirada o no autenticado. Vuelve a iniciar sesión.'
     if (err.status === 403)
       return err.message || 'No tienes permiso para esta acción.'
+    if (err.status >= 500)
+      return `El servidor de Sasha respondió, pero tuvo un problema: ${err.message}`
     return err.message
   }
-  if (err instanceof TypeError) return 'No se pudo conectar con el servidor.'
+  if (err instanceof TypeError) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false)
+      return 'No tienes conexión a internet. Conéctate e inténtalo de nuevo.'
+    return 'No se pudo contactar con el servidor de Sasha. Tu dispositivo indica que tiene internet, pero el servidor no responde. Inténtalo de nuevo más tarde.'
+  }
   if (err instanceof Error) return err.message
   return 'Error inesperado'
 }

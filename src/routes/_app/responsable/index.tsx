@@ -12,6 +12,7 @@ import type { PortalObligacion } from '#/services/portal'
 import { getModos } from '#/services/prematricula'
 import { listPrematriculas, nombreSolicitud } from '#/services/prematricula'
 import type { SolicitudPrematricula } from '#/services/prematricula'
+import { userMessageFromError } from '#/lib/api'
 import { PrematriculaPortal } from '#/components/prematricula/PrematriculaPortal'
 import { SubirReciboModal } from '#/components/portal/padre/SubirReciboModal'
 import { hoyHonduras, lempiras } from '#/lib/fechas-padre'
@@ -32,7 +33,7 @@ function ResponsableHomePage() {
     enabled: responsable,
     refetchOnWindowFocus: true,
   })
-  const { data = [], isLoading, isError } = useQuery({
+  const { data = [], isLoading, isError, error: hijosError } = useQuery({
     queryKey: ['portal-hijos'],
     queryFn: listHijos,
     enabled: responsable,
@@ -44,6 +45,7 @@ function ResponsableHomePage() {
       enabled: responsable,
     })),
   })
+  const errorConsulta = config.error ?? hijosError ?? pagos.find((p) => p.isError)?.error
   const mora = data.flatMap((h, i) => {
     const obligaciones = pagos[i]?.data?.obligaciones ?? []
     const vencidas = obligaciones.filter((o) => o.estado !== 'pagado' && o.fecha_vencimiento < hoyHonduras())
@@ -69,7 +71,7 @@ function ResponsableHomePage() {
 
   return (
     <div className="maestro-hub" data-testid="responsable-home">
-      {isLoading || config.isPending || (data.length > 0 && pagos.some((p) => p.isPending)) ? <div className="empty-state">Cargando…</div> : isError || config.isError || pagos.some((p) => p.isError) ? <div className="empty-state" role="alert">Hay problemas de conexión.</div> : mora.length > 0 ? (
+      {isLoading || config.isPending || (data.length > 0 && pagos.some((p) => p.isPending)) ? <div className="empty-state">Cargando…</div> : isError || config.isError || pagos.some((p) => p.isError) ? <div className="empty-state" role="alert">{userMessageFromError(errorConsulta)}</div> : mora.length > 0 ? (
         <section className="responsable-deuda" data-testid="responsable-mora">
           <header className="responsable-deuda__heading">
             <AlertCircle size={22} aria-hidden="true" />
@@ -135,7 +137,7 @@ function SeguimientoPrematriculas({ solicitudes, loading, error }: { solicitudes
 
 function ListaHijos({ data, loading, error, onChoose, grades = false }: { data: PortalHijo[]; loading: boolean; error: boolean; onChoose: (h: PortalHijo) => void; grades?: boolean }) {
   if (loading) return <div className="empty-state">Cargando alumnos…</div>
-  if (error) return <div className="empty-state" role="alert">Hay problemas de conexión.</div>
+  if (error) return <div className="empty-state" role="alert">No se pudieron cargar los datos del servidor de Sasha. Comprueba tu conexión a internet e inténtalo de nuevo.</div>
   if (!data.length) return <div className="empty-state">No tienes alumnos a cargo registrados.</div>
   return <div className="maestro-hub__cards" data-testid="responsable-hijos">{data.map((h) => <HijoCard key={h.alumno_id} hijo={h} onClick={() => onChoose(h)} grades={grades} />)}</div>
 }
