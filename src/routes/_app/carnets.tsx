@@ -10,6 +10,7 @@ import type {
 } from '#/components/carnets/CarnetEstudiantil'
 import { RequirePermission } from '#/components/gates/Can'
 import { Combobox } from '#/components/ui/Combobox'
+import { useBovedaImage } from '#/hooks/use-boveda-image'
 import {
   exportCarnetPdf,
   exportCarnetPng,
@@ -40,6 +41,8 @@ function nombreCompleto(ficha: UserFicha): string {
 function mapCarnet(
   ficha: UserFicha | undefined,
   codigoRespaldo: string,
+  foto?: string | null,
+  logo?: string | null,
 ): CarnetAlumno | undefined {
   if (!ficha) return undefined
   const p = ficha.perfil
@@ -53,6 +56,8 @@ function mapCarnet(
     grado: mat ? `${mat.grado} ${mat.seccion}`.trim() : '—',
     jornada: mat?.modalidad ? mat.modalidad.toUpperCase() : '—',
     vigencia: mat ? `${mat.anio_lectivo} - ${mat.anio_lectivo + 1}` : '—',
+    foto: foto ?? undefined,
+    logo: logo ?? undefined,
   }
 }
 
@@ -74,6 +79,8 @@ function CarnetsPage() {
     queryFn: () => getFicha(codigo),
     enabled: Boolean(codigo),
   })
+  const foto = useBovedaImage(ficha.data?.perfil?.path_imagen)
+  const logo = useBovedaImage(institucion.data?.logo_institucion_key)
 
   const opciones = useMemo(
     () =>
@@ -88,8 +95,8 @@ function CarnetsPage() {
   )
 
   const alumno = useMemo(
-    () => mapCarnet(ficha.data, codigo),
-    [ficha.data, codigo],
+    () => mapCarnet(ficha.data, codigo, foto, logo),
+    [ficha.data, codigo, foto, logo],
   )
   const listo = Boolean(alumno) && !ficha.isPending
 

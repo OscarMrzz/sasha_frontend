@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { CarnetEstudiantil } from '#/components/carnets/CarnetEstudiantil'
 import type { CarnetAlumno, CarnetRef } from '#/components/carnets/CarnetEstudiantil'
 import { carnetSvgBlob as svgCombinadoBlob } from '#/helpers/export-carnet'
+import { apiRequest } from '#/lib/api'
 import { buildFichaPdfBlob } from '#/lib/fichaPdf'
 import type { FichaPdfOpts } from '#/lib/fichaPdf'
 import type { UserFicha } from '#/services/personas'
@@ -50,8 +51,12 @@ export async function carnetSvgBlob(
   const ref = createRef<CarnetRef>()
 
   try {
+    const foto = alumno.foto ?? (alumno.fotoKey ? await cargarFotoCarnet(alumno.fotoKey) : undefined)
+    const logo = alumno.logo ?? (alumno.logoUrl
+      ? await cargarImagenCarnet(alumno.logoUrl)
+      : alumno.logoKey ? await cargarFotoCarnet(alumno.logoKey) : undefined)
     flushSync(() => {
-      root.render(createElement(CarnetEstudiantil, { ref, alumno, institucion }))
+      root.render(createElement(CarnetEstudiantil, { ref, alumno: { ...alumno, foto, logo }, institucion }))
     })
 
     const front = ref.current?.front ?? null
@@ -62,6 +67,23 @@ export async function carnetSvgBlob(
     root.unmount()
     host.remove()
   }
+}
+
+async function cargarFotoCarnet(key: string): Promise<string> {
+  return cargarImagenCarnet(`/boveda/object?key=${encodeURIComponent(key)}`)
+}
+
+async function cargarImagenCarnet(url: string): Promise<string> {
+  const response = await apiRequest<Response>(url, { raw: true })
+  const blob = await response.blob()
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => typeof reader.result === 'string'
+      ? resolve(reader.result)
+      : reject(new Error('No se pudo preparar la foto del alumno para el carnet.'))
+    reader.onerror = () => reject(new Error('No se pudo leer la foto del alumno.'))
+    reader.readAsDataURL(blob)
+  })
 }
 
 export interface DocumentoMatriculaItem {

@@ -32,6 +32,8 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/controladores', label: 'Controladores', permission: 'users:put', icon: 'shield' },
   { to: '/mantenimiento-admin', label: 'Mantenimiento', permission: 'mantenimiento:put', icon: 'shield' },
   { to: '/matricula', label: 'Matrícula', permission: 'matricula:get', icon: 'clipboard' },
+  { to: '/prematriculas', label: 'Prematrículas', permission: 'matricula:get', icon: 'clipboard', showForRoles: ['admin', 'admin_temporal', 'director', 'consejeria', 'admisiones'] },
+  { to: '/modos', label: 'Modos institucionales', permission: 'configuracion:put', icon: 'settings', showForRoles: ['admin'] },
   { to: '/carnets', label: 'Carnets', permission: 'carnets:get', icon: 'id-card' },
   { to: '/asignacion', label: 'Asignación', permission: 'asignacion:get', icon: 'link' },
   { to: '/horarios', label: 'Horarios', permission: 'horarios:get', icon: 'calendar-days' },

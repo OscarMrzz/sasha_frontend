@@ -1,6 +1,7 @@
 import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 import { AppShell } from '#/components/layout/AppShell'
 import { hasPersistedSession } from '#/lib/session-storage'
+import { ModoPortal } from '#/components/prematricula/ModoPortal'
 
 export const Route = createFileRoute('/_app')({
   // localStorage no existe en SSR: sin esto, beforeLoad manda siempre a /login y luego el cliente corrige (parpadeo).
@@ -12,7 +13,9 @@ export const Route = createFileRoute('/_app')({
   },
   component: () => (
     <AppShell>
-      <Outlet />
+      <ModoPortal>
+        <Outlet />
+      </ModoPortal>
     </AppShell>
   ),
 })

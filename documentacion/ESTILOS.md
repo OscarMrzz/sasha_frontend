@@ -76,3 +76,17 @@ El catálogo completo, con las clases reales, vive **como comentario en `src/sty
 - El **tema claro/oscuro** se activa con `data-theme="light"` en `<html>` (lo maneja `AppShell`); cada diseño define ambos con sus tokens.
 - Los tokens (`--sasha-*`) son el puente entre el diseño y los componentes: si un diseño cambia un color, solo cambia su `tokens.css`.
 - `style1.css` reproduce exactamente el diseño anterior (antes `app.css`), incluida su decoración de fondo (`body::before`).
+
+## Reglas para asistentes por pasos (wizard)
+
+Tomar `MatriculaWizard` como referencia de estructura, controles y presentación. Los wizards nuevos y los formularios largos que se dividan en pasos deben cumplir lo siguiente:
+
+1. Mostrar el progreso y el paso actual con `WizardSteps`; organizar el contenido en paneles legibles y conservar los valores al avanzar y retroceder.
+2. Al cambiar de paso, avanzar o volver, desplazar el contenido del modal/página al inicio para que el usuario note el cambio de vista.
+3. Usar `Field` y los controles oficiales (`field__input`, `field__select`, `field__textarea`, `Combobox`). No usar la clase genérica `input` en campos de formularios: deja controles sin el borde, contraste y altura establecidos. Para opciones con catálogo, usar `Combobox` cuando se necesite escribir para filtrar; el texto inicial debe indicar que es un selector (por ejemplo, «Seleccionar período»), y el filtrado ocurre al abrirlo.
+4. En móvil, el botón principal **Siguiente/Guardar/Enviar** va encima de **Cancelar** y **Anterior**. Los botones de navegación ocupan el ancho completo. En escritorio conservan la disposición estándar del wizard.
+5. Mantener campos, tarjetas, botones repetibles y textos dentro del ancho del panel: usar `min-width: 0`, `box-sizing: border-box` y controles con `width: 100%` cuando estén en grids o bloques repetibles.
+6. Para listas opcionales como alergias o condiciones especiales, preguntar primero si existen. Al responder sí, mostrar un campo independiente por elemento, botón **Más** de ancho completo para añadir y una **X** accesible por fila para quitarlo. No pedir listas separadas por comas.
+7. Colocar la fotografía cerca del final del proceso, después de los datos del alumno, historial, datos académicos y responsables, y antes de recibos/confirmación. Mantenerla opcional si el flujo no requiere foto obligatoria.
+8. Cuando una elección del catálogo tenga detalles necesarios para decidir (por ejemplo, modalidad), mostrarlos junto a la selección con nombres comprensibles y datos completos relevantes, como hora de inicio/finalización y días.
+9. En pasos móviles, no depender solo del nombre de una opción o de su abreviatura: presentar resúmenes claros de la selección.

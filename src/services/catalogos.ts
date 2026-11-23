@@ -28,6 +28,7 @@ export interface Modalidad {
   nombre: string
   hora_inicio: string
   hora_fin: string
+  dias?: number[]
   status: string
   detalles?: string
   duracion_hora_clase_minutos: number

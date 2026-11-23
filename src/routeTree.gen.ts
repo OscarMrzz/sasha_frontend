@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MantenimientoRouteImport } from './routes/mantenimiento'
+import { Route as PrematriculaRouteImport } from './routes/prematricula'
 import { Route as AppActualizacionesRouteImport } from './routes/_app/actualizaciones'
 import { Route as AppAlumnosRouteImport } from './routes/_app/alumnos'
 import { Route as AppAnaliticaPagosRouteImport } from './routes/_app/analitica-pagos'
@@ -35,12 +36,14 @@ import { Route as AppMantenimientoAdminRouteImport } from './routes/_app/manteni
 import { Route as AppMatriculaRouteImport } from './routes/_app/matricula'
 import { Route as AppMiPerfilRouteImport } from './routes/_app/mi-perfil'
 import { Route as AppModoExamenRouteImport } from './routes/_app/modo-examen'
+import { Route as AppModosRouteImport } from './routes/_app/modos'
 import { Route as AppMonitoresRouteImport } from './routes/_app/monitores'
 import { Route as AppNotificacionesAdminRouteImport } from './routes/_app/notificaciones-admin'
 import { Route as AppPadresRouteImport } from './routes/_app/padres'
 import { Route as AppPagosRouteImport } from './routes/_app/pagos'
 import { Route as AppPersonasRouteImport } from './routes/_app/personas'
 import { Route as AppPlanEstudioRouteImport } from './routes/_app/plan-estudio'
+import { Route as AppPrematriculasRouteImport } from './routes/_app/prematriculas'
 import { Route as AppRecibosRouteImport } from './routes/_app/recibos'
 import { Route as AppRecuperacionesRouteImport } from './routes/_app/recuperaciones'
 import { Route as AppReportesExamenRouteImport } from './routes/_app/reportes-examen'
@@ -104,6 +107,11 @@ const LoginRoute = LoginRouteImport.update({
 const MantenimientoRoute = MantenimientoRouteImport.update({
   id: '/mantenimiento',
   path: '/mantenimiento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrematriculaRoute = PrematriculaRouteImport.update({
+  id: '/prematricula',
+  path: '/prematricula',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppActualizacionesRoute = AppActualizacionesRouteImport.update({
@@ -216,6 +224,11 @@ const AppModoExamenRoute = AppModoExamenRouteImport.update({
   path: '/modo-examen',
   getParentRoute: () => AppRoute,
 } as any)
+const AppModosRoute = AppModosRouteImport.update({
+  id: '/modos',
+  path: '/modos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMonitoresRoute = AppMonitoresRouteImport.update({
   id: '/monitores',
   path: '/monitores',
@@ -244,6 +257,11 @@ const AppPersonasRoute = AppPersonasRouteImport.update({
 const AppPlanEstudioRoute = AppPlanEstudioRouteImport.update({
   id: '/plan-estudio',
   path: '/plan-estudio',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrematriculasRoute = AppPrematriculasRouteImport.update({
+  id: '/prematriculas',
+  path: '/prematriculas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRecibosRoute = AppRecibosRouteImport.update({
@@ -478,6 +496,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/mantenimiento': typeof MantenimientoRoute
+  '/prematricula': typeof PrematriculaRoute
   '/actualizaciones': typeof AppActualizacionesRoute
   '/alumnos': typeof AppAlumnosRoute
   '/analitica-pagos': typeof AppAnaliticaPagosRoute
@@ -500,12 +519,14 @@ export interface FileRoutesByFullPath {
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
   '/modo-examen': typeof AppModoExamenRouteWithChildren
+  '/modos': typeof AppModosRoute
   '/monitores': typeof AppMonitoresRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/padres': typeof AppPadresRoute
   '/pagos': typeof AppPagosRoute
   '/personas': typeof AppPersonasRoute
   '/plan-estudio': typeof AppPlanEstudioRoute
+  '/prematriculas': typeof AppPrematriculasRoute
   '/recibos': typeof AppRecibosRoute
   '/recuperaciones': typeof AppRecuperacionesRoute
   '/reportes-examen': typeof AppReportesExamenRoute
@@ -556,6 +577,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/mantenimiento': typeof MantenimientoRoute
+  '/prematricula': typeof PrematriculaRoute
   '/actualizaciones': typeof AppActualizacionesRoute
   '/alumnos': typeof AppAlumnosRoute
   '/analitica-pagos': typeof AppAnaliticaPagosRoute
@@ -578,12 +600,14 @@ export interface FileRoutesByTo {
   '/matricula': typeof AppMatriculaRoute
   '/mi-perfil': typeof AppMiPerfilRoute
   '/modo-examen': typeof AppModoExamenRouteWithChildren
+  '/modos': typeof AppModosRoute
   '/monitores': typeof AppMonitoresRoute
   '/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/padres': typeof AppPadresRoute
   '/pagos': typeof AppPagosRoute
   '/personas': typeof AppPersonasRoute
   '/plan-estudio': typeof AppPlanEstudioRoute
+  '/prematriculas': typeof AppPrematriculasRoute
   '/recibos': typeof AppRecibosRoute
   '/recuperaciones': typeof AppRecuperacionesRoute
   '/reportes-examen': typeof AppReportesExamenRoute
@@ -636,6 +660,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/mantenimiento': typeof MantenimientoRoute
+  '/prematricula': typeof PrematriculaRoute
   '/_app/actualizaciones': typeof AppActualizacionesRoute
   '/_app/alumnos': typeof AppAlumnosRoute
   '/_app/analitica-pagos': typeof AppAnaliticaPagosRoute
@@ -658,12 +683,14 @@ export interface FileRoutesById {
   '/_app/matricula': typeof AppMatriculaRoute
   '/_app/mi-perfil': typeof AppMiPerfilRoute
   '/_app/modo-examen': typeof AppModoExamenRouteWithChildren
+  '/_app/modos': typeof AppModosRoute
   '/_app/monitores': typeof AppMonitoresRoute
   '/_app/notificaciones-admin': typeof AppNotificacionesAdminRoute
   '/_app/padres': typeof AppPadresRoute
   '/_app/pagos': typeof AppPagosRoute
   '/_app/personas': typeof AppPersonasRoute
   '/_app/plan-estudio': typeof AppPlanEstudioRoute
+  '/_app/prematriculas': typeof AppPrematriculasRoute
   '/_app/recibos': typeof AppRecibosRoute
   '/_app/recuperaciones': typeof AppRecuperacionesRoute
   '/_app/reportes-examen': typeof AppReportesExamenRoute
@@ -716,6 +743,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/mantenimiento'
+    | '/prematricula'
     | '/actualizaciones'
     | '/alumnos'
     | '/analitica-pagos'
@@ -738,12 +766,14 @@ export interface FileRouteTypes {
     | '/matricula'
     | '/mi-perfil'
     | '/modo-examen'
+    | '/modos'
     | '/monitores'
     | '/notificaciones-admin'
     | '/padres'
     | '/pagos'
     | '/personas'
     | '/plan-estudio'
+    | '/prematriculas'
     | '/recibos'
     | '/recuperaciones'
     | '/reportes-examen'
@@ -794,6 +824,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/mantenimiento'
+    | '/prematricula'
     | '/actualizaciones'
     | '/alumnos'
     | '/analitica-pagos'
@@ -816,12 +847,14 @@ export interface FileRouteTypes {
     | '/matricula'
     | '/mi-perfil'
     | '/modo-examen'
+    | '/modos'
     | '/monitores'
     | '/notificaciones-admin'
     | '/padres'
     | '/pagos'
     | '/personas'
     | '/plan-estudio'
+    | '/prematriculas'
     | '/recibos'
     | '/recuperaciones'
     | '/reportes-examen'
@@ -873,6 +906,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/mantenimiento'
+    | '/prematricula'
     | '/_app/actualizaciones'
     | '/_app/alumnos'
     | '/_app/analitica-pagos'
@@ -895,12 +929,14 @@ export interface FileRouteTypes {
     | '/_app/matricula'
     | '/_app/mi-perfil'
     | '/_app/modo-examen'
+    | '/_app/modos'
     | '/_app/monitores'
     | '/_app/notificaciones-admin'
     | '/_app/padres'
     | '/_app/pagos'
     | '/_app/personas'
     | '/_app/plan-estudio'
+    | '/_app/prematriculas'
     | '/_app/recibos'
     | '/_app/recuperaciones'
     | '/_app/reportes-examen'
@@ -953,6 +989,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   MantenimientoRoute: typeof MantenimientoRoute
+  PrematriculaRoute: typeof PrematriculaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -983,6 +1020,13 @@ declare module '@tanstack/react-router' {
       path: '/mantenimiento'
       fullPath: '/mantenimiento'
       preLoaderRoute: typeof MantenimientoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prematricula': {
+      id: '/prematricula'
+      path: '/prematricula'
+      fullPath: '/prematricula'
+      preLoaderRoute: typeof PrematriculaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/actualizaciones': {
@@ -1139,6 +1183,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppModoExamenRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/modos': {
+      id: '/_app/modos'
+      path: '/modos'
+      fullPath: '/modos'
+      preLoaderRoute: typeof AppModosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/monitores': {
       id: '/_app/monitores'
       path: '/monitores'
@@ -1179,6 +1230,13 @@ declare module '@tanstack/react-router' {
       path: '/plan-estudio'
       fullPath: '/plan-estudio'
       preLoaderRoute: typeof AppPlanEstudioRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/prematriculas': {
+      id: '/_app/prematriculas'
+      path: '/prematriculas'
+      fullPath: '/prematriculas'
+      preLoaderRoute: typeof AppPrematriculasRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/recibos': {
@@ -1545,12 +1603,14 @@ interface AppRouteChildren {
   AppMatriculaRoute: typeof AppMatriculaRoute
   AppMiPerfilRoute: typeof AppMiPerfilRoute
   AppModoExamenRoute: typeof AppModoExamenRouteWithChildren
+  AppModosRoute: typeof AppModosRoute
   AppMonitoresRoute: typeof AppMonitoresRoute
   AppNotificacionesAdminRoute: typeof AppNotificacionesAdminRoute
   AppPadresRoute: typeof AppPadresRoute
   AppPagosRoute: typeof AppPagosRoute
   AppPersonasRoute: typeof AppPersonasRoute
   AppPlanEstudioRoute: typeof AppPlanEstudioRoute
+  AppPrematriculasRoute: typeof AppPrematriculasRoute
   AppRecibosRoute: typeof AppRecibosRoute
   AppRecuperacionesRoute: typeof AppRecuperacionesRoute
   AppReportesExamenRoute: typeof AppReportesExamenRoute
@@ -1619,12 +1679,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppMatriculaRoute: AppMatriculaRoute,
   AppMiPerfilRoute: AppMiPerfilRoute,
   AppModoExamenRoute: AppModoExamenRouteWithChildren,
+  AppModosRoute: AppModosRoute,
   AppMonitoresRoute: AppMonitoresRoute,
   AppNotificacionesAdminRoute: AppNotificacionesAdminRoute,
   AppPadresRoute: AppPadresRoute,
   AppPagosRoute: AppPagosRoute,
   AppPersonasRoute: AppPersonasRoute,
   AppPlanEstudioRoute: AppPlanEstudioRoute,
+  AppPrematriculasRoute: AppPrematriculasRoute,
   AppRecibosRoute: AppRecibosRoute,
   AppRecuperacionesRoute: AppRecuperacionesRoute,
   AppReportesExamenRoute: AppReportesExamenRoute,
@@ -1677,6 +1739,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   MantenimientoRoute: MantenimientoRoute,
+  PrematriculaRoute: PrematriculaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,4 +1,5 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import {
   BarChart3,
   BookOpen,
@@ -36,6 +37,7 @@ import { clearPortalContext, usePortalClase } from '#/lib/portal-context'
 import { logout } from '#/services/auth'
 import { toast } from 'sonner'
 import { useMiFoto } from '#/hooks/use-mi-foto'
+import { getModos } from '#/services/prematricula'
 
 const ATAJO_BUSCADOR = atajosTeclado.atajos.find((a) => a.id === 'abrir-buscador-comandos')
 const BUSCADOR_ACTIVO = ATAJO_BUSCADOR?.activo ?? false
@@ -53,7 +55,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith('/hijo/') ||
     pathname.startsWith('/alumno/')
   const maestro = isMaestroRole(roles)
+  const esAdmin = roles.includes('admin')
   const portal = isPortalRole(roles)
+  const modoInstitucional = useQuery({ queryKey: ['modos-institucion'], queryFn: getModos, enabled: portal, refetchOnWindowFocus: false })
+  const portalRestringido = portal && roles.length === 1 && (modoInstitucional.data?.modo_efectivo ?? modoInstitucional.data?.modo ?? 'normal') !== 'normal'
   const supervisionExamen = puedeSupervisarExamenes(roles) && can('examenes:get')
   const permiteModoExamen = maestro || supervisionExamen
   const rutaModoExamen = maestro ? '/maestro/examenes' : '/modo-examen'
@@ -76,7 +81,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const fotoSrc = useMiFoto()
   const [paletteOpen, setPaletteOpen] = useState(false)
 
+  useEffect(() => {
+    setCollapsed(!esAdmin)
+  }, [esAdmin])
+
   const items = useMemo(() => {
+    if (portalRestringido) return []
     type Item = {
       to: string
       label: string
@@ -120,7 +130,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return permitted.filter((item) =>
       isExamenMode ? examRoutes.has(item.to) : !examRoutes.has(item.to),
     )
-  }, [can, roles, maestro, portal, navigate, isExamenMode])
+  }, [can, roles, maestro, portal, navigate, isExamenMode, portalRestringido])
 
   const comandos = useMemo<Comando[]>(() => {
     const navegar: Comando[] = items.map((item) => ({
@@ -417,16 +427,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-label="Navegación principal"
           >
             <div className="sidebar-toolbar">
-              <button
-                type="button"
-                className="sidebar-toolbar__collapse"
-                onClick={() => setCollapsed((c) => !c)}
-                aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
-                title={collapsed ? 'Expandir' : 'Colapsar'}
-                data-testid="sidebar-collapse"
-              >
-                {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
-              </button>
+              {!esAdmin && (
+                <button
+                  type="button"
+                  className="sidebar-toolbar__collapse"
+                  onClick={() => setCollapsed((c) => !c)}
+                  aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+                  title={collapsed ? 'Expandir' : 'Colapsar'}
+                  data-testid="sidebar-collapse"
+                >
+                  {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+                </button>
+              )}
             </div>
 
             {portal && portalClase ? (

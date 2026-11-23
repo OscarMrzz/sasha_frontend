@@ -13,6 +13,14 @@ export interface CarnetAlumno {
   grado: string
   jornada: string
   vigencia: string
+  /** Imagen ya resuelta para mostrar en pantalla o incrustada en el SVG. */
+  foto?: string
+  /** Clave de la imagen en la bóveda; se resuelve al generar el SVG descargable. */
+  fotoKey?: string
+  /** Logo institucional ya resuelto, o su clave/URL para incluirlo al exportar. */
+  logo?: string
+  logoKey?: string
+  logoUrl?: string
 }
 
 export interface CarnetRef {
@@ -54,15 +62,15 @@ const CARNET_LABEL_STYLE = `
 `
 
 const FRONT_STYLE = `
-  .carnet-card-title { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 800; fill: #ffffff; text-anchor: middle; letter-spacing: 1px; }
+  .carnet-card-title { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; fill: #ffffff; text-anchor: middle; letter-spacing: .35px; }
   .carnet-card-subtitle { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; fill: #ffffff; opacity: 0.9; text-anchor: middle; letter-spacing: 2px; }
-  .carnet-student-name { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 800; fill: #0f172a; text-anchor: middle; }
+  .carnet-student-name { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 800; fill: #0f172a; text-anchor: middle; }
   .carnet-student-role { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; fill: #e11d48; text-anchor: middle; letter-spacing: 2px; }
 ${CARNET_LABEL_STYLE}
 `
 
 const BACK_STYLE = `
-  .carnet-back-title { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 800; fill: #ffffff; text-anchor: middle; letter-spacing: 1px; }
+  .carnet-back-title { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; fill: #ffffff; text-anchor: middle; letter-spacing: .35px; }
   .carnet-back-subtitle { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 600; fill: #ffffff; opacity: 0.8; text-anchor: middle; letter-spacing: 1px; }
   .carnet-back-text { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; fill: #475569; }
   .carnet-back-brand { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; fill: #ffffff; text-anchor: middle; letter-spacing: 4px; opacity: 0.92; }
@@ -72,6 +80,22 @@ ${CARNET_LABEL_STYLE}
 function limpiar(v: string | undefined, fallback: string) {
   const t = v?.trim()
   return t ? t : fallback
+}
+
+function envolverTexto(texto: string, maxCaracteres: number): string[] {
+  const palabras = texto.trim().split(/\s+/).filter(Boolean)
+  const lineas: string[] = []
+  let linea = ''
+  for (const palabra of palabras) {
+    if (linea && `${linea} ${palabra}`.length > maxCaracteres) {
+      lineas.push(linea)
+      linea = palabra
+    } else {
+      linea = linea ? `${linea} ${palabra}` : palabra
+    }
+  }
+  if (linea) lineas.push(linea)
+  return lineas.length ? lineas : ['']
 }
 
 export const CarnetEstudiantil = memo(
@@ -107,6 +131,14 @@ export const CarnetEstudiantil = memo(
     const lineaInstitucion = instNombre
       ? `Inst. Educativa ${instNombre}`
       : 'institución'
+    const lineasInstitucion = envolverTexto(tituloInstitucion, 38)
+    const lineasAlumno = envolverTexto(nombre, 28)
+    const lineasInstitucionUso = envolverTexto(`de la ${lineaInstitucion}.`, 46)
+    const nombreY = 318 - (lineasAlumno.length - 1) * 11
+    const rolY = nombreY + lineasAlumno.length * 22
+    const separadorY = rolY + 20
+    const datosY = separadorY + 37
+    const logoInstitucion = alumno?.logo || LOGO_PLACEHOLDER
 
     const fecha = (fechaEmision ?? '').trim() || formatearFecha(new Date())
 
@@ -156,19 +188,21 @@ export const CarnetEstudiantil = memo(
               />
 
               {/* Encabezado / Contenedor del Logo */}
-              <g transform="translate(190, 22)">
+              <g transform="translate(190, 12)">
                 <image
                   id="front-logo-img"
-                  x="-24"
+                  x="-18"
                   y="0"
-                  width="48"
-                  height="48"
-                  href={LOGO_PLACEHOLDER}
+                  width="36"
+                  height="36"
+                  href={logoInstitucion}
                 />
-                <text y="66" className="carnet-card-title">
-                  {tituloInstitucion}
+                <text y="52" className="carnet-card-title">
+                  {lineasInstitucion.map((linea, index) => (
+                    <tspan key={index} x="0" dy={index === 0 ? 0 : 17}>{linea}</tspan>
+                  ))}
                 </text>
-                <text y="82" className="carnet-card-subtitle">
+                <text y={52 + lineasInstitucion.length * 17 + 2} className="carnet-card-subtitle">
                   INSTITUCIÓN EDUCATIVA
                 </text>
               </g>
@@ -178,38 +212,48 @@ export const CarnetEstudiantil = memo(
               <circle cx="190" cy="200" r="72" fill="#ffffff" />
               <circle cx="190" cy="200" r="68" fill="#e2e8f0" />
 
-              {/* Avatar Ilustrado de Muestra (se conserva tal cual) */}
-              <g clipPath="url(#avatar-clip)">
-                <circle cx="190" cy="180" r="28" fill="#475569" />
-                <path
-                  d="M 140 240 C 140 200, 240 200, 240 240 Z"
-                  fill="#334155"
+              {alumno?.foto ? (
+                <image
+                  href={alumno.foto}
+                  x="122"
+                  y="132"
+                  width="136"
+                  height="136"
+                  clipPath="url(#avatar-clip)"
+                  preserveAspectRatio="xMidYMid slice"
                 />
-              </g>
+              ) : (
+                <g clipPath="url(#avatar-clip)">
+                  <circle cx="190" cy="180" r="28" fill="#475569" />
+                  <path d="M 140 240 C 140 200, 240 200, 240 240 Z" fill="#334155" />
+                </g>
+              )}
 
               {/* Información del Estudiante */}
               <text
                 x="190"
-                y="318"
+                y={nombreY}
                 id="svg-txt-name"
                 className="carnet-student-name"
               >
-                {nombre}
+                {lineasAlumno.map((linea, index) => (
+                  <tspan key={index} x="190" dy={index === 0 ? 0 : 22}>{linea}</tspan>
+                ))}
               </text>
-              <text x="190" y="338" className="carnet-student-role">
+              <text x="190" y={rolY} className="carnet-student-role">
                 ESTUDIANTE
               </text>
 
               <line
                 x1="40"
-                y1="358"
+                y1={separadorY}
                 x2="340"
-                y2="358"
+                y2={separadorY}
                 stroke="#f1f5f9"
                 strokeWidth="2"
               />
 
-              <g transform="translate(50, 395)">
+              <g transform={`translate(50, ${datosY})`}>
                 <text x="0" y="0" className="carnet-label">
                   CÓDIGO:
                 </text>
@@ -294,12 +338,14 @@ export const CarnetEstudiantil = memo(
                   y="0"
                   width="36"
                   height="36"
-                  href={LOGO_PLACEHOLDER}
+                  href={logoInstitucion}
                 />
-                <text x="0" y="52" className="carnet-back-title">
-                  {tituloInstitucion}
+                <text x="0" y="48" className="carnet-back-title">
+                  {lineasInstitucion.map((linea, index) => (
+                    <tspan key={index} x="0" dy={index === 0 ? 0 : 15}>{linea}</tspan>
+                  ))}
                 </text>
-                <text x="0" y="66" className="carnet-back-subtitle">
+                <text x="0" y={48 + lineasInstitucion.length * 15 + 3} className="carnet-back-subtitle">
                   CARNET OFICIAL
                 </text>
               </g>
@@ -316,9 +362,11 @@ export const CarnetEstudiantil = memo(
                   • Acredita al portador como estudiante activo
                 </text>
                 <text x="0" y="64" className="carnet-back-text">
-                  {`  de la ${lineaInstitucion}.`}
+                  {lineasInstitucionUso.map((linea, index) => (
+                    <tspan key={index} x="0" dy={index === 0 ? 0 : 17}>{linea}</tspan>
+                  ))}
                 </text>
-                <text x="0" y="86" className="carnet-back-text">
+                <text x="0" y={64 + lineasInstitucionUso.length * 17 + 5} className="carnet-back-text">
                   • En caso de extravío, notificar a secretaría.
                 </text>
               </g>

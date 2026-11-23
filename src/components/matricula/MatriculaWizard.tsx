@@ -354,6 +354,7 @@ function mapCarnetAlumno(ficha: UserFicha): CarnetAlumno {
     grado: m ? [m.grado, m.seccion].filter(Boolean).join(' ') : '',
     jornada: m?.modalidad ? m.modalidad.toUpperCase() : '',
     vigencia: m ? `${m.anio_lectivo} - ${m.anio_lectivo + 1}` : '',
+    fotoKey: p?.path_imagen ?? undefined,
   }
 }
 
@@ -1392,10 +1393,12 @@ export function MatriculaWizard({
         const ficha = await getFicha(code).catch(() => null)
 
         let institucion = 'INSTITUCIÓN EDUCATIVA'
+        let logoInstitucionKey: string | undefined
         try {
           const inst = await getInstitucion()
           if (inst.nombre_institucion.trim())
             institucion = inst.nombre_institucion.trim()
+          logoInstitucionKey = inst.logo_institucion_key
         } catch {
           /* fallback a «INSTITUCIÓN EDUCATIVA» */
         }
@@ -1415,7 +1418,9 @@ export function MatriculaWizard({
           }
         }
 
-        const carnetAlumno = ficha ? mapCarnetAlumno(ficha) : null
+        const carnetAlumno = ficha
+          ? { ...mapCarnetAlumno(ficha), logoKey: logoInstitucionKey }
+          : null
 
         const { blob, filename, avisos } = await generarDocumentosMatricula({
           nombreAlumno: fullName(alumno),
