@@ -44,9 +44,12 @@ export interface OpcionesRecuperaciones {
     curso_nombre: string
     grado_nombre: string
     seccion_nombre: string
+    maestro_nombre: string
     periodo_academico_id: string
   }[]
 }
+
+export type ClaseRecuperacion = OpcionesRecuperaciones['clases'][number]
 
 export interface FilaRecuperacion {
   alumno_id: string

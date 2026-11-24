@@ -22,7 +22,8 @@ export const Route = createFileRoute('/_app/recuperaciones')({
 const col = createColumnHelper<EtapaRecuperacion>()
 
 function RecuperacionesPage() {
-  const { can } = useCan()
+  const { can, roles } = useCan()
+  const esMaestro = roles.includes('maestro')
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState('')
   const [ctx, setCtx] = useState<{
     x: number
@@ -217,7 +218,9 @@ function RecuperacionesPage() {
           key={`${periodoId}-${asignacionId}-${modal.row.id}`}
           asignacionId={asignacionId}
           lista={lista}
+          clases={materias}
           claseLabel={claseLabel}
+          esMaestro={esMaestro}
           soloVer={modal.soloVer}
           fijarSeleccion
           inicial={{

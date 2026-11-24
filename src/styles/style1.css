@@ -3225,6 +3225,63 @@ input.field__input,
   gap: 0 0.75rem;
 }
 
+.recuperacion-clase-filtros {
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  min-width: 0;
+  border: 1px solid var(--sasha-border-suave);
+  border-radius: 0.75rem;
+  background: var(--sasha-bg-raised);
+}
+
+.recuperacion-clase-filtros__titulo {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+}
+
+.recuperacion-clase-filtros__campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1rem 1.25rem;
+  min-width: 0;
+}
+
+.recuperacion-clase-filtros__campos > * {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.recuperacion-clase-filtros__campos .combobox,
+.recuperacion-clase-filtros__campos .combobox__control,
+.recuperacion-clase-filtros__campos .combobox__input {
+  width: 100%;
+  min-width: 0;
+}
+
+.recuperacion-clase-filtros__seleccion {
+  margin: 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--sasha-border-suave);
+  color: var(--sasha-texto-muted);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .recuperacion-clase-filtros {
+    padding: 1rem;
+  }
+
+  .recuperacion-clase-filtros__campos {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+}
+
 .recuperaciones-filtros {
   width: min(100%, 26rem);
   margin-bottom: 1.25rem;

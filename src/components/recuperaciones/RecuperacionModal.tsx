@@ -2,17 +2,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '#/components/ui/ConfirmDialog'
+import { Combobox } from '#/components/ui/Combobox'
 import { Field } from '#/components/ui/Field'
 import { Modal, useDismiss } from '#/components/ui/Modal'
 import { userMessageFromError } from '#/lib/api'
 import {
   getCandidatos,
   guardarRecuperaciones,
+  listRecuperaciones,
   notaParcialEfectiva,
   notaPeriodoEfectiva,
 } from '#/services/recuperaciones'
 import type {
   CandidatoRecuperacion,
+  ClaseRecuperacion,
   ListaRecuperaciones,
   TipoRecuperacion,
 } from '#/services/recuperaciones'
@@ -29,7 +32,9 @@ function parseNota(v: string): number | null | undefined {
 export function RecuperacionModal({
   asignacionId,
   lista,
+  clases,
   claseLabel,
+  esMaestro,
   soloVer = false,
   fijarSeleccion = false,
   inicial,
@@ -37,7 +42,9 @@ export function RecuperacionModal({
 }: {
   asignacionId: string
   lista: ListaRecuperaciones
+  clases: ClaseRecuperacion[]
   claseLabel: string
+  esMaestro: boolean
   soloVer?: boolean
   fijarSeleccion?: boolean
   inicial?: { tipo?: TipoRecuperacion; parcialId?: string; numero?: number }
@@ -47,6 +54,16 @@ export function RecuperacionModal({
   const qc = useQueryClient()
   const esMovil = useEsMovil()
   const terminados = lista.parciales.filter((p) => p.terminado)
+  const claseInicial = clases.find(
+    (c) => c.asignacion_docente_id === asignacionId,
+  )
+  const [grado, setGrado] = useState(claseInicial?.grado_nombre ?? '')
+  const [seccion, setSeccion] = useState(claseInicial?.seccion_nombre ?? '')
+  const [materia, setMateria] = useState(claseInicial?.curso_nombre ?? '')
+  const [maestro, setMaestro] = useState(
+    esMaestro ? '' : (claseInicial?.maestro_nombre ?? ''),
+  )
+  const [asignacionActiva, setAsignacionActiva] = useState(asignacionId)
   const [tipo, setTipo] = useState<TipoRecuperacion>(inicial?.tipo ?? 'parcial')
   const [parcialId, setParcialId] = useState(
     () =>
@@ -58,27 +75,75 @@ export function RecuperacionModal({
   const [drafts, setDrafts] = useState<Partial<Record<string, string>>>({})
   const [confirm, setConfirm] = useState(false)
 
+  const clasesGrado = clases.filter((c) => !grado || c.grado_nombre === grado)
+  const clasesSeccion = clasesGrado.filter(
+    (c) => !seccion || c.seccion_nombre === seccion,
+  )
+  const clasesMateria = clasesSeccion.filter(
+    (c) => !materia || c.curso_nombre === materia,
+  )
+  const claseActiva = clases.find(
+    (c) => c.asignacion_docente_id === asignacionActiva,
+  )
+  const listaClaseQ = useQuery({
+    queryKey: ['recuperaciones', lista.periodo_id, asignacionActiva],
+    queryFn: () => listRecuperaciones(asignacionActiva, lista.periodo_id),
+    enabled: Boolean(asignacionActiva && asignacionActiva !== asignacionId),
+  })
+  const listaActiva =
+    asignacionActiva === asignacionId ? lista : listaClaseQ.data
+  const listaCargando =
+    asignacionActiva !== asignacionId && listaClaseQ.isLoading
+  const config = listaActiva?.config ?? lista.config
+  const claseActivaLabel = claseActiva
+    ? `${claseActiva.curso_nombre} · ${claseActiva.grado_nombre} sec. ${claseActiva.seccion_nombre} · ${claseActiva.maestro_nombre}`
+    : claseLabel
+
+  const seleccionarClase = (filtros: {
+    grado: string
+    seccion: string
+    materia: string
+    maestro: string
+  }) => {
+    const opciones = clases.filter(
+      (c) =>
+        (!filtros.grado || c.grado_nombre === filtros.grado) &&
+        (!filtros.seccion || c.seccion_nombre === filtros.seccion) &&
+        (!filtros.materia || c.curso_nombre === filtros.materia) &&
+        (esMaestro || !filtros.maestro || c.maestro_nombre === filtros.maestro),
+    )
+    if (opciones[0]) setAsignacionActiva(opciones[0].asignacion_docente_id)
+    setDrafts({})
+  }
+
+  const opcionesUnicas = (valores: string[]) =>
+    [...new Set(valores.filter(Boolean))].map((v) => ({ value: v, label: v }))
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: [
       'recuperaciones-candidatos',
       lista.periodo_id,
-      asignacionId,
+      asignacionActiva,
       tipo,
       parcialId,
       numero,
     ],
     queryFn: () =>
       getCandidatos(
-        asignacionId,
+        asignacionActiva,
         tipo,
         tipo === 'parcial' ? parcialId : undefined,
         tipo === 'periodo' ? numero : undefined,
         lista.periodo_id,
       ),
-    enabled: tipo === 'periodo' || Boolean(parcialId),
+    enabled:
+      Boolean(listaActiva) &&
+      !listaCargando &&
+      (tipo === 'periodo' || Boolean(parcialId)),
   })
 
-  const soloLectura = soloVer || lista.finalizado || !data?.disponible
+  const soloLectura =
+    soloVer || Boolean(listaActiva?.finalizado) || !data?.disponible
 
   const cambiar = (fn: () => void) => {
     fn()
@@ -105,7 +170,7 @@ export function RecuperacionModal({
   const guardarMut = useMutation({
     mutationFn: () =>
       guardarRecuperaciones({
-        asignacion_docente_id: asignacionId,
+        asignacion_docente_id: asignacionActiva,
         tipo,
         parcial_id: tipo === 'parcial' ? parcialId : undefined,
         numero: tipo === 'periodo' ? numero : undefined,
@@ -117,7 +182,7 @@ export function RecuperacionModal({
         [
           'recuperaciones-candidatos',
           lista.periodo_id,
-          asignacionId,
+          asignacionActiva,
           tipo,
           parcialId,
           numero,
@@ -159,7 +224,7 @@ export function RecuperacionModal({
   const finales = (a: CandidatoRecuperacion, nota: number | null) => {
     const notas = [...a.recuperaciones_periodo].slice(
       0,
-      lista.config.recuperaciones_periodo,
+      config.recuperaciones_periodo,
     )
     notas[numero - 1] = nota
     return notas
@@ -192,7 +257,7 @@ export function RecuperacionModal({
   )
 
   const numeros = Array.from(
-    { length: lista.config.recuperaciones_periodo },
+    { length: config.recuperaciones_periodo },
     (_, i) => i + 1,
   )
 
@@ -226,13 +291,107 @@ export function RecuperacionModal({
       }
     >
       <div data-testid="recuperacion-modal">
-        <p
-          className="texto-muted"
-          style={{ marginTop: 0, fontSize: '0.85rem' }}
+        <section
+          className="recuperacion-clase-filtros"
+          aria-label="Filtrar clase"
         >
-          {claseLabel} · nota mínima {lista.config.nota_minima}
-        </p>
-        {lista.finalizado ? (
+          <div className="recuperacion-clase-filtros__titulo">
+            <strong>Clase</strong>
+            <span className="texto-muted">
+              {esMaestro
+                ? 'Filtra por grado, sección y clase.'
+                : 'Filtra por grado, sección, clase y maestro.'}
+            </span>
+          </div>
+          <div className="recuperacion-clase-filtros__campos">
+            <Field label="Grado">
+              <Combobox
+                value={grado}
+                options={[
+                  { value: '', label: 'Todos los grados' },
+                  ...opcionesUnicas(clases.map((c) => c.grado_nombre)),
+                ]}
+                onChange={(value) => {
+                  const next = {
+                    grado: value,
+                    seccion: '',
+                    materia: '',
+                    maestro: '',
+                  }
+                  setGrado(value)
+                  setSeccion('')
+                  setMateria('')
+                  setMaestro('')
+                  seleccionarClase(next)
+                }}
+                data-testid="recuperacion-filtro-grado"
+              />
+            </Field>
+            <Field label="Sección">
+              <Combobox
+                value={seccion}
+                options={[
+                  { value: '', label: 'Todas las secciones' },
+                  ...opcionesUnicas(clasesGrado.map((c) => c.seccion_nombre)),
+                ]}
+                onChange={(value) => {
+                  const next = {
+                    grado,
+                    seccion: value,
+                    materia: '',
+                    maestro: '',
+                  }
+                  setSeccion(value)
+                  setMateria('')
+                  setMaestro('')
+                  seleccionarClase(next)
+                }}
+                data-testid="recuperacion-filtro-seccion"
+              />
+            </Field>
+            <Field label="Clase">
+              <Combobox
+                value={materia}
+                options={[
+                  { value: '', label: 'Todas las materias' },
+                  ...opcionesUnicas(clasesSeccion.map((c) => c.curso_nombre)),
+                ]}
+                onChange={(value) => {
+                  const next = { grado, seccion, materia: value, maestro: '' }
+                  setMateria(value)
+                  setMaestro('')
+                  seleccionarClase(next)
+                }}
+                data-testid="recuperacion-filtro-materia"
+              />
+            </Field>
+            {esMaestro ? null : (
+              <Field label="Maestro">
+                <Combobox
+                  value={maestro}
+                  options={[
+                    { value: '', label: 'Todos los maestros' },
+                    ...opcionesUnicas(
+                      clasesMateria.map((c) => c.maestro_nombre),
+                    ),
+                  ]}
+                  onChange={(value) => {
+                    const next = { grado, seccion, materia, maestro: value }
+                    setMaestro(value)
+                    seleccionarClase(next)
+                  }}
+                  data-testid="recuperacion-filtro-maestro"
+                />
+              </Field>
+            )}
+          </div>
+          {claseActiva ? (
+            <p className="recuperacion-clase-filtros__seleccion">
+              {claseActivaLabel} · nota mínima {config.nota_minima}
+            </p>
+          ) : null}
+        </section>
+        {listaActiva?.finalizado ? (
           <p
             className="recuperacion-aviso"
             data-testid="recuperacion-finalizado"
@@ -267,7 +426,7 @@ export function RecuperacionModal({
                   value={parcialId}
                   onChange={(e) => cambiar(() => setParcialId(e.target.value))}
                 >
-                  {lista.parciales.map((p) => (
+                  {(listaActiva?.parciales ?? lista.parciales).map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.etiqueta}
                       {p.terminado ? '' : ' (en curso)'}
@@ -297,7 +456,7 @@ export function RecuperacionModal({
           </div>
         ) : null}
 
-        {isLoading ? (
+        {listaCargando || isLoading ? (
           <div className="empty-state">Cargando alumnos…</div>
         ) : isError || !data ? (
           <div className="empty-state">{userMessageFromError(error)}</div>
