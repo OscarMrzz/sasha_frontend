@@ -170,6 +170,7 @@ function DisciplinaPage() {
     <RequirePermission permission="fichas:get">
       <div data-testid="disciplina-page">
         <DataTable
+          fixedOrder
           title="Fichas disciplinarias"
           data={data}
           columns={columns}

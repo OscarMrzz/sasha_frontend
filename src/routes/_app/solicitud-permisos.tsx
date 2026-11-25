@@ -117,6 +117,7 @@ function SolicitudesPermisoPage() {
     <RequirePermission permission="permisos_admin:get">
       <div data-testid="solicitud-permisos-page">
         <DataTable
+          fixedOrder
           title="Solicitudes de permiso"
           data={data}
           columns={columns}

@@ -282,6 +282,7 @@ function PrematriculasPage() {
       )}
       {solicitudes.isPending && <p role="status">Cargando prematrículas…</p>}
       <DataTable
+        fixedOrder
         title="Prematrículas"
         data={solicitudes.data ?? []}
         columns={columns}

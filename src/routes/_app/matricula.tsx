@@ -223,6 +223,7 @@ function MatriculaPage() {
   return (
     <RequirePermission permission="matricula:get">
       <DataTable
+        fixedOrder
         title="Matrícula"
         data={data}
         columns={columns}

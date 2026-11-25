@@ -51,6 +51,8 @@ export type DataTableCard<T> = {
 type DataTableProps<T extends RowData> = {
   data: T[]
   columns: LegacyColumnDef<T, any>[]
+  /** Conserva el orden canónico recibido, también en cards y al paginar. */
+  fixedOrder?: boolean
   /** Si se pasa, renderiza el h1 con el conteo de filas al lado. */
   title?: string
   /** Filtros clave (select). No incluir códigos. */
@@ -116,6 +118,7 @@ function norm(texto: string) {
 export function DataTable<T extends RowData>({
   data,
   columns,
+  fixedOrder = false,
   title,
   filters = [],
   onRowContextMenu,
@@ -215,7 +218,8 @@ export function DataTable<T extends RowData>({
   const table = useLegacyTable({
     data: filteredData,
     columns: tableColumns,
-    state: { globalFilter, sorting },
+    state: { globalFilter, sorting: fixedOrder ? [] : sorting },
+    enableSorting: !fixedOrder,
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     globalFilterFn: (row, columnId, filterValue) => {

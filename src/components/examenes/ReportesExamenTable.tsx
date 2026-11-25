@@ -79,7 +79,6 @@ export function ReportesExamenTable({
       map.set(reporte.alumno_id, `${reporte.codigo} — ${reporte.nombre}`)
     }
     return [...map.entries()]
-      .sort((a, b) => a[1].localeCompare(b[1], 'es'))
       .map(([value, label]) => ({ value, label }))
   }, [reportes])
 
@@ -184,6 +183,7 @@ export function ReportesExamenTable({
   return (
     <>
       <DataTable
+        fixedOrder
         title="Reportes de examen"
         data={visibles}
         columns={columns}

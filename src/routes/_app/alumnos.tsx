@@ -123,6 +123,7 @@ function AlumnosCajaPage() {
     <RequirePermission permission="cartera:get">
       <div data-testid="caja-alumnos-page">
         <DataTable
+          fixedOrder
           title="Alumnos"
           data={data}
           columns={columns}

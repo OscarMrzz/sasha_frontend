@@ -128,6 +128,7 @@ function RecibosPage() {
     <RequirePermission permission="pagos:put">
       <div data-testid="recibos-page">
         <DataTable
+          fixedOrder
           title="Recibos de pago"
           data={data}
           columns={columns}

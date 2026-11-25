@@ -171,6 +171,7 @@ function PagosPage() {
     <RequirePermission permission="pagos:get">
       <div data-testid="pagos-page">
         <DataTable
+          fixedOrder
           title="Pagos"
           data={data}
           columns={columns}

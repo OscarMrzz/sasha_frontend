@@ -282,6 +282,7 @@ function CalificacionesConsejeriaView() {
         <div className="empty-state">Cargando calificaciones…</div>
       ) : (
         <DataTable
+          fixedOrder
           title="Calificaciones"
           data={filas}
           columns={columns}
@@ -444,6 +445,7 @@ function CalificacionesStaffPage() {
   return (
     <RequirePermission permission="calificaciones:get">
       <DataTable
+        fixedOrder
         title={title}
         data={isLoading ? [] : filas}
         columns={columns}

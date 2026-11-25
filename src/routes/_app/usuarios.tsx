@@ -228,6 +228,7 @@ function UsuariosPage() {
   return (
     <RequirePermission permission="users:get">
       <DataTable
+        fixedOrder
         title="Usuarios"
         data={data}
         columns={columns}

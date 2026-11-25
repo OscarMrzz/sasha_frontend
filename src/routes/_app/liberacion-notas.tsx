@@ -350,6 +350,7 @@ function LiberacionNotasPage() {
           </div>
         ) : periodoId ? (
           <DataTable
+            fixedOrder
             key={periodoId}
             title="Alumnos sin liberar por pagos pendientes"
             data={bloqueadosQ.data ?? []}

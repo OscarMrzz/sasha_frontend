@@ -93,7 +93,7 @@ export function AnalisisContenido({ data, dim, cargando }: { data: AnalisisRespo
       <section className="analisis__seccion analisis__seccion--sobria" data-testid="analisis-asistencia">
         <SeccionTitulo icon={CalendarCheck} titulo="Asistencia" />
         {data.asistencia ? (
-          <SeccionSobria bloque={data.asistencia} prefijo="analisis-asistencia" titulo="Asistencia promedio" />
+          <SeccionSobria bloque={data.asistencia} dim={dim} prefijo="analisis-asistencia" titulo="Asistencia promedio" />
         ) : (
           <Aviso>No hay registros de asistencia con los filtros actuales.</Aviso>
         )}
@@ -104,7 +104,7 @@ export function AnalisisContenido({ data, dim, cargando }: { data: AnalisisRespo
         {dim === 'alumno' || dim === 'mes' ? (
           <Aviso testId="analisis-cumplimiento-aviso">{dim === 'alumno' ? 'No aplica por alumno.' : 'No aplica por mes.'}</Aviso>
         ) : data.cumplimiento ? (
-          <SeccionSobria bloque={data.cumplimiento} prefijo="analisis-cumplimiento" titulo="Cumplimiento promedio" />
+          <SeccionSobria bloque={data.cumplimiento} dim={dim} prefijo="analisis-cumplimiento" titulo="Cumplimiento promedio" />
         ) : (
           <Aviso>No hay planes activos con los filtros actuales.</Aviso>
         )}

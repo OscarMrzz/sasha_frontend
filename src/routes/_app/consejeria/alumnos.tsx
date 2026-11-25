@@ -169,6 +169,7 @@ function AlumnosConsejeriaPage() {
     <RequirePermission permission="expediente:get">
       <div data-testid="consejeria-alumnos-page">
         <DataTable
+          fixedOrder
           title="Alumnos"
           data={data}
           columns={columns}

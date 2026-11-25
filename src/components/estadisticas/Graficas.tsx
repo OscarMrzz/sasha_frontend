@@ -136,17 +136,20 @@ export function CajaBigotes({
 export type Paginar = { modo: 'puestos'; porPagina: number } | { modo: 'filas'; porPagina: number }
 
 /** Ranking denso de mayor a menor: valores iguales comparten puesto y el siguiente valor toma el número siguiente. */
-export function conPuesto(grupos: Grupo[]): { grupo: Grupo; puesto: number; fila: number }[] {
+export function conPuesto(grupos: Grupo[], fixedOrder = false): { grupo: Grupo; puesto: number; fila: number }[] {
   const orden = [...grupos].sort((a, b) => b.valor - a.valor)
   let puesto = 0
   let anterior: number | null = null
-  return orden.map((g, i) => {
+  const ranking = orden.map((g, i) => {
     if (g.valor !== anterior) {
       puesto++
       anterior = g.valor
     }
     return { grupo: g, puesto, fila: i + 1 }
   })
+  if (!fixedOrder) return ranking
+  const puestos = new Map(ranking.map((r) => [r.grupo.id, r.puesto]))
+  return grupos.map((grupo, i) => ({ grupo, puesto: puestos.get(grupo.id) ?? 0, fila: i + 1 }))
 }
 
 /**
@@ -158,11 +161,13 @@ export function BarrasHorizontales({
   grupos,
   unidad = '',
   paginar,
+  fixedOrder = false,
   testId,
 }: {
   grupos: Grupo[]
   unidad?: string
   paginar: Paginar
+  fixedOrder?: boolean
   testId?: string
 }) {
   const [q, setQ] = useState('')
@@ -170,9 +175,10 @@ export function BarrasHorizontales({
   const pagina = pag.de === grupos ? pag.n : 1
   const irA = (n: number) => setPag({ de: grupos, n })
 
-  const filas = useMemo(() => conPuesto(grupos), [grupos])
+  const filas = useMemo(() => conPuesto(grupos, fixedOrder), [grupos, fixedOrder])
+  const porPuestos = paginar.modo === 'puestos' && !fixedOrder
   const ultimoPuesto = filas.length ? filas[filas.length - 1].puesto : 0
-  const total = paginar.modo === 'puestos' ? ultimoPuesto : filas.length
+  const total = porPuestos ? ultimoPuesto : filas.length
   const paginas = Math.max(1, Math.ceil(total / paginar.porPagina))
   const desde = (pagina - 1) * paginar.porPagina + 1
   const hasta = Math.min(pagina * paginar.porPagina, total)
@@ -180,7 +186,7 @@ export function BarrasHorizontales({
   const busqueda = q.trim().toLowerCase()
   const visibles = busqueda
     ? filas.filter((f) => f.grupo.nombre.toLowerCase().includes(busqueda))
-    : paginar.modo === 'puestos'
+    : porPuestos
       ? filas.filter((f) => f.puesto >= desde && f.puesto <= hasta)
       : filas.slice(desde - 1, hasta)
   const conBuscador = paginas > 1 || busqueda !== ''
@@ -224,7 +230,7 @@ export function BarrasHorizontales({
       {!busqueda && paginas > 1 ? (
         <div className="analisis-bento__pager">
           <span className="analisis-bento__pager-texto" data-testid={testId ? `${testId}-pagina` : undefined}>
-            {paginar.modo === 'puestos' ? 'Puestos' : 'Filas'} {desde}–{hasta} · página {pagina} de {paginas}
+            {porPuestos ? 'Puestos' : 'Filas'} {desde}–{hasta} · página {pagina} de {paginas}
           </span>
           <button
             type="button"

@@ -168,6 +168,7 @@ export function ExamenPagosButton({ onSaved }: { onSaved?: () => void }) {
           <div className="empty-state">Cargando recibos…</div>
         ) : (
           <DataTable
+            fixedOrder
             title="Recibos pendientes"
             data={recibos.data ?? []}
             columns={columns}

@@ -137,21 +137,24 @@ function DesviacionTile({ bloque }: { bloque: Bloque }) {
 /** Grupos fuera de los bigotes de la caja (los puntos atípicos), de un lado. */
 function AtipicosTile({
   bloque,
+  dim,
   lado,
   unidad,
   testId,
 }: {
   bloque: Bloque
+  dim: Dimension
   lado: 'arriba' | 'abajo'
   unidad: string
   testId: string
 }) {
   const d = bloque.distribucion
-  const lista = bloque.grupos
-    .filter((g) =>
-      lado === 'arriba' ? g.valor > d.bigote_sup : g.valor < d.bigote_inf,
-    )
-    .sort((a, b) => (lado === 'arriba' ? b.valor - a.valor : a.valor - b.valor))
+  const lista = bloque.grupos.filter((g) =>
+    lado === 'arriba' ? g.valor > d.bigote_sup : g.valor < d.bigote_inf,
+  )
+  if (dim !== 'alumno') {
+    lista.sort((a, b) => (lado === 'arriba' ? b.valor - a.valor : a.valor - b.valor))
+  }
   return (
     <TileAmpliable
       titulo={lado === 'arriba' ? 'Atípicos por arriba' : 'Atípicos por abajo'}
@@ -241,12 +244,14 @@ export function BloquePrincipal({
       </TileAmpliable>
       <AtipicosTile
         bloque={bloque}
+        dim={dim}
         lado="abajo"
         unidad={unidad}
         testId={`${prefijo}-atipicos-abajo`}
       />
       <AtipicosTile
         bloque={bloque}
+        dim={dim}
         lado="arriba"
         unidad={unidad}
         testId={`${prefijo}-atipicos-arriba`}
@@ -255,6 +260,7 @@ export function BloquePrincipal({
         {(grande) => (
           <BarrasHorizontales
             grupos={bloque.grupos}
+            fixedOrder={dim === 'alumno'}
             unidad={unidad}
             paginar={{ modo: 'puestos', porPagina: 10 }}
             testId={grande ? undefined : `${prefijo}-barras`}
@@ -324,10 +330,12 @@ export function MiniTipoCard({ bt, dim }: { bt: BloqueTipo; dim: Dimension }) {
 /** Sección secundaria (asistencia, cumplimiento): cifras y barras, sin gráficas grandes. */
 export function SeccionSobria({
   bloque,
+  dim,
   prefijo,
   titulo,
 }: {
   bloque: Bloque
+  dim: Dimension
   prefijo: string
   titulo: string
 }) {
@@ -368,6 +376,7 @@ export function SeccionSobria({
         {(grande) => (
           <BarrasHorizontales
             grupos={bloque.grupos}
+            fixedOrder={dim === 'alumno'}
             unidad="%"
             paginar={{ modo: 'filas', porPagina: 25 }}
             testId={grande ? undefined : `${prefijo}-barras`}
