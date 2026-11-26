@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { UserOptions } from 'jspdf-autotable'
 import { formatHoras, minutosSemana } from '#/helpers/horas'
+import { hora12 } from '#/lib/examenes'
 import { roleLabel } from '#/helpers/permissions'
 import type { UserFicha } from '#/services/personas'
 
@@ -363,8 +364,8 @@ export function buildFichaPdfDoc(ficha: UserFicha, opts: FichaPdfOpts = {}): jsP
         m.disponibilidad.map((d) => [
           dash(d.modalidad),
           dash(d.dia_semana),
-          dash(d.hora_inicio?.slice(0, 5)),
-          dash(d.hora_fin?.slice(0, 5)),
+          dash(hora12(d.hora_inicio)),
+          dash(hora12(d.hora_fin)),
           yn(d.es_disponible),
           dash(d.motivo),
         ]),

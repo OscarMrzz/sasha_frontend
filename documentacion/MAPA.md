@@ -24,7 +24,7 @@ Subidas a la bóveda (`POST /boveda/upload`): el error se muestra con **contexto
 
 ## Zona horaria
 
-- Las horas que se presentan en la interfaz y en los PDF usan formato clásico de 12 horas con `am`/`pm` (por ejemplo, `08:00 pm`). Los valores de captura y el contrato con el API siguen en `HH:mm` de 24 horas. El formateador compartido está en `src/lib/examenes.ts`.
+- Las horas que se presentan en la interfaz y en los PDF usan formato clásico de 12 horas con `am`/`pm` (por ejemplo, `08:00 pm`). Los valores de captura y el contrato con el API siguen en `HH:mm` de 24 horas. El formateador canónico es `hora12(hora)` y `horaRango12(inicio, fin)` en `src/lib/examenes.ts`. Lo usan todos los componentes de horario (`HorarioViewModal`, `HorarioBoard`, `MaestroHorarioView`, `HorarioSemanaGrid`, `HorarioDiasView`, `AlumnoHorarioView`) y los exámenes, además de `PrematriculaForm` y la disponibilidad del maestro en `fichaPdf.ts`. Los inputs `type="time"`, los payloads al backend y los cálculos internos permanecen en formato 24 horas.
 - Los cálculos de **"hoy"** usan la fecha **local del navegador** (`getFullYear/getMonth/getDate`), nunca `new Date().toISOString()` (que da la fecha **UTC** y a partir de las 18:00 hora Honduras devuelve el día siguiente). Helper canónico: `hoyISO()` de `src/lib/fechas-padre.ts` (lo usan el horario del maestro `MaestroHorarioView` y los nombres de archivo de exportación SACE/análisis/analítica de pagos).
 - Las fechas de tarea/entrega se muestran a partir del string `YYYY-MM-DD` que manda el backend, **sin conversión** (siempre muestran el día correcto). El locale `es-HN` fija el idioma del formato, no la zona.
 - Zona de negocio del sistema: **`America/Tegucigalpa` (Honduras, UTC-6)**.
