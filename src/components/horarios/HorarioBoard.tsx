@@ -434,7 +434,7 @@ export function HorarioBoard({
                   return (
                     <tr key={`recess-${row.interval.start}`}>
                       <td className="horario-board__time">
-                        {row.interval.start}–{row.interval.end}
+                        {horaRango12(row.interval.start, row.interval.end)}
                       </td>
                       {days.map((d) => (
                         <td key={d} className="horario-board__cell horario-board__cell--recess">

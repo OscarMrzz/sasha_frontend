@@ -5,6 +5,7 @@ import { Field } from '#/components/ui/Field'
 import { Combobox } from '#/components/ui/Combobox'
 import { PhotoCapture } from '#/components/matricula/PhotoCapture'
 import { userMessageFromError } from '#/lib/api'
+import { hora12 } from '#/lib/examenes'
 import {
   corregirPrematricula,
   editarPrematricula,
@@ -591,8 +592,8 @@ export function PrematriculaForm({
             <aside className="pre-modalidad-resumen" aria-live="polite">
               <div className="pre-modalidad-resumen__top"><GraduationCap aria-hidden="true" /><div><span>Horario de la modalidad</span><strong>{modalidadElegida.nombre}</strong></div></div>
               <div className="pre-modalidad-resumen__details">
-                <div><small>Inicia</small><strong>{modalidadElegida.hora_inicio.slice(0, 5)}</strong></div>
-                <div><small>Finaliza</small><strong>{modalidadElegida.hora_fin.slice(0, 5)}</strong></div>
+                <div><small>Inicia</small><strong>{hora12(modalidadElegida.hora_inicio)}</strong></div>
+                <div><small>Finaliza</small><strong>{hora12(modalidadElegida.hora_fin)}</strong></div>
                 <div className="pre-modalidad-resumen__days"><small>Días de clase</small><strong>{diasModalidad.length ? diasModalidad.join(' · ') : 'Días no especificados'}</strong></div>
               </div>
             </aside>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Combobox } from '#/components/ui/Combobox'
 import { Modal } from '#/components/ui/Modal'
 import { DIA_SHORT, type TimeInterval } from '#/lib/horarioGrid'
+import { hora12, horaRango12 } from '#/lib/examenes'
 import {
   downloadHorarioActualPdf,
   downloadHorariosAlumnosPdf,
@@ -238,7 +239,7 @@ export function HorarioViewModal({
               {detail.periodo_nombre || 'Periodo'} ·{' '}
               {detail.es_activa ? 'Activa' : 'Inactiva'}
               {detail.modalidad_nombre ? ` · ${detail.modalidad_nombre}` : ''}
-              {finJornada ? ` · jornada hasta ${finJornada}` : ''}
+              {finJornada ? ` · jornada hasta ${hora12(finJornada)}` : ''}
             </div>
 
             <div className="horario-view__filters">
@@ -299,7 +300,7 @@ export function HorarioViewModal({
                         return (
                           <tr key={`recess-${row.start}`}>
                             <td className="horario-board__time">
-                              {row.start}–{row.end}
+                              {horaRango12(row.start, row.end)}
                             </td>
                             {DAYS.map((d) => (
                               <td key={d} className="horario-board__cell horario-board__cell--recess">
@@ -318,7 +319,7 @@ export function HorarioViewModal({
                           <td
                             className={`horario-board__time${isExtra ? ' horario-board__time--extra' : ''}`}
                           >
-                            {row.start}–{row.end}
+                            {horaRango12(row.start, row.end)}
                             {isExtra ? <span className="horario-board__extra-tag">extra</span> : null}
                           </td>
                           {DAYS.map((d) => {

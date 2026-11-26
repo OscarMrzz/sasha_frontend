@@ -95,7 +95,7 @@ export function horaRango12(
   const a = hora12(inicio)
   const b = hora12(fin)
   if (!a && !b) return '—'
-  if (!b || a === b) return a || '—'
+  if (!a || !b || a === b) return a || b || '—'
   return `${a} – ${b}`
 }
 
